@@ -37,4 +37,18 @@
 .hitrow button.no.on{background:var(--bad);color:#2a0606}
 #card{max-height:62%;overflow:auto}
 #hint{z-index:20;pointer-events:none}   /* Tipps gehen durch den Hinweis hindurch */
-#stage.marking #hint{top:56px}          /* beim Linie-Markieren nach oben, damit die Mitte frei bleibt */
+
+/* Einrichtung (Linie ablaufen/antippen). Beim Markieren klein oben, damit das Bild frei bleibt. */
+#setup{position:absolute;left:10px;right:10px;bottom:10px;max-width:520px;margin:0 auto;z-index:15;max-height:62%;overflow:auto;
+  background:rgba(20,29,38,.95);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+#setup[hidden]{display:none}
+#setup h3{margin:0;font-family:var(--head);font-size:1.3rem;font-weight:600}
+#setup p{margin:0 0 4px;line-height:1.4}
+#stage.marking #setup{top:10px;bottom:auto}
+#stage.marking.flip #setup{top:auto;bottom:10px}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.btnrow button{flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 10px;font-weight:600;min-height:44px}
+#setup button:disabled{opacity:.45}
+.btnrow button.flip{flex:none;min-width:44px}
+.btnrow button.primaryBtn{background:var(--orange);color:#1a1000;border-color:transparent}
+.btnrow button{white-space:nowrap}

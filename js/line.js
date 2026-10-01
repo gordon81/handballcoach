@@ -3,7 +3,7 @@
 // als glatte Kurve durch beliebig viele angetippte Punkte (Catmull-Rom) nachgebildet.
 import { app } from './state.js';
 import { settings, store } from './store.js';
-import { $, video, canvas, showHint } from './dom.js';
+import { $, video, canvas } from './dom.js';
 
 // Altes Format {a, b, inside} (gerade Linie aus 2 Punkten) übernehmen.
 if(settings.line && settings.line.a) settings.line = {pts:[settings.line.a, settings.line.b], inside:settings.line.inside};
@@ -42,35 +42,34 @@ export function inTorraum(p){
 }
 export function lineCenter(l){ return {x:l.pts.reduce((a,p)=>a+p.x,0)/l.pts.length, y:l.pts.reduce((a,p)=>a+p.y,0)/l.pts.length}; }
 
-/* ---------- Markieren ---------- */
-function finishLinePoints(){
-  if(app.marking.length < 2){ showHint('Mindestens 2 Punkte auf der 6-m-Linie antippen', 2500); return; }
-  app.markStep = 'inside'; $('#btnLine').textContent = 'Linie';
-  showHint('Jetzt 1 Punkt im Torraum antippen');
-}
-// Button „Linie“: Markieren starten bzw. mit „Fertig“ die Linienpunkte abschließen.
-export function onLineButton(){
-  if(app.source==='none'){ showHint('Erst Start drücken, dann die Linie markieren', 2500); return; }
-  if(app.marking && app.markStep==='line'){ finishLinePoints(); return; }
+/* ---------- Antippen ---------- */
+let listener = () => {};
+export function onLineChange(fn){ listener = fn; }
+
+export function saveLine(pts, inside){ settings.line = {pts, inside}; store(); listener(); }
+export function clearLine(){ settings.line = null; store(); listener(); }
+
+// Antippen starten; optional mit schon vorhandenen Punkten (z. B. vom Ablaufen).
+export function startTapMarking(points = [], step = 'line'){
   if(app.source==='file') video.pause();
-  app.marking = []; app.markStep = 'line'; $('#btnLine').textContent = 'Fertig';
+  app.marking = points.slice(); app.markStep = step;
   $('#stage').classList.add('marking'); $('#card').style.display = 'none';
-  showHint('Punkte entlang der 6-m-Linie antippen (sie ist gebogen: 4–6 Punkte), dann „Fertig“');
+  listener();
 }
-function endMarking(){ app.marking=null; app.markStep=null; $('#stage').classList.remove('marking'); }
-export function cancelMarking(){ endMarking(); $('#btnLine').textContent='Linie'; }
-export function clearLine(){ settings.line = null; store(); showHint('Linie gelöscht', 1500); }
+export function finishLinePoints(){ if(app.marking?.length >= 2){ app.markStep = 'inside'; listener(); } }
+// Letzten Punkt zurücknehmen; im Torraum-Schritt zurück zu den Linienpunkten.
+export function undoPoint(){
+  if(!app.marking) return;
+  if(app.markStep==='inside') app.markStep = 'line'; else app.marking.pop();
+  listener();
+}
+export function cancelMarking(){ app.marking=null; app.markStep=null; $('#stage').classList.remove('marking'); listener(); }
 
 export function initLineMarking(){
   canvas.addEventListener('pointerdown', e => {
     if(!app.marking) return;
     const r = canvas.getBoundingClientRect(), p = {x:(e.clientX-r.left)/r.width, y:(e.clientY-r.top)/r.height};
-    if(app.markStep==='inside'){
-      settings.line = {pts:app.marking, inside:p}; endMarking(); store();
-      showHint('Linie gespeichert', 1500); return;
-    }
-    app.marking.push(p);
-    showHint(app.marking.length < 3 ? 'Weitere Punkte entlang der Linie antippen (Bogen: 4–6 Punkte), dann „Fertig“'
-                                    : `${app.marking.length} Punkte. Weitere antippen oder „Fertig“`);
+    if(app.markStep==='inside'){ const pts = app.marking; cancelMarking(); saveLine(pts, p); return; }
+    app.marking.push(p); listener();
   });
 }

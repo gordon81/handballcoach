@@ -33,5 +33,5 @@ export function initSettings(){
   $('#sCam').onchange = async e => { settings.camera = e.target.value; store(); if(app.source==='cam'){ try{ await startCamera(); }catch(err){ showHint('Kamera-Fehler: ' + err.message, 5000); } } };
   $('#sModel').onchange = async e => { settings.model = e.target.value; store(); if(landmarker){ try{ await ensureModel(); }catch(err){ showHint('Modell-Fehler: ' + err.message, 5000); } } };
   $('#sAddT').onclick = () => { settings.targets.push({name:'Neues Ziel', on:true}); store(); renderTargets(); };
-  $('#sClearLine').onclick = clearLine;
+  $('#sClearLine').onclick = () => { clearLine(); showHint('Linie gelöscht', 1500); };
 }

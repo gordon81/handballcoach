@@ -26,12 +26,13 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
   - `store.js` – `settings` und `log` im localStorage, Trainings-Sitzungen.
   - `utils.js`, `dom.js` – Helfer, Seitenelemente, Hinweis-Einblendung.
   - `speech.js`, `wakelock.js`, `model.js`, `source.js` – Sprache, Bildschirm wach, KI-Modell laden, Kamera/Video + Layout.
-  - `line.js` – 6-m-Linie markieren, Kurve, `inTorraum()`.
+  - `line.js` – 6-m-Linie: Antippen (mit „Zurück“), Kurve, `inTorraum()`, `saveLine()`.
+  - `lineWizard.js` – Linie ablaufen: Person geht auf Sprachansage die Linie entlang, Fußpunkte werden zur Linie.
   - `tracking.js` – Zustandsautomat, Absprung-/Landungserkennung, speichert den Wurf.
   - `analysis.js` – `evaluate()`: die sechs Prüfungen und der Sprachtext.
   - `feedback.js` – Labels, `PRIO`, `tips()`.
   - `draw.js` – Overlay (Linie, Skelett). `summary.js` + `report.js` – Auswertung und Bericht.
-  - `ui/` – `controls.js` (Buttons, Video-Leiste, Training-Fenster), `settingsView.js`, `card.js` (Ergebnis-Karte), `logView.js`, `sheets.js`.
+  - `ui/` – `setupView.js` (Einrichtung vor dem Training, Start/Stopp), `controls.js` (Buttons, Video-Leiste, Training-Fenster), `settingsView.js`, `card.js` (Ergebnis-Karte), `logView.js`, `sheets.js`.
 - `README.md` – Kurzbeschreibung für GitHub.
 - `brain.md` – diese Datei.
 
@@ -43,6 +44,12 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 - Screen Wake Lock hält den Bildschirm an.
 - Schrift: Barlow / Barlow Condensed (Google Fonts) mit System-Fallback.
 - Kein Build-Schritt, keine Abhängigkeiten im Repo.
+
+## Einrichtung (vor dem Training)
+- **Start** lädt KI und Kamera und öffnet die Einrichtung; erst danach „Training starten“ (im Kamera-Modus nur mit gesetzter 6-m-Linie). Der Button „Setup“ öffnet die Einrichtung jederzeit. Video-Modus: Analyse startet direkt, Linie optional.
+- **Linie antippen**: Punkte entlang des Bogens, „↶ Zurück“ nimmt den letzten Punkt (bzw. den Torraum-Schritt) zurück, „Fertig“, dann 1 Punkt im Torraum. Die Leiste steht dabei oben, „⇅“ schiebt sie nach unten.
+- **Linie ablaufen** (`lineWizard.js`): Ansage „ans äußere Ende stellen“ → steht die Person 1,5 s still, „los, langsam auf der Linie gehen“ → gesammelt wird der Bodenpunkt des aufstehenden Fußes (Mitte Ferse/Spitze) → nach ≥ 0,8 Körperlängen Weg und ~1 s Stillstand (oder „Fertig“, max. 30 s) werden die Punkte geglättet (gleitender Median) und auf 3–7 Punkte in gleichen Abständen reduziert → „zwei Schritte in den Torraum und stehen bleiben“ → Stillstand mit genug Abstand zur Linie = Torraum-Punkt. Klappt das nicht (20 s), Torraum-Punkt antippen.
+- Noch nicht in der Halle getestet; nur mit simulierten Posen geprüft.
 
 ## Ablauf (Zustandsautomat)
 `off` → `ready` → `runup` → `air` → `cool` → `ready` …
@@ -56,7 +63,7 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 
 ## Prüfungen (in `evaluate()`, `js/analysis.js`), Priorität für den Tipp
 1. **over – Übertritt**: Fußspitze oder Ferse des Sprungbeins im Absprung-Frame auf der Torraum-Seite der markierten 6-m-Linie. Ohne Linie: nicht geprüft.
-   - Die 6-m-Linie ist **gebogen** (Viertelkreise mit 6 m Radius um die Pfosten + 3 m gerades Stück). Markierung daher als beliebig viele Punkte entlang des Bogens (≥ 2, empfohlen 4–6), Button wird zu „Fertig“, danach 1 Punkt im Torraum.
+   - Die 6-m-Linie ist **gebogen** (Viertelkreise mit 6 m Radius um die Pfosten + 3 m gerades Stück). Markierung daher als beliebig viele Punkte entlang des Bogens (≥ 2, empfohlen 4–6) oder per Ablaufen, danach 1 Punkt im Torraum (siehe Einrichtung).
    - `curve()` legt eine Catmull-Rom-Kurve durch die Punkte; `lineSide()` nimmt das Kreuzprodukt zum nächstgelegenen Kurvenstück (Endstücke verlängert, Abstand seitenverhältnis-korrigiert). Funktioniert im perspektivischen Bild ohne Kalibrierung.
 2. **leg – Sprungbein**: Rechtshänder links, Linkshänder rechts.
 3. **arm – Wurfarm**: bestes Frame im Fenster −0,04 … +0,08 s um den Absprung. Handgelenk über Nase = gut, über Schulter = mittel (Tipp), sonst zu tief.
@@ -93,3 +100,4 @@ Feedback: Sprachansage = zufälliges Lob aus den guten Punkten + Kurz-Tipp des w
 - 2026-10-01: 6-m-Linie als Bogen statt Gerade (mehrere Punkte, glatte Kurve) – vorher wurde am Flügel der Übertritt falsch bewertet.
 - 2026-10-01: Aufteilung in `index.html`, `css/` und `js/`-Module (gleiches Verhalten, kein Build).
 - 2026-10-01: Fix: Startanleitung (`#empty`) blieb trotz `hidden` sichtbar (CSS `display:flex`) und fing alle Tipps ab; Hinweis-Text ist jetzt durchlässig (`pointer-events:none`) und steht beim Linie-Markieren oben.
+- 2026-10-01: Einrichtung vor dem Training (Start → Einrichtung → Training starten), „Zurück“ beim Antippen, Linie ablaufen mit Sprachansage.

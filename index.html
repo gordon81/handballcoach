@@ -22,15 +22,16 @@
     <div class="rings" aria-hidden="true"><i class="o"></i><i class="o"></i><i class="b"></i><i class="b"></i></div>
     <ol>
       <li><b>Handy aufs Stativ</b>, seitlich-schräg auf die Absprungzone, ganzer Körper im Bild.</li>
-      <li><b>Start</b> drücken, Kamera und KI-Modell werden geladen.</li>
-      <li>Mit <b>Linie</b> die 6-m-Linie markieren: mehrere Punkte entlang des Bogens, „Fertig“, dann 1 Punkt im Torraum.</li>
-      <li>Spieler stellt sich ins Bild, das Handy ruft das Ziel, Anlauf, Wurf, Feedback.</li>
+      <li><b>Start</b> drücken: Kamera und KI-Modell werden geladen, die Einrichtung öffnet sich.</li>
+      <li><b>6-m-Linie einrichten:</b> eine Person läuft sie auf Ansage ab, oder du tippst Punkte entlang des Bogens an.</li>
+      <li><b>Training starten:</b> das Handy ruft das Ziel, Anlauf, Wurf, Feedback.</li>
     </ol>
   </div>
   <div id="hud"><span class="chip" id="state" data-s="off">Gestoppt</span><span class="chip" id="fps">– fps</span></div>
   <div id="target"></div>
   <div id="hint"></div>
   <section id="card" aria-live="polite"></section>
+  <section id="setup" hidden></section>
 </main>
 
 <div id="filebar" hidden>
@@ -43,7 +44,7 @@
 
 <nav id="bar">
   <button id="btnStart" class="primary">Start</button>
-  <button id="btnLine">Linie</button>
+  <button id="btnLine">Setup</button>
   <button id="btnCall">Ansage</button>
   <button id="btnVideo">Video</button>
   <button id="btnLog">Log</button>
