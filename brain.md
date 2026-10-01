@@ -92,3 +92,4 @@ Feedback: Sprachansage = zufälliges Lob aus den guten Punkten + Kurz-Tipp des w
 - 2026-10-01: Körperdrehung, Position LA/RA, Lob + Tipp nach jedem Wurf, Training-Auswertung, Abschlussbericht teilen/herunterladen.
 - 2026-10-01: 6-m-Linie als Bogen statt Gerade (mehrere Punkte, glatte Kurve) – vorher wurde am Flügel der Übertritt falsch bewertet.
 - 2026-10-01: Aufteilung in `index.html`, `css/` und `js/`-Module (gleiches Verhalten, kein Build).
+- 2026-10-01: Fix: Startanleitung (`#empty`) blieb trotz `hidden` sichtbar (CSS `display:flex`) und fing alle Tipps ab; Hinweis-Text ist jetzt durchlässig (`pointer-events:none`) und steht beim Linie-Markieren oben.
