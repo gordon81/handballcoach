@@ -14,10 +14,24 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 - Lokal: `/home/gordon/Projekte/handballcoach`
 - Repo: https://github.com/gordon81/handballcoach (Branch `main`)
 - Live: https://gordon81.github.io/handballcoach/ (GitHub Pages, Deploy from branch `main` / root)
-- Kamera funktioniert nur über https (oder localhost), nicht per `file://`.
+- Kamera und ES-Module funktionieren nur über https oder localhost, nicht per `file://`. Lokal testen: `python3 -m http.server` im Projektordner, dann http://localhost:8000.
 
 ## Dateien
-- `index.html` – die komplette App (HTML + CSS + JS-Modul in einer Datei, ca. 700 Zeilen).
+- `index.html` – nur das HTML-Gerüst; bindet die CSS-Dateien und `js/main.js` ein.
+- `css/` – `base.css` (Farben, Schriften, Grundstil), `stage.css` (Kamerabild, HUD, Zielansage, Hinweis, Ergebnis-Karte), `controls.css` (Video- und Button-Leiste), `sheets.css` (Einstellungen, Training).
+- `js/` – ES-Module, ohne Build direkt vom Browser geladen:
+  - `main.js` – Einstieg: verbindet die Bedienung, Hauptschleife (ein KI-Durchlauf pro Videobild).
+  - `config.js` – feste Werte: MediaPipe-URLs, Modelle, Körperpunkt-Indizes, Skelett, Standard-Einstellungen.
+  - `state.js` – gemeinsamer Laufzeit-Zustand `app` (Zustand, Quelle, Ziel, letzter Frame, Linien-Markierung). Als Objekt, weil importierte Variablen nicht neu zugewiesen werden können.
+  - `store.js` – `settings` und `log` im localStorage, Trainings-Sitzungen.
+  - `utils.js`, `dom.js` – Helfer, Seitenelemente, Hinweis-Einblendung.
+  - `speech.js`, `wakelock.js`, `model.js`, `source.js` – Sprache, Bildschirm wach, KI-Modell laden, Kamera/Video + Layout.
+  - `line.js` – 6-m-Linie markieren, Kurve, `inTorraum()`.
+  - `tracking.js` – Zustandsautomat, Absprung-/Landungserkennung, speichert den Wurf.
+  - `analysis.js` – `evaluate()`: die sechs Prüfungen und der Sprachtext.
+  - `feedback.js` – Labels, `PRIO`, `tips()`.
+  - `draw.js` – Overlay (Linie, Skelett). `summary.js` + `report.js` – Auswertung und Bericht.
+  - `ui/` – `controls.js` (Buttons, Video-Leiste, Training-Fenster), `settingsView.js`, `card.js` (Ergebnis-Karte), `logView.js`, `sheets.js`.
 - `README.md` – Kurzbeschreibung für GitHub.
 - `brain.md` – diese Datei.
 
@@ -40,7 +54,7 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 - **Landung**: nach > 0,25 s, wenn Fuß wieder am Boden oder Hüfte < 0,04 über Basis; spätestens nach 1,8 s oder 0,4 s ohne Pose.
 - **cool**: Pause nach Wurf (Einstellung, Standard 4 s; im Video-Modus 0,6 s).
 
-## Prüfungen (in `finish()`), Priorität für den Tipp
+## Prüfungen (in `evaluate()`, `js/analysis.js`), Priorität für den Tipp
 1. **over – Übertritt**: Fußspitze oder Ferse des Sprungbeins im Absprung-Frame auf der Torraum-Seite der markierten 6-m-Linie. Ohne Linie: nicht geprüft.
    - Die 6-m-Linie ist **gebogen** (Viertelkreise mit 6 m Radius um die Pfosten + 3 m gerades Stück). Markierung daher als beliebig viele Punkte entlang des Bogens (≥ 2, empfohlen 4–6), Button wird zu „Fertig“, danach 1 Punkt im Torraum.
    - `curve()` legt eine Catmull-Rom-Kurve durch die Punkte; `lineSide()` nimmt das Kreuzprodukt zum nächstgelegenen Kurvenstück (Endstücke verlängert, Abstand seitenverhältnis-korrigiert). Funktioniert im perspektivischen Bild ohne Kalibrierung.
@@ -50,7 +64,7 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 5. **jump – Sprunghöhe**: (Basis − Hüft-Höchstpunkt) / Körperlänge: ≥ 0,25 hoch, ≥ 0,17 mittel, sonst flach.
 6. **lean – Oberkörper** beim Wurf (Frame mit max. Handgelenk-Geschwindigkeit): < 15° aufrecht; > 25° Richtung Torraum = kippt nach vorn; weg vom Torraum = Rücklage (ok).
 
-Feedback: Sprachansage = zufälliges Lob aus den guten Punkten + Kurz-Tipp des wichtigsten Fehlers. Texte in `tips()` (short / tip / drill), Labels in `LABEL_GOOD` / `LABEL_BAD`, Reihenfolge in `PRIO`.
+Feedback: Sprachansage = zufälliges Lob aus den guten Punkten + Kurz-Tipp des wichtigsten Fehlers. Texte in `tips()` (`js/feedback.js`) (short / tip / drill), Labels in `LABEL_GOOD` / `LABEL_BAD`, Reihenfolge in `PRIO`.
 
 ## Daten (localStorage)
 - `awc-settings`: `hand` (R/L), `pos` (LA/RA), `mode` (auto/timer), `pause`, `camera`, `model`, `targets[{name,on}]`, `line{pts[],inside}` (normalisiert 0–1; altes Format `{a,b,inside}` wird beim Laden zu `pts:[a,b]`), `session{id,start,last}`.
@@ -77,3 +91,4 @@ Feedback: Sprachansage = zufälliges Lob aus den guten Punkten + Kurz-Tipp des w
 - 2026-10-01: erste Version (Ansage, Übertritt, Sprungbein, Arm, Sprung, Oberkörper, Log, Video-Analyse).
 - 2026-10-01: Körperdrehung, Position LA/RA, Lob + Tipp nach jedem Wurf, Training-Auswertung, Abschlussbericht teilen/herunterladen.
 - 2026-10-01: 6-m-Linie als Bogen statt Gerade (mehrere Punkte, glatte Kurve) – vorher wurde am Flügel der Übertritt falsch bewertet.
+- 2026-10-01: Aufteilung in `index.html`, `css/` und `js/`-Module (gleiches Verhalten, kein Build).

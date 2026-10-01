@@ -1,0 +1,33 @@
+// Einstieg: Bedienung verbinden und Hauptschleife starten (ein KI-Durchlauf pro Videobild).
+import { app } from './state.js';
+import { $, video } from './dom.js';
+import { landmarker } from './model.js';
+import { keepAwake } from './wakelock.js';
+import { processFrame } from './tracking.js';
+import { initLineMarking } from './line.js';
+import { draw } from './draw.js';
+import { initSheets } from './ui/sheets.js';
+import { initControls } from './ui/controls.js';
+import { initSettings } from './ui/settingsView.js';
+
+initLineMarking();
+initSheets();
+initControls();
+initSettings();
+document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible' && app.state!=='off') keepAwake(); });
+
+let fpsN = 0, fpsT0 = performance.now(), lastVT = -1;
+function loop(){
+  requestAnimationFrame(loop);
+  if(app.source==='none' || !landmarker || video.readyState < 2){ draw(); return; }
+  const vt = video.currentTime;
+  if(app.source==='file' && vt===lastVT) return;
+  lastVT = vt;
+  const pn = performance.now();
+  let res = null; try{ res = landmarker.detectForVideo(video, pn); }catch(e){ console.warn(e); }
+  processFrame(res, app.source==='file' ? vt : pn/1000);
+  draw();
+  fpsN++; if(pn - fpsT0 > 1000){ $('#fps').textContent = Math.round(fpsN*1000/(pn-fpsT0)) + ' fps'; fpsN = 0; fpsT0 = pn; }
+  if(app.source==='file' && video.duration) $('#fSeek').value = Math.round(vt/video.duration*1000);
+}
+requestAnimationFrame(loop);
