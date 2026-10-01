@@ -91,6 +91,10 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 .entry{border-top:1px solid var(--line);padding:8px 0}
 .entry b{font-family:var(--head);font-size:1.1rem}
 .entry small{color:var(--muted)}
+.primaryBtn{background:var(--orange);color:#1a1000;border-color:transparent;font-weight:600}
+.tipline{margin:8px 0 0;line-height:1.4;display:flex;gap:8px}
+#card{max-height:62%;overflow:auto}
+#hint{z-index:20}
 </style>
 </head>
 <body>
@@ -135,6 +139,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
   <div class="sheet-in">
     <div class="sheet-h"><h2>Einstellungen</h2><button class="x" data-close aria-label="Schließen">✕</button></div>
     <label class="row">Wurfhand <select id="sHand"><option value="R">Rechts</option><option value="L">Links</option></select></label>
+    <label class="row">Position <select id="sPos"><option value="LA">Linksaußen</option><option value="RA">Rechtsaußen</option></select></label>
     <label class="row">Ansage <select id="sMode"><option value="auto">Wenn Spieler im Bild steht</option><option value="timer">Nach fester Pause</option></select></label>
     <label class="row">Pause nach Wurf (s) <input type="number" id="sPause" min="1" max="30" step="1"></label>
     <label class="row">Kamera <select id="sCam"><option value="environment">Rückkamera</option><option value="user">Frontkamera</option></select></label>
@@ -144,16 +149,19 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
     <button class="wide" id="sAddT">Ziel hinzufügen</button>
     <button class="wide" id="sClearLine">6-m-Linie löschen</button>
     <h3>So prüft die App</h3>
-    <p class="muted">Übertritt: Fußspitze oder Ferse des Sprungbeins beim letzten Bodenkontakt auf der Torraum-Seite der markierten Linie. Sprungbein: Rechtshänder links, Linkshänder rechts. Wurfarm: Handgelenk beim Absprung über dem Kopf. Oberkörper und Sprunghöhe sind Schätzungen aus einer Kamera.</p>
+    <p class="muted">Übertritt: Fußspitze oder Ferse des Sprungbeins beim letzten Bodenkontakt auf der Torraum-Seite der markierten Linie. Sprungbein: Rechtshänder links, Linkshänder rechts. Wurfarm: Handgelenk beim Absprung über dem Kopf. Körperdrehung: wie weit Schultern gegenüber der Hüfte in der Luft aufdrehen (3D-Schätzung der KI). Oberkörper, Sprunghöhe und Drehung sind Schätzungen aus einer Kamera.</p>
     <p class="muted">Tipp: Kamera erhöht (1,5–2 m) und schräg von vorn auf die Absprungzone, damit Fuß und Linie gut zu sehen sind. Gutes Licht und 60 fps verbessern die Erkennung.</p>
   </div>
 </div>
 
 <div class="sheet" id="logSheet" hidden>
   <div class="sheet-in">
-    <div class="sheet-h"><h2>Trainings-Log</h2><button class="x" data-close aria-label="Schließen">✕</button></div>
+    <div class="sheet-h"><h2>Training</h2><button class="x" data-close aria-label="Schließen">✕</button></div>
     <div id="logBody"></div>
-    <button class="wide" id="logClear">Log leeren</button>
+    <button class="wide primaryBtn" id="repShare">Bericht teilen</button>
+    <button class="wide" id="repFile">Bericht als Datei</button>
+    <button class="wide" id="newSession">Neues Training starten</button>
+    <button class="wide" id="logClear">Gesamtes Log löschen</button>
   </div>
 </div>
 
@@ -172,7 +180,7 @@ const L = {nose:0,lSh:11,rSh:12,lEl:13,rEl:14,lWr:15,rWr:16,lHip:23,rHip:24,lAnk
 const BONES = [[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28],[27,29],[29,31],[27,31],[28,30],[30,32],[28,32]];
 
 /* ---------- Einstellungen & Speicher ---------- */
-const DEF = {hand:'R', mode:'auto', pause:4, camera:'environment', model:'lite', line:null,
+const DEF = {hand:'R', pos:'LA', mode:'auto', pause:4, camera:'environment', model:'lite', line:null, session:null,
   targets:[{name:'Orange kurz',on:true},{name:'Orange lang',on:true},{name:'Blau kurz',on:true},{name:'Blau lang',on:true}]};
 function load(k, d){ try{ const v = JSON.parse(localStorage.getItem(k)); return v ?? d; }catch(e){ return d; } }
 const settings = {...DEF, ...load('awc-settings', {})};
@@ -186,6 +194,8 @@ function pct(a,p){ if(!a.length) return null; const s=[...a].sort((x,y)=>x-y); r
 const colorOf = n => /blau|blue/i.test(n) ? 'var(--blue)' : /orange/i.test(n) ? 'var(--orange)' : 'var(--text)';
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const pick = a => a[Math.floor(Math.random()*a.length)];
+const angDiff = (a,b) => ((a-b+540)%360)-180;
+const fmtDate = d => d.toLocaleString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
 
 let hintTimer = null;
 function showHint(t, ms){ const h=$('#hint'); h.textContent=t; h.style.display='block'; clearTimeout(hintTimer); if(ms) hintTimer=setTimeout(hideHint, ms); }
@@ -292,7 +302,7 @@ function setState(s, t){
 function resetTracking(t){ H=[]; latest=null; visSince=null; ev=null; groundY=baseHip=bodyRef=null; target=null; hudTarget(null); if(state!=='off') setState('ready', t); }
 function hudTarget(name){ const el=$('#target'); el.textContent = name || ''; el.style.color = name ? colorOf(name) : ''; }
 
-function makeFrame(lm, t){
+function makeFrame(lm, t, wl){
   const W = canvas.width, Hh = canvas.height;
   const p = {}; for(const k in L){ const q=lm[L[k]]; p[k] = {x:q.x*W, y:q.y*Hh, v:q.visibility ?? 1}; }
   const R = settings.hand === 'R';
@@ -303,12 +313,16 @@ function makeFrame(lm, t){
   f.bodyLen = dist(f.sh, mid(p.lAnk,p.rAnk));
   f.low = Math.max(f.foot[0].y, f.foot[1].y);
   f.valid = Math.min(p.lHip.v,p.rHip.v,p.lAnk.v,p.rAnk.v,p.lSh.v,p.rSh.v) > 0.35 && f.bodyLen > 20;
+  if(wl){
+    const yaw = (a,b) => Math.atan2(wl[b].z-wl[a].z, wl[b].x-wl[a].x) * 180/Math.PI;
+    f.shYaw = yaw(11,12); f.twist = angDiff(f.shYaw, yaw(23,24));
+  } else { f.shYaw = f.twist = null; }
   return f;
 }
 
 function onResult(res, t){
   const lm = res?.landmarks?.[0];
-  const f = lm ? makeFrame(lm, t) : null;
+  const f = lm ? makeFrame(lm, t, res.worldLandmarks?.[0]) : null;
   latest = f;
   if(!f || !f.valid){ visSince=null; if(state==='air' && t-lastSeen>0.4) finish(t); return; }
   if(visSince===null) visSince = t;
@@ -354,49 +368,96 @@ function airFrame(f, t, replay){
   if(landed || t-ev.t0 > 1.8) finish(t);
 }
 
+const LABEL_BAD = {over:'Übertritt', leg:'Falsches Sprungbein', arm:'Wurfarm zu spät oben', rot:'Zu wenig Körperdrehung', jump:'Sprung zu flach', lean:'Oberkörper kippt nach vorn'};
+const LABEL_GOOD = {over:'Kein Übertritt', leg:'Richtiges Sprungbein', arm:'Wurfarm früh oben', rot:'Gute Körperdrehung', jump:'Starker Sprung', lean:'Stabiler Oberkörper'};
+const PRIO = ['over','leg','arm','rot','jump','lean'];
+const wrongSide = () => (settings.hand==='R') === (settings.pos==='RA');
+function tips(){
+  const R = settings.hand==='R', bein = R ? 'links' : 'rechts', ws = wrongSide();
+  return {
+    over:{short:'Übertritt. Etwas früher abspringen.', tip:'Etwas früher abspringen: den letzten Schritt kürzer setzen oder den Anlauf weiter außen beginnen.', drill:'Markierung 20–30 cm vor die 6-m-Linie legen und genau dort abspringen, 10 Wiederholungen.'},
+    leg:{short:`Falsches Bein. Mit ${bein} abspringen.`, tip:`Als ${R?'Rechtshänder':'Linkshänder'} mit ${bein} abspringen. Rhythmus im Kopf: ${R?'links, rechts, links hoch':'rechts, links, rechts hoch'}.`, drill:'Nur Anlauf und Absprung ohne Ball, 10× langsam, dann im Spieltempo.'},
+    arm:{short:'Arm früher hoch.', tip:'Den Ball schon im vorletzten Schritt hochnehmen, damit der Ellbogen beim Absprung über der Schulter ist.', drill:'Ball über dem Kopf halten und nur Anlauf, Sprung und Landung üben, 10×.'},
+    rot:{short: ws ? 'Mehr zum Tor aufdrehen.' : 'Mehr aus dem Rumpf drehen.',
+      tip: ws ? `Als ${R?'Rechtshänder auf Rechtsaußen':'Linkshänder auf Linksaußen'} in der Luft deutlich zum Tor aufdrehen: Wurfschulter weit zurück, Rücklage nutzen, dann über die Schulter zum Tor werfen.`
+              : 'Die Wurfschulter beim Absprung zurücknehmen und in der Luft die Schultern gegen die Hüfte zum Tor aufdrehen. Die Kraft kommt aus dem Rumpf.',
+      drill:'Rotationswürfe mit dem Medizinball gegen die Wand, 3×10. Danach Sprungwürfe nur mit Fokus aufs Aufdrehen.'},
+    jump:{short:'Knie hoch, höher springen.', tip:'Das Schwungbein-Knie aktiv nach oben ziehen und den letzten Schritt explosiv setzen.', drill:'Einbeinige Sprünge auf einen Kasten und Hopserlauf, 3×8 je Bein.'},
+    lean:{short:'Oberkörper aufrichten.', tip:'Blick zum Ziel, Schultern zurück. Erst in der Luft aufdrehen, nicht nach vorn fallen.', drill:'Sprungwürfe auf einen Weichboden mit bewusster leichter Rücklage.'}
+  };
+}
+
 function finish(t){
   const e = ev; ev = null; if(!e) return;
   const W = canvas.width, Hh = canvas.height, R = settings.hand==='R';
-  const res = [], talk = [];
+  const res = [], issues = [], good = [];
 
   // Übertritt
   let over = null;
   if(settings.line){ const ft = e.tf.foot[e.foot]; over = [ft.toe, ft.heel].some(p => inTorraum({x:p.x/W, y:p.y/Hh})); }
-  res.push(over===null ? {ok:null, txt:'Übertritt nicht geprüft (Linie fehlt)'} : over ? {ok:false, txt:'Übertritt beim Absprung'} : {ok:true, txt:'Kein Übertritt'});
-  if(over) talk.push('Übertritt');
+  if(over===null) res.push({ok:null, txt:'Übertritt nicht geprüft (Linie fehlt)'});
+  else if(over){ res.push({ok:false, txt:'Übertritt beim Absprung'}); issues.push('over'); }
+  else { res.push({ok:true, txt:'Kein Übertritt'}); good.push('over'); }
 
   // Sprungbein
   const want = R ? 0 : 1, legOk = e.foot === want;
   res.push({ok:legOk, txt:`Absprung mit ${e.foot===0?'links':'rechts'}` + (legOk ? '' : `, richtig wäre ${want===0?'links':'rechts'}`)});
-  if(!legOk) talk.push('Falsches Sprungbein');
+  (legOk ? good : issues).push('leg');
 
   // Wurfarm beim Absprung
   const a = e.armF, arm = a.wr.y < a.nose.y ? 'high' : a.wr.y < a.wsh.y ? 'mid' : 'low';
-  res.push(arm==='high' ? {ok:true, txt:'Wurfarm beim Absprung oben'} : arm==='mid' ? {ok:null, txt:'Wurfarm nur auf Schulterhöhe'} : {ok:false, txt:'Wurfarm beim Absprung zu tief'});
-  if(arm==='low') talk.push('Arm früher hoch'); else if(arm==='mid') talk.push('Arm höher');
+  if(arm==='high'){ res.push({ok:true, txt:'Wurfarm beim Absprung oben'}); good.push('arm'); }
+  else if(arm==='mid'){ res.push({ok:null, txt:'Wurfarm nur auf Schulterhöhe'}); issues.push('arm'); }
+  else { res.push({ok:false, txt:'Wurfarm beim Absprung zu tief'}); issues.push('arm'); }
+
+  // Körperdrehung (Schultern gegen Hüfte, 3D-Schätzung)
+  const endT = e.throwF ? e.throwF.t + 0.1 : t;
+  const fr = H.filter(h => h.t >= e.t0 && h.t <= endT && h.twist != null);
+  let rot = null;
+  if(fr.length >= 3){
+    const tw = fr.map(h => h.twist);
+    rot = Math.round(Math.max(Math.max(...tw) - Math.min(...tw), Math.abs(angDiff(fr.at(-1).shYaw, fr[0].shYaw))));
+  }
+  const need = wrongSide() ? 35 : 25;
+  if(rot===null) res.push({ok:null, txt:'Körperdrehung nicht messbar'});
+  else if(rot >= need){ res.push({ok:true, txt:`Körperdrehung ca. ${rot}°`}); good.push('rot'); }
+  else if(rot >= need*0.5){ res.push({ok:null, txt:`Körperdrehung ca. ${rot}°, etwas wenig`}); issues.push('rot'); }
+  else { res.push({ok:false, txt:`Kaum Körperdrehung (ca. ${rot}°)`}); issues.push('rot'); }
 
   // Sprunghöhe (grob)
   const jr = (e.base - e.peak)/e.bl, jump = jr >= 0.25 ? 'hoch' : jr >= 0.17 ? 'mittel' : 'flach';
   res.push({ok: jump!=='flach', txt:`Sprunghöhe ${jump}`});
-  if(jump==='flach') talk.push('Höher springen');
+  if(jump==='hoch') good.push('jump'); else if(jump==='flach') issues.push('jump');
 
   // Oberkörper beim Wurf
   const tf = e.throwF || e.peakF || e.tf;
   const lean = Math.atan2(tf.sh.x - tf.hip.x, tf.hip.y - tf.sh.y) * 180/Math.PI, al = Math.abs(lean);
   let dir = 0; if(settings.line){ const l=settings.line, m=mid(l.a,l.b); dir = Math.sign(l.inside.x - m.x); }
   const toward = dir ? Math.sign(lean) === dir : null;
-  if(al < 15) res.push({ok:true, txt:'Oberkörper beim Wurf aufrecht'});
-  else if(toward===true && al > 25){ res.push({ok:false, txt:`Oberkörper kippt nach vorn (${Math.round(al)}°)`}); talk.push('Oberkörper aufrichten'); }
-  else if(toward===false) res.push({ok:true, txt:`Rücklage ${Math.round(al)}°`});
+  if(al < 15){ res.push({ok:true, txt:'Oberkörper beim Wurf aufrecht'}); good.push('lean'); }
+  else if(toward===true && al > 25){ res.push({ok:false, txt:`Oberkörper kippt nach vorn (${Math.round(al)}°)`}); issues.push('lean'); }
+  else if(toward===false){ res.push({ok:true, txt:`Rücklage ${Math.round(al)}°`}); good.push('lean'); }
   else if(al > 35) res.push({ok:null, txt:`Starke Neigung ${Math.round(al)}°`});
   else res.push({ok:true, txt:`Leichte Neigung ${Math.round(al)}°`});
 
-  say(talk.length ? talk.slice(0,3).join('. ') + '.' : pick(['Sauber!','Gut so!','Starker Wurf!','Passt!']));
-  const entry = {nr:(log.at(-1)?.nr || 0) + 1, target:e.target, res, hit:null, time:Date.now(), video:source==='file'};
-  log.push(entry); if(log.length > 500) log.shift(); store();
+  issues.sort((x,y) => PRIO.indexOf(x) - PRIO.indexOf(y));
+  const T = tips(), main = issues[0] || null;
+  const praise = good.length ? LABEL_GOOD[pick(good)] : null;
+  say([praise ? praise + '.' : '', main ? T[main].short : pick(['Alles sauber!','Top Wurf!','Weiter so!'])].join(' ').trim());
+
+  if(!settings.session) ensureSession();
+  settings.session.last = Date.now();
+  const entry = {nr:(log.at(-1)?.nr || 0) + 1, sid:settings.session.id, target:e.target, res, issues, good, praise, main,
+    tip: main ? T[main].tip : null, rot, noLine: over===null, hit:null, time:Date.now(), video:source==='file'};
+  log.push(entry); if(log.length > 1000) log.shift(); store();
   showCard(entry); renderLog();
   target = null; hudTarget(null);
   setState('cool', t);
+}
+
+function ensureSession(force){
+  const s0 = settings.session;
+  if(force || !s0 || Date.now() - (s0.last || s0.start) > 3*3600e3){ settings.session = {id:Date.now(), start:Date.now(), last:Date.now()}; store(); }
 }
 
 function announce(t){
@@ -422,28 +483,110 @@ function showCard(en){
   const c = $('#card');
   c.innerHTML = `<h3>Wurf ${en.nr}${en.target ? ', Ziel ' + esc(en.target) : ''}</h3>
     <ul class="checks">${en.res.map(r => `<li>${icon(r.ok)}<span>${esc(r.txt)}</span></li>`).join('')}</ul>
+    ${en.praise ? `<p class="tipline"><span class="ic ok">+</span><span><b>Gut:</b> ${esc(en.praise)}</span></p>` : ''}
+    <p class="tipline"><span class="ic mid">➜</span><span><b>Besser:</b> ${en.tip ? esc(en.tip) : 'Nichts Auffälliges, genau so weitermachen.'}</span></p>
     ${en.target ? `<div class="hitrow"><span>Ziel getroffen?</span><button data-h="1">Treffer</button><button class="no" data-h="0">Daneben</button></div>` : ''}`;
   c.querySelectorAll('[data-h]').forEach(b => b.onclick = () => {
     en.hit = b.dataset.h === '1'; store(); renderLog();
     c.querySelectorAll('[data-h]').forEach(x => x.classList.toggle('on', x===b));
     clearTimeout(cardTimer); cardTimer = setTimeout(() => c.style.display='none', 1500);
   });
-  c.style.display = 'block';
-  clearTimeout(cardTimer); cardTimer = setTimeout(() => c.style.display='none', 8000);
+  c.style.display = 'block'; c.scrollTop = 0;
+  clearTimeout(cardTimer); cardTimer = setTimeout(() => c.style.display='none', 10000);
 }
+
+function sessionEntries(){ const sid = settings.session?.id; return sid ? log.filter(e => e.sid === sid) : []; }
+function summarize(list){
+  const n = list.length, counts = {}, byT = {};
+  for(const e of list){
+    (e.issues || []).forEach(k => counts[k] = (counts[k] || 0) + 1);
+    if(e.target){ const s = byT[e.target] ||= {n:0, hit:0, rated:0, clean:0}; s.n++; if(e.hit!==null){ s.rated++; if(e.hit) s.hit++; } if(!(e.issues || []).length) s.clean++; }
+  }
+  const clean = list.filter(e => !(e.issues || []).length).length;
+  const top = Object.entries(counts).sort((x,y) => y[1] - x[1]);
+  const lineN = list.filter(e => !e.noLine).length;
+  const rots = list.map(e => e.rot).filter(x => x != null);
+  const strengths = n < 3 ? [] : PRIO.filter(k => {
+    if(k==='over') return lineN >= 3 && (counts.over || 0)/lineN <= 0.2;
+    if(k==='rot' && rots.length < 3) return false;
+    return (counts[k] || 0)/n <= 0.2;
+  });
+  const rotAvg = rots.length ? Math.round(rots.reduce((x,y) => x+y, 0)/rots.length) : null;
+  return {n, clean, top, byT, strengths, rotAvg};
+}
+function profileText(){ return `${settings.hand==='R'?'Rechtshänder':'Linkshänder'} auf ${settings.pos==='LA'?'Linksaußen':'Rechtsaußen'}`; }
+
 function renderLog(){
-  const by = {};
-  for(const e of log){ if(!e.target) continue; const s = by[e.target] ||= {n:0, hit:0, rated:0, clean:0}; s.n++; if(e.hit!==null){ s.rated++; if(e.hit) s.hit++; } if(e.res.every(r=>r.ok!==false)) s.clean++; }
-  const keys = Object.keys(by);
-  const stats = keys.length ? `<div class="stats"><div class="muted">Ziel</div><div class="muted">Technik ok</div><div class="muted">Treffer</div>
-    ${keys.map(k => `<div style="color:${colorOf(k)}">${esc(k)}</div><div>${by[k].clean}/${by[k].n}</div><div>${by[k].rated ? by[k].hit+'/'+by[k].rated : '–'}</div>`).join('')}</div>` : '';
-  const list = [...log].reverse().slice(0, 60).map(e => {
-    const bad = e.res.filter(r => r.ok===false).map(r => r.txt);
-    const hit = e.hit===true ? ' · Treffer' : e.hit===false ? ' · daneben' : '';
+  const list = sessionEntries(), box = $('#logBody');
+  if(!list.length){ box.innerHTML = '<p class="muted">In diesem Training noch keine Würfe.</p>'; return; }
+  const s = summarize(list), T = tips();
+  let h = `<p class="muted">${fmtDate(new Date(settings.session.start))}, ${profileText()}<br>${s.n} Würfe, Technik sauber ${s.clean}/${s.n}${s.rotAvg!=null ? `, Drehung im Schnitt ca. ${s.rotAvg}°` : ''}</p>`;
+  if(s.strengths.length) h += `<h3>Stärken</h3><p>${s.strengths.map(k => LABEL_GOOD[k]).join(', ')}</p>`;
+  if(s.top.length) h += `<h3>Daran arbeiten</h3>` + s.top.slice(0,3).map(([k,c]) =>
+    `<div class="entry"><b>${LABEL_BAD[k]}</b> <small>${c}×</small><br>${esc(T[k].tip)}<br><small>Übung: ${esc(T[k].drill)}</small></div>`).join('');
+  const keys = Object.keys(s.byT);
+  if(keys.length) h += `<h3>Ziele</h3><div class="stats"><div class="muted">Ziel</div><div class="muted">Technik ok</div><div class="muted">Treffer</div>
+    ${keys.map(k => `<div style="color:${colorOf(k)}">${esc(k)}</div><div>${s.byT[k].clean}/${s.byT[k].n}</div><div>${s.byT[k].rated ? s.byT[k].hit+'/'+s.byT[k].rated : '–'}</div>`).join('')}</div>`;
+  h += `<h3>Würfe</h3>` + [...list].reverse().map(e => {
+    const hit = e.hit===true ? ', Treffer' : e.hit===false ? ', daneben' : '';
     return `<div class="entry"><b>Wurf ${e.nr}</b> ${e.target ? `<span style="color:${colorOf(e.target)}">${esc(e.target)}</span>` : ''}<small>${hit}</small><br>
-      <small>${bad.length ? esc(bad.join(', ')) : 'Alle Punkte ok'}</small></div>`;
+      <small>${e.praise ? 'Gut: ' + esc(e.praise) + '. ' : ''}${e.main ? 'Besser: ' + esc(LABEL_BAD[e.main]) : 'Alles sauber'}</small></div>`;
   }).join('');
-  $('#logBody').innerHTML = (log.length ? stats + list : '<p class="muted">Noch keine Würfe erfasst.</p>');
+  box.innerHTML = h;
+}
+
+/* ---------- Abschlussbericht ---------- */
+function reportName(){ const d = new Date(settings.session?.start || Date.now()); return `Wurfbericht-${d.toISOString().slice(0,10)}.html`; }
+function reportText(){
+  const list = sessionEntries(); if(!list.length) return null;
+  const s = summarize(list), T = tips(), L = [];
+  L.push(`Außenwurf-Training vom ${fmtDate(new Date(settings.session.start))}`, profileText());
+  L.push(`Würfe: ${s.n}, Technik sauber: ${s.clean} (${Math.round(s.clean/s.n*100)} %)`);
+  if(s.rotAvg!=null) L.push(`Körperdrehung im Schnitt: ca. ${s.rotAvg}°`);
+  if(s.strengths.length) L.push('', 'Stärken: ' + s.strengths.map(k => LABEL_GOOD[k]).join(', '));
+  if(s.top.length){
+    L.push('', 'Schwerpunkte fürs nächste Training:');
+    s.top.slice(0,3).forEach(([k,c],i) => L.push(`${i+1}. ${LABEL_BAD[k]} (${c}×)`, `   Tipp: ${T[k].tip}`, `   Übung: ${T[k].drill}`));
+  } else L.push('', 'Keine Technikfehler erkannt. Weiter so!');
+  const keys = Object.keys(s.byT);
+  if(keys.length){ L.push('', 'Ziele:'); keys.forEach(k => { const b = s.byT[k]; L.push(`- ${k}: ${b.n} Würfe, Technik ok ${b.clean}/${b.n}` + (b.rated ? `, Treffer ${b.hit}/${b.rated}` : '')); }); }
+  L.push('', 'Erstellt mit Außenwurf-Coach');
+  return L.join('\n');
+}
+function reportHTML(){
+  const list = sessionEntries(); if(!list.length) return null;
+  const s = summarize(list), T = tips();
+  const focus = s.top.length ? s.top.slice(0,3).map(([k,c]) => `<li><b>${LABEL_BAD[k]}</b> (${c}×)<br>Tipp: ${esc(T[k].tip)}<br><span class="m">Übung: ${esc(T[k].drill)}</span></li>`).join('') : '<li>Keine Technikfehler erkannt. Weiter so!</li>';
+  const targets = Object.keys(s.byT).map(k => { const b = s.byT[k]; return `<tr><td>${esc(k)}</td><td>${b.n}</td><td>${b.clean}/${b.n}</td><td>${b.rated ? b.hit+'/'+b.rated : '–'}</td></tr>`; }).join('');
+  const rows = list.map(e => `<tr><td>${e.nr}</td><td>${esc(e.target || '–')}</td><td>${e.hit===true?'✓':e.hit===false?'✗':'–'}</td><td>${esc(e.praise || '–')}</td><td>${e.main ? esc(LABEL_BAD[e.main]) : 'sauber'}</td></tr>`).join('');
+  return `<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Wurfbericht</title>
+<style>body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;max-width:720px;margin:24px auto;padding:0 16px;color:#1b2530;line-height:1.5}
+h1{margin:0}h2{margin-top:28px;padding-bottom:4px;border-bottom:3px solid #ff8a1f}.m{color:#5b6b7b}
+table{width:100%;border-collapse:collapse;font-size:.92rem}td,th{border-bottom:1px solid #dde3e9;padding:6px 4px;text-align:left}li{margin-bottom:10px}</style></head><body>
+<h1>Außenwurf-Training</h1><p class="m">${fmtDate(new Date(settings.session.start))}, ${profileText()}</p>
+<p><b>${s.n}</b> Würfe, Technik sauber <b>${s.clean}</b> (${Math.round(s.clean/s.n*100)} %)${s.rotAvg!=null ? `, Körperdrehung im Schnitt ca. ${s.rotAvg}°` : ''}</p>
+${s.strengths.length ? `<h2>Stärken</h2><p>${s.strengths.map(k => LABEL_GOOD[k]).join(', ')}</p>` : ''}
+<h2>Schwerpunkte fürs nächste Training</h2><ol>${focus}</ol>
+${targets ? `<h2>Ziele</h2><table><tr><th>Ziel</th><th>Würfe</th><th>Technik ok</th><th>Treffer</th></tr>${targets}</table>` : ''}
+<h2>Alle Würfe</h2><table><tr><th>Nr</th><th>Ziel</th><th>Treffer</th><th>Gut</th><th>Verbessern</th></tr>${rows}</table>
+<p class="m" style="margin-top:24px">Erstellt mit Außenwurf-Coach. Werte sind KI-Schätzungen aus einer Handykamera.</p></body></html>`;
+}
+function downloadReport(){
+  const html = reportHTML(); if(!html){ showHint('Noch keine Würfe in diesem Training', 2500); return; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([html], {type:'text/html'}));
+  a.download = reportName(); document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+async function shareText(){
+  const text = reportText(); if(!text){ showHint('Noch keine Würfe in diesem Training', 2500); return; }
+  if(navigator.share){ try{ await navigator.share({title:'Wurfbericht', text}); return; }catch(e){ if(e.name==='AbortError') return; } }
+  try{ await navigator.clipboard.writeText(text); showHint('Bericht in die Zwischenablage kopiert', 2500); }catch(e){ downloadReport(); }
+}
+async function shareFile(){
+  const html = reportHTML(); if(!html){ showHint('Noch keine Würfe in diesem Training', 2500); return; }
+  const file = new File([html], reportName(), {type:'text/html'});
+  if(navigator.canShare?.({files:[file]})){ try{ await navigator.share({files:[file], title:'Wurfbericht'}); return; }catch(e){ if(e.name==='AbortError') return; } }
+  downloadReport();
 }
 
 /* ---------- Zeichnen ---------- */
@@ -501,7 +644,7 @@ $('#btnStart').onclick = async () => {
   try{
     await ensureModel();
     if(source==='none') await startCamera();
-    setState('ready', curT()); setRunning(true); keepAwake();
+    ensureSession(); setState('ready', curT()); setRunning(true); keepAwake();
     if(source==='cam' && !settings.line) showHint('Tipp: Mit „Linie“ die 6-m-Linie markieren', 4000);
   }catch(e){ console.error(e); showHint('Start fehlgeschlagen: ' + (e.message || e), 7000); }
 };
@@ -517,7 +660,7 @@ $('#btnCall').onclick = () => {
 $('#btnVideo').onclick = () => $('#file').click();
 $('#file').onchange = async e => {
   const f = e.target.files[0]; if(!f) return;
-  try{ await ensureModel(); loadFile(f); setState('ready', 0); setRunning(true); showHint('Video geladen. Mit ▶︎ abspielen, Linie bei Bedarf markieren.', 3500); }
+  try{ await ensureModel(); ensureSession(); loadFile(f); setState('ready', 0); setRunning(true); showHint('Video geladen. Mit ▶︎ abspielen, Linie bei Bedarf markieren.', 3500); }
   catch(err){ showHint('Fehler: ' + (err.message || err), 6000); }
   e.target.value = '';
 };
@@ -547,10 +690,11 @@ document.querySelectorAll('.sheet').forEach(s => {
   s.addEventListener('click', e => { if(e.target===s || e.target.hasAttribute('data-close')) s.hidden = true; });
 });
 $('#btnSet').onclick = () => {
-  $('#sHand').value = settings.hand; $('#sMode').value = settings.mode; $('#sPause').value = settings.pause;
+  $('#sHand').value = settings.hand; $('#sPos').value = settings.pos; $('#sMode').value = settings.mode; $('#sPause').value = settings.pause;
   $('#sCam').value = settings.camera; $('#sModel').value = settings.model; renderTargets(); openSheet('#setSheet');
 };
 $('#sHand').onchange = e => { settings.hand = e.target.value; store(); };
+$('#sPos').onchange = e => { settings.pos = e.target.value; store(); };
 $('#sMode').onchange = e => { settings.mode = e.target.value; store(); };
 $('#sPause').onchange = e => { settings.pause = Math.max(1, +e.target.value || 4); store(); };
 $('#sCam').onchange = async e => { settings.camera = e.target.value; store(); if(source==='cam'){ try{ await startCamera(); }catch(err){ showHint('Kamera-Fehler: ' + err.message, 5000); } } };
@@ -558,7 +702,10 @@ $('#sModel').onchange = async e => { settings.model = e.target.value; store(); i
 $('#sAddT').onclick = () => { settings.targets.push({name:'Neues Ziel', on:true}); store(); renderTargets(); };
 $('#sClearLine').onclick = () => { settings.line = null; store(); showHint('Linie gelöscht', 1500); };
 $('#btnLog').onclick = () => { renderLog(); openSheet('#logSheet'); };
-$('#logClear').onclick = () => { if(confirm('Alle Würfe aus dem Log löschen?')){ log = []; store(); renderLog(); } };
+$('#logClear').onclick = () => { if(confirm('Alle Würfe aller Trainings löschen?')){ log = []; store(); renderLog(); } };
+$('#repShare').onclick = shareText;
+$('#repFile').onclick = shareFile;
+$('#newSession').onclick = () => { if(confirm('Neues Training starten? Das aktuelle bleibt im Speicher.')){ ensureSession(true); renderLog(); showHint('Neues Training gestartet', 1800); } };
 </script>
 </body>
 </html>
