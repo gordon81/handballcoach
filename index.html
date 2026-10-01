@@ -107,7 +107,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
     <ol>
       <li><b>Handy aufs Stativ</b>, seitlich-schräg auf die Absprungzone, ganzer Körper im Bild.</li>
       <li><b>Start</b> drücken, Kamera und KI-Modell werden geladen.</li>
-      <li>Mit <b>Linie</b> die 6-m-Linie markieren (2 Punkte), dann 1 Punkt im Torraum.</li>
+      <li>Mit <b>Linie</b> die 6-m-Linie markieren: mehrere Punkte entlang des Bogens, „Fertig“, dann 1 Punkt im Torraum.</li>
       <li>Spieler stellt sich ins Bild, das Handy ruft das Ziel, Anlauf, Wurf, Feedback.</li>
     </ol>
   </div>
@@ -149,7 +149,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
     <button class="wide" id="sAddT">Ziel hinzufügen</button>
     <button class="wide" id="sClearLine">6-m-Linie löschen</button>
     <h3>So prüft die App</h3>
-    <p class="muted">Übertritt: Fußspitze oder Ferse des Sprungbeins beim letzten Bodenkontakt auf der Torraum-Seite der markierten Linie. Sprungbein: Rechtshänder links, Linkshänder rechts. Wurfarm: Handgelenk beim Absprung über dem Kopf. Körperdrehung: wie weit Schultern gegenüber der Hüfte in der Luft aufdrehen (3D-Schätzung der KI). Oberkörper, Sprunghöhe und Drehung sind Schätzungen aus einer Kamera.</p>
+    <p class="muted">Übertritt: Fußspitze oder Ferse des Sprungbeins beim letzten Bodenkontakt auf der Torraum-Seite der markierten (gebogenen) 6-m-Linie. Sprungbein: Rechtshänder links, Linkshänder rechts. Wurfarm: Handgelenk beim Absprung über dem Kopf. Körperdrehung: wie weit Schultern gegenüber der Hüfte in der Luft aufdrehen (3D-Schätzung der KI). Oberkörper, Sprunghöhe und Drehung sind Schätzungen aus einer Kamera.</p>
     <p class="muted">Tipp: Kamera erhöht (1,5–2 m) und schräg von vorn auf die Absprungzone, damit Fuß und Linie gut zu sehen sind. Gutes Licht und 60 fps verbessern die Erkennung.</p>
   </div>
 </div>
@@ -276,17 +276,57 @@ window.addEventListener('resize', layout);
 video.addEventListener('loadedmetadata', layout);
 
 /* ---------- 6-m-Linie ---------- */
-let marking = null;
-function side(l, p){ return Math.sign((l.b.x-l.a.x)*(p.y-l.a.y) - (l.b.y-l.a.y)*(p.x-l.a.x)); }
-function inTorraum(p){ const l=settings.line; return l ? side(l,p)===side(l,l.inside) || side(l,p)===0 : null; }
+// Die 6-m-Linie ist ein Bogen (Viertelkreise um die Pfosten + 3 m gerade). Im Bild wird sie
+// als glatte Kurve durch beliebig viele angetippte Punkte (Catmull-Rom) nachgebildet.
+let marking = null, markStep = null;   // markStep: 'line' (Punkte auf der Linie) | 'inside'
+if(settings.line && settings.line.a) settings.line = {pts:[settings.line.a, settings.line.b], inside:settings.line.inside};
+function curve(pts){
+  if(pts.length < 3) return pts.slice();
+  const out = [], n = pts.length, P = i => pts[Math.max(0, Math.min(n-1, i))];
+  for(let i=0; i<n-1; i++){
+    const p0=P(i-1), p1=P(i), p2=P(i+1), p3=P(i+2);
+    for(let k=0; k<8; k++){
+      const t=k/8, t2=t*t, t3=t2*t;
+      const f = (a,b,c,d) => 0.5*(2*b + (c-a)*t + (2*a-5*b+4*c-d)*t2 + (3*b-a-3*c+d)*t3);
+      out.push({x:f(p0.x,p1.x,p2.x,p3.x), y:f(p0.y,p1.y,p2.y,p3.y)});
+    }
+  }
+  out.push(pts[n-1]); return out;
+}
+function lineSide(c, p){
+  // Seite relativ zum nächstgelegenen Kurvenstück; Endstücke gelten als verlängert.
+  const ar = canvas.width && canvas.height ? canvas.width/canvas.height : 1;
+  let best = Infinity, s = 0;
+  for(let i=0; i<c.length-1; i++){
+    const a=c[i], b=c[i+1], dx=(b.x-a.x)*ar, dy=b.y-a.y, L=dx*dx+dy*dy || 1e-12;
+    let t = ((p.x-a.x)*ar*dx + (p.y-a.y)*dy) / L;
+    if(i>0) t = Math.max(0, t); if(i<c.length-2) t = Math.min(1, t);
+    const qx=(a.x-p.x)*ar + t*dx, qy=a.y-p.y + t*dy, d=qx*qx+qy*qy;
+    if(d < best){ best = d; s = Math.sign(dx*(p.y-a.y) - dy*(p.x-a.x)*ar); }
+  }
+  return s;
+}
+function inTorraum(p){
+  const l=settings.line; if(!l) return null;
+  const c = curve(l.pts), s = lineSide(c, p);
+  return s===lineSide(c, l.inside) || s===0;
+}
+function lineCenter(l){ return {x:l.pts.reduce((a,p)=>a+p.x,0)/l.pts.length, y:l.pts.reduce((a,p)=>a+p.y,0)/l.pts.length}; }
+function finishLinePoints(){
+  if(marking.length < 2){ showHint('Mindestens 2 Punkte auf der 6-m-Linie antippen', 2500); return; }
+  markStep = 'inside'; $('#btnLine').textContent = 'Linie';
+  showHint('Jetzt 1 Punkt im Torraum antippen');
+}
 canvas.addEventListener('pointerdown', e => {
   if(!marking) return;
-  const r = canvas.getBoundingClientRect();
-  marking.push({x:(e.clientX-r.left)/r.width, y:(e.clientY-r.top)/r.height});
-  if(marking.length===3){
-    settings.line = {a:marking[0], b:marking[1], inside:marking[2]}; marking=null; store();
-    showHint('Linie gespeichert', 1500);
-  } else showHint(marking.length===1 ? 'Zweiter Punkt auf der 6-m-Linie' : 'Jetzt 1 Punkt im Torraum antippen');
+  const r = canvas.getBoundingClientRect(), p = {x:(e.clientX-r.left)/r.width, y:(e.clientY-r.top)/r.height};
+  if(markStep==='inside'){
+    settings.line = {pts:marking, inside:p}; marking=null; markStep=null; store();
+    showHint('Linie gespeichert', 1500); return;
+  }
+  marking.push(p);
+  showHint(marking.length < 3 ? 'Weitere Punkte entlang der Linie antippen (Bogen: 4–6 Punkte), dann „Fertig“'
+                              : `${marking.length} Punkte. Weitere antippen oder „Fertig“`);
 });
 
 /* ---------- Tracking ---------- */
@@ -432,7 +472,7 @@ function finish(t){
   // Oberkörper beim Wurf
   const tf = e.throwF || e.peakF || e.tf;
   const lean = Math.atan2(tf.sh.x - tf.hip.x, tf.hip.y - tf.sh.y) * 180/Math.PI, al = Math.abs(lean);
-  let dir = 0; if(settings.line){ const l=settings.line, m=mid(l.a,l.b); dir = Math.sign(l.inside.x - m.x); }
+  let dir = 0; if(settings.line){ const l=settings.line, m=lineCenter(l); dir = Math.sign(l.inside.x - m.x); }
   const toward = dir ? Math.sign(lean) === dir : null;
   if(al < 15){ res.push({ok:true, txt:'Oberkörper beim Wurf aufrecht'}); good.push('lean'); }
   else if(toward===true && al > 25){ res.push({ok:false, txt:`Oberkörper kippt nach vorn (${Math.round(al)}°)`}); issues.push('lean'); }
@@ -595,12 +635,19 @@ function draw(){
   ctx.clearRect(0, 0, W, Hh);
   const l = settings.line;
   if(l){
-    const A = {x:l.a.x*W, y:l.a.y*Hh}, B = {x:l.b.x*W, y:l.b.y*Hh};
+    const c = curve(l.pts).map(p => ({x:p.x*W, y:p.y*Hh})), n = c.length;
+    const ext = (p, q) => ({x:p.x+(p.x-q.x)*30, y:p.y+(p.y-q.y)*30});   // Endstücke verlängert
     ctx.strokeStyle = '#ff5a5a'; ctx.lineWidth = lw*1.5; ctx.setLineDash([lw*5, lw*3]);
-    ctx.beginPath(); ctx.moveTo(A.x+(A.x-B.x)*3, A.y+(A.y-B.y)*3); ctx.lineTo(B.x+(B.x-A.x)*3, B.y+(B.y-A.y)*3); ctx.stroke();
+    ctx.beginPath(); const s0 = ext(c[0], c[1]); ctx.moveTo(s0.x, s0.y);
+    for(const p of c) ctx.lineTo(p.x, p.y);
+    const s1 = ext(c[n-1], c[n-2]); ctx.lineTo(s1.x, s1.y); ctx.stroke();
     ctx.setLineDash([]);
     ctx.fillStyle = 'rgba(255,90,90,.9)'; ctx.font = `600 ${lw*7}px Barlow, sans-serif`;
     ctx.fillText('Torraum', l.inside.x*W + lw*3, l.inside.y*Hh);
+  }
+  if(marking && marking.length > 1){
+    ctx.strokeStyle = 'rgba(255,90,90,.7)'; ctx.lineWidth = lw;
+    ctx.beginPath(); curve(marking).forEach((p,i) => i ? ctx.lineTo(p.x*W, p.y*Hh) : ctx.moveTo(p.x*W, p.y*Hh)); ctx.stroke();
   }
   if(marking) for(const p of marking){ ctx.fillStyle = '#ff5a5a'; ctx.beginPath(); ctx.arc(p.x*W, p.y*Hh, lw*4, 0, 7); ctx.fill(); }
   if(latest){
@@ -650,8 +697,10 @@ $('#btnStart').onclick = async () => {
 };
 $('#btnLine').onclick = () => {
   if(source==='none'){ showHint('Erst Start drücken, dann die Linie markieren', 2500); return; }
+  if(marking && markStep==='line'){ finishLinePoints(); return; }
   if(source==='file') video.pause();
-  marking = []; showHint('Tippe 2 Punkte auf die 6-m-Linie');
+  marking = []; markStep = 'line'; $('#btnLine').textContent = 'Fertig';
+  showHint('Punkte entlang der 6-m-Linie antippen (sie ist gebogen: 4–6 Punkte), dann „Fertig“');
 };
 $('#btnCall').onclick = () => {
   if(source!=='cam' || state==='off'){ showHint('Ansagen gibt es im Kamera-Modus nach Start', 2500); return; }
@@ -664,7 +713,7 @@ $('#file').onchange = async e => {
   catch(err){ showHint('Fehler: ' + (err.message || err), 6000); }
   e.target.value = '';
 };
-$('#fPlay').onclick = () => { if(video.paused){ marking=null; video.play(); } else video.pause(); };
+$('#fPlay').onclick = () => { if(video.paused){ marking=null; markStep=null; $('#btnLine').textContent='Linie'; video.play(); } else video.pause(); };
 video.addEventListener('play', () => $('#fPlay').textContent = '❚❚');
 video.addEventListener('pause', () => $('#fPlay').textContent = '▶︎');
 $('#fBack').onclick = () => { video.currentTime = Math.max(0, video.currentTime - 2); };
