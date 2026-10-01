@@ -54,9 +54,11 @@ export function onLineButton(){
   if(app.marking && app.markStep==='line'){ finishLinePoints(); return; }
   if(app.source==='file') video.pause();
   app.marking = []; app.markStep = 'line'; $('#btnLine').textContent = 'Fertig';
+  $('#stage').classList.add('marking'); $('#card').style.display = 'none';
   showHint('Punkte entlang der 6-m-Linie antippen (sie ist gebogen: 4–6 Punkte), dann „Fertig“');
 }
-export function cancelMarking(){ app.marking=null; app.markStep=null; $('#btnLine').textContent='Linie'; }
+function endMarking(){ app.marking=null; app.markStep=null; $('#stage').classList.remove('marking'); }
+export function cancelMarking(){ endMarking(); $('#btnLine').textContent='Linie'; }
 export function clearLine(){ settings.line = null; store(); showHint('Linie gelöscht', 1500); }
 
 export function initLineMarking(){
@@ -64,7 +66,7 @@ export function initLineMarking(){
     if(!app.marking) return;
     const r = canvas.getBoundingClientRect(), p = {x:(e.clientX-r.left)/r.width, y:(e.clientY-r.top)/r.height};
     if(app.markStep==='inside'){
-      settings.line = {pts:app.marking, inside:p}; app.marking=null; app.markStep=null; store();
+      settings.line = {pts:app.marking, inside:p}; endMarking(); store();
       showHint('Linie gespeichert', 1500); return;
     }
     app.marking.push(p);

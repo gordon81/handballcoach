@@ -3,6 +3,7 @@
 #video,#overlay{position:absolute;left:0;top:0}
 #overlay{touch-action:none}
 #empty{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:28px;max-width:560px;margin:0 auto;gap:10px}
+#empty[hidden]{display:none}   /* sonst überdeckt die Anleitung nach dem Start das Bild und fängt alle Tipps ab */
 #empty h1{font-family:var(--head);font-weight:800;font-size:2.6rem;line-height:1;margin:0}
 #empty h1 span{display:block;color:var(--muted);font-weight:600;font-size:1.2rem;margin-top:6px}
 #empty ol{margin:8px 0 0;padding-left:1.2em;color:var(--muted);line-height:1.5}
@@ -35,4 +36,5 @@
 .hitrow button.on{background:var(--ok);color:#06210f;border-color:transparent}
 .hitrow button.no.on{background:var(--bad);color:#2a0606}
 #card{max-height:62%;overflow:auto}
-#hint{z-index:20}
+#hint{z-index:20;pointer-events:none}   /* Tipps gehen durch den Hinweis hindurch */
+#stage.marking #hint{top:56px}          /* beim Linie-Markieren nach oben, damit die Mitte frei bleibt */
