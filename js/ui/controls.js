@@ -1,32 +1,25 @@
 // Button-Leiste (Start, Linie, Ansage, Video, Log), Video-Leiste und Training-Fenster.
 import { app } from '../state.js';
-import { settings, ensureSession, clearLog } from '../store.js';
+import { ensureSession, clearLog } from '../store.js';
 import { $, video, showHint } from '../dom.js';
-import { say } from '../speech.js';
-import { keepAwake, releaseWake } from '../wakelock.js';
 import { ensureModel } from '../model.js';
 import { startCamera, loadFile, curT } from '../source.js';
-import { setState, hudTarget, announce } from '../tracking.js';
-import { onLineButton, cancelMarking } from '../line.js';
+import { setState, announce } from '../tracking.js';
+import { cancelMarking } from '../line.js';
 import { shareText, shareFile } from '../report.js';
 import { renderLog } from './logView.js';
 import { openSheet } from './sheets.js';
-
-function setRunning(on){ const b=$('#btnStart'); b.textContent = on ? 'Stopp' : 'Start'; b.classList.toggle('running', on); }
+import { setRunning, openSetup, toggleSetup, startTraining, stopTraining } from './setupView.js';
 
 export function initControls(){
   /* Button-Leiste */
-  $('#btnStart').onclick = async () => {
-    if(app.state !== 'off'){ setState('off', curT()); app.target=null; hudTarget(null); setRunning(false); releaseWake(); return; }
-    say('Los geht’s');
-    try{
-      await ensureModel();
-      if(app.source==='none') await startCamera();
-      ensureSession(); setState('ready', curT()); setRunning(true); keepAwake();
-      if(app.source==='cam' && !settings.line) showHint('Tipp: Mit „Linie“ die 6-m-Linie markieren', 4000);
-    }catch(e){ console.error(e); showHint('Start fehlgeschlagen: ' + (e.message || e), 7000); }
+  // Start: zuerst Einrichtung (Kamera, Linie), dann Training. Während des Trainings: Stopp.
+  $('#btnStart').onclick = () => {
+    if(app.state !== 'off') stopTraining();
+    else if(app.source==='none') openSetup();
+    else startTraining();
   };
-  $('#btnLine').onclick = onLineButton;
+  $('#btnLine').onclick = () => app.source==='none' ? openSetup() : toggleSetup();
   $('#btnCall').onclick = () => {
     if(app.source!=='cam' || app.state==='off'){ showHint('Ansagen gibt es im Kamera-Modus nach Start', 2500); return; }
     if(app.state!=='air') announce(curT());
@@ -34,7 +27,7 @@ export function initControls(){
   $('#btnVideo').onclick = () => $('#file').click();
   $('#file').onchange = async e => {
     const f = e.target.files[0]; if(!f) return;
-    try{ await ensureModel(); ensureSession(); loadFile(f); setState('ready', 0); setRunning(true); showHint('Video geladen. Mit ▶︎ abspielen, Linie bei Bedarf markieren.', 3500); }
+    try{ await ensureModel(); ensureSession(); loadFile(f); setState('ready', 0); setRunning(true); showHint('Video geladen. Mit ▶︎ abspielen, Linie bei Bedarf unter „Setup“.', 3500); }
     catch(err){ showHint('Fehler: ' + (err.message || err), 6000); }
     e.target.value = '';
   };

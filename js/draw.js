@@ -4,6 +4,7 @@ import { app } from './state.js';
 import { settings } from './store.js';
 import { canvas, ctx } from './dom.js';
 import { curve } from './line.js';
+import { wizard } from './lineWizard.js';
 
 export function draw(){
   const W = canvas.width, Hh = canvas.height, lw = Math.max(2, W/350);
@@ -25,6 +26,14 @@ export function draw(){
     ctx.beginPath(); curve(marking).forEach((p,i) => i ? ctx.lineTo(p.x*W, p.y*Hh) : ctx.moveTo(p.x*W, p.y*Hh)); ctx.stroke();
   }
   if(marking) for(const p of marking){ ctx.fillStyle = '#ff5a5a'; ctx.beginPath(); ctx.arc(p.x*W, p.y*Hh, lw*4, 0, 7); ctx.fill(); }
+  if(wizard.phase){   // Linie ablaufen: gesammelte Fußpunkte und erkannte Linie
+    ctx.fillStyle = '#f6c445';
+    for(const p of wizard.path){ ctx.beginPath(); ctx.arc(p.x*W, p.y*Hh, lw*1.5, 0, 7); ctx.fill(); }
+    if(wizard.pts){
+      ctx.strokeStyle = '#f6c445'; ctx.lineWidth = lw*1.5;
+      ctx.beginPath(); curve(wizard.pts).forEach((p,i) => i ? ctx.lineTo(p.x*W, p.y*Hh) : ctx.moveTo(p.x*W, p.y*Hh)); ctx.stroke();
+    }
+  }
   if(app.latest){
     const lm = app.latest.lm, R = settings.hand==='R', arm = R ? [12,14,16] : [11,13,15];
     for(const [i,j] of BONES){
