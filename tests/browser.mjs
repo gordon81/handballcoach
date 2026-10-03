@@ -60,7 +60,7 @@ test('Demo: Einrichtung, Würfe, Videos, Zuruf, Kamera bewegt', {timeout:300000}
   await t.test('8 Würfe, Bewertung wie simuliert', async () => {
     await page.click('#setup [data-a=start]');
     await until(page, () => M.store.log.length >= 8, null, 150000, '8 Würfe');
-    const log = await page.evaluate(() => M.store.log.slice(0, 8).map(e => ({issues:e.issues, target:e.target})));
+    const log = await page.evaluate(() => M.store.log.slice(0, 8).map(e => ({issues:e.issues, target:e.target, m:e.m})));
     // Die simulierte Person wirft im Wechsel: gut, gut, Übertritt, flach mit Arm unten.
     log.forEach((e, i) => {
       const k = i % 4, has = x => e.issues.includes(x);
@@ -69,7 +69,15 @@ test('Demo: Einrichtung, Würfe, Videos, Zuruf, Kamera bewegt', {timeout:300000}
       assert.equal(has('jump'), k===3, `Wurf ${i+1}: Sprung flach ${JSON.stringify(e.issues)}`);
       assert.equal(has('arm'), k===3, `Wurf ${i+1}: Arm ${JSON.stringify(e.issues)}`);
       assert.ok(!has('leg'), `Wurf ${i+1}: Sprungbein`);
+      // Rohe Messwerte zum Kalibrieren passen zur Bewertung.
+      assert.equal(e.m.line > 0, k===2, `Wurf ${i+1}: Messwert Linie ${e.m.line}`);
+      assert.equal(e.m.jump < 0.17, k===3, `Wurf ${i+1}: Messwert Sprung ${e.m.jump}`);
+      assert.equal(e.m.arm < 0, k===3, `Wurf ${i+1}: Messwert Arm ${e.m.arm}`);
+      assert.ok(e.m.fps >= 20, `Wurf ${i+1}: ${e.m.fps} fps`);
     });
+    await page.click('#btnLog');
+    assert.ok(await page.locator('#logBody .meas').count() >= 8, 'Messwerte im Training-Fenster');
+    await page.click('#logSheet [data-close]');
   });
 
   await t.test('Wurf-Videos gespeichert und abspielbar', async () => {

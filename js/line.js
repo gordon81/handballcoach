@@ -23,8 +23,8 @@ export function curve(pts){
   }
   out.push(pts[n-1]); return out;
 }
-function lineSide(c, p){
-  // Seite relativ zum nächstgelegenen Kurvenstück; Endstücke gelten als verlängert.
+// Seite (s) und Abstand (d, in Bildhöhen) relativ zum nächstgelegenen Kurvenstück; Endstücke gelten als verlängert.
+function nearest(c, p){
   const ar = canvas.width && canvas.height ? canvas.width/canvas.height : 1;
   let best = Infinity, s = 0;
   for(let i=0; i<c.length-1; i++){
@@ -34,13 +34,20 @@ function lineSide(c, p){
     const qx=(a.x-p.x)*ar + t*dx, qy=a.y-p.y + t*dy, d=qx*qx+qy*qy;
     if(d < best){ best = d; s = Math.sign(dx*(p.y-a.y) - dy*(p.x-a.x)*ar); }
   }
-  return s;
+  return {s, d:Math.sqrt(best)};
 }
+const lineSide = (c, p) => nearest(c, p).s;
 // p in normierten Koordinaten (0–1). null, wenn keine Linie markiert ist.
 export function inTorraum(p){
   const l=settings.line; if(!l) return null;
   const c = curve(l.pts), s = lineSide(c, p);
   return s===lineSide(c, l.inside) || s===0;
+}
+// Abstand zur Linie in Bildhöhen, positiv auf der Torraum-Seite. null, wenn keine Linie markiert ist.
+export function lineOffset(p){
+  const l=settings.line; if(!l) return null;
+  const c = curve(l.pts), n = nearest(c, p);
+  return n.s===lineSide(c, l.inside) ? n.d : -n.d;
 }
 export function lineCenter(l){ return {x:l.pts.reduce((a,p)=>a+p.x,0)/l.pts.length, y:l.pts.reduce((a,p)=>a+p.y,0)/l.pts.length}; }
 

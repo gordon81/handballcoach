@@ -14,5 +14,11 @@ export const BONES = [[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[2
 export const DEF = {hand:'R', pos:'LA', mode:'auto', pause:4, callMin:1, callMax:5, sens:'mid', clips:true, camera:'environment', model:'lite', line:null, session:null,
   targets:[{name:'Orange kurz',on:true},{name:'Orange lang',on:true},{name:'Blau kurz',on:true},{name:'Blau lang',on:true}]};
 
+// Grenzwerte der Prüfungen in Körperlängen (KL = Schulter–Knöchel) bzw. Grad. Nach den ersten Hallentests
+// anpassen: die Messwerte jedes Wurfs stehen im Training-Fenster und im Bericht (siehe brain.md, Kalibrieren).
+export const TH = {jumpHigh:0.25, jumpMid:0.17, rot:25, rotWrongSide:35, leanUpright:15, leanForward:25, leanStrong:35};
+// Für die cm-Angaben angenommene Körperlänge (Schulter–Knöchel eines Erwachsenen).
+export const KL_CM = 140;
+
 // Demo-Modus (gezeichnete Halle, simulierte Person statt Kamera und KI): Seite mit ?demo=1 öffnen.
 export const DEMO = new URLSearchParams(location.search).has('demo');

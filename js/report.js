@@ -3,7 +3,7 @@ import { settings, sessionEntries } from './store.js';
 import { showHint } from './dom.js';
 import { esc, fmtDate } from './utils.js';
 import { LABEL_BAD, LABEL_GOOD, tips } from './feedback.js';
-import { summarize, profileText } from './summary.js';
+import { summarize, profileText, measures, MEASURE_HELP, LIMITS_TEXT } from './summary.js';
 
 function reportName(){ const d = new Date(settings.session?.start || Date.now()); return `Wurfbericht-${d.toISOString().slice(0,10)}.html`; }
 
@@ -29,6 +29,7 @@ function reportHTML(){
   const s = summarize(list), T = tips();
   const focus = s.top.length ? s.top.slice(0,3).map(([k,c]) => `<li><b>${LABEL_BAD[k]}</b> (${c}×)<br>Tipp: ${esc(T[k].tip)}<br><span class="m">Übung: ${esc(T[k].drill)}</span></li>`).join('') : '<li>Keine Technikfehler erkannt. Weiter so!</li>';
   const targets = Object.keys(s.byT).map(k => { const b = s.byT[k]; return `<tr><td>${esc(k)}</td><td>${b.n}</td><td>${b.clean}/${b.n}</td><td>${b.rated ? b.hit+'/'+b.rated : '–'}</td></tr>`; }).join('');
+  const mrows = list.filter(e => e.m).map(e => { const s = measures(e.m); return `<tr><td>${e.nr}</td><td>${s.line}</td><td>${s.arm}</td><td>${s.rot}</td><td>${s.jump}</td><td>${s.lean}</td><td>${s.fps}</td></tr>`; }).join('');
   const rows = list.map(e => `<tr><td>${e.nr}</td><td>${esc(e.target || '–')}</td><td>${e.hit===true?'✓':e.hit===false?'✗':'–'}</td><td>${esc(e.praise || '–')}</td><td>${e.main ? esc(LABEL_BAD[e.main]) : 'sauber'}</td></tr>`).join('');
   return `<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Wurfbericht</title>
 <style>body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;max-width:720px;margin:24px auto;padding:0 16px;color:#1b2530;line-height:1.5}
@@ -40,6 +41,8 @@ ${s.strengths.length ? `<h2>Stärken</h2><p>${s.strengths.map(k => LABEL_GOOD[k]
 <h2>Schwerpunkte fürs nächste Training</h2><ol>${focus}</ol>
 ${targets ? `<h2>Ziele</h2><table><tr><th>Ziel</th><th>Würfe</th><th>Technik ok</th><th>Treffer</th></tr>${targets}</table>` : ''}
 <h2>Alle Würfe</h2><table><tr><th>Nr</th><th>Ziel</th><th>Treffer</th><th>Gut</th><th>Verbessern</th></tr>${rows}</table>
+${mrows ? `<h2>Messwerte</h2><p class="m">Zum Einstellen der Grenzen nach dem Hallentest. ${esc(MEASURE_HELP)}<br>${esc(LIMITS_TEXT())}</p>
+<table><tr><th>Nr</th><th>Linie</th><th>Arm</th><th>Drehung</th><th>Sprung</th><th>Oberkörper</th><th>fps</th></tr>${mrows}</table>` : ''}
 <p class="m" style="margin-top:24px">Erstellt mit Außenwurf-Coach. Werte sind KI-Schätzungen aus einer Handykamera.</p></body></html>`;
 }
 

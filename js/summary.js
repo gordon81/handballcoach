@@ -1,6 +1,24 @@
 // Auswertung eines Trainings (für Log-Ansicht und Bericht).
 import { settings } from './store.js';
 import { PRIO } from './feedback.js';
+import { TH, KL_CM } from './config.js';
+
+const cm = x => Math.round(x*KL_CM), sgn = x => (x > 0 ? '+' : '') + x;
+// Messwerte eines Wurfs (zum Kalibrieren der Grenzen). cm sind über KL_CM geschätzt.
+export function measures(m){
+  if(!m) return null;
+  return {line: m.line!=null ? sgn(cm(m.line)) + ' cm' : '–', arm: sgn(cm(m.arm)) + ' cm', rot: m.rot!=null ? m.rot + '°' : '–',
+    jump: cm(m.jump) + ' cm', lean: sgn(m.lean) + '°', fps: m.fps + ''};
+}
+export function measureText(m){
+  const s = measures(m); if(!s) return '';
+  return `Linie ${s.line} · Arm ${s.arm} · Drehung ${s.rot} · Sprung ${s.jump} · Oberkörper ${s.lean} · ${s.fps} fps`;
+}
+export const MEASURE_HELP = 'Linie: Fuß beim Absprung zur 6-m-Linie (+ = im Torraum, also Übertritt). Arm: Handgelenk beim Absprung über (+) oder unter (−) der Nase. '
+  + 'Sprung: Hüfte über der Anlauf-Höhe. Oberkörper beim Wurf (+ = Richtung Torraum). fps: Bilder pro Sekunde der Pose-Erkennung. '
+  + `cm geschätzt (Schulter–Knöchel = ${KL_CM} cm angenommen).`;
+export const LIMITS_TEXT = () => `Grenzen: Sprung hoch ab ${cm(TH.jumpHigh)} cm, mittel ab ${cm(TH.jumpMid)} cm; Drehung ab ${TH.rot}° (falsche Seite ${TH.rotWrongSide}°); `
+  + `Oberkörper aufrecht unter ${TH.leanUpright}°, kippt nach vorn ab ${TH.leanForward}°; Arm über der Nase = oben.`;
 
 export function summarize(list){
   const n = list.length, counts = {}, byT = {};

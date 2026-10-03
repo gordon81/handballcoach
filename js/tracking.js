@@ -135,7 +135,7 @@ function finish(t){
   if(!settings.session) ensureSession();
   settings.session.last = Date.now();
   const entry = {nr:(log.at(-1)?.nr || 0) + 1, sid:settings.session.id, target:e.target, res:r.res, issues:r.issues, good:r.good, praise:r.praise, main:r.main,
-    tip:r.tip, rot:r.rot, noLine:r.noLine, hit:null, time:Date.now(), video:app.source==='file'};
+    tip:r.tip, rot:r.rot, noLine:r.noLine, m:r.m, hit:null, time:Date.now(), video:app.source==='file'};
   log.push(entry); if(log.length > 1000) log.shift(); store();
   showCard(entry); renderLog();
   if(recAge(t)!==null) recFinish(entry.time).then(ok => { if(ok){ entry.clip = true; store(); clipReady(entry); renderLog(); } });

@@ -119,17 +119,30 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 5. **jump – Sprunghöhe**: (Basis − Hüft-Höchstpunkt) / Körperlänge: ≥ 0,25 hoch, ≥ 0,17 mittel, sonst flach.
 6. **lean – Oberkörper** beim Wurf (Frame mit max. Handgelenk-Geschwindigkeit): < 15° aufrecht; > 25° Richtung Torraum = kippt nach vorn; weg vom Torraum = Rücklage (ok).
 
+Alle Grenzwerte stehen in `TH` (`js/config.js`), nicht verstreut im Code.
+
 Feedback: Sprachansage = zufälliges Lob aus den guten Punkten + Kurz-Tipp des wichtigsten Fehlers. Texte in `tips()` (`js/feedback.js`) (short / tip / drill), Labels in `LABEL_GOOD` / `LABEL_BAD`, Reihenfolge in `PRIO`.
 
 ## Daten (localStorage)
 - `awc-settings`: `hand` (R/L), `pos` (LA/RA), `mode` (auto/timer/call), `callMin`, `callMax`, `sens` (low/mid/high), `clips` (Wurf-Videos an/aus), `pause`, `camera`, `model`, `targets[{name,on}]`, `line{pts[],inside,at,snapped,ref{w,h,g}}` (normalisiert 0–1; altes Format `{a,b,inside}` wird beim Laden zu `pts:[a,b]`), `session{id,start,last}`.
 - Demo-Modus: dieselben Daten unter `awc-demo-settings` / `awc-demo-log`.
-- `awc-log`: Array von Würfen `{nr, sid, target, res[{ok,txt}], issues[], good[], praise, main, tip, rot, noLine, hit, time, video}`; max. 1000 Einträge.
+- `awc-log`: Array von Würfen `{nr, sid, target, res[{ok,txt}], issues[], good[], praise, main, tip, rot, noLine, m, hit, time, video, clip}`; max. 1000 Einträge.
+  - `m` = rohe Messwerte zum Kalibrieren: `line` (Fuß zur Linie beim Absprung, KL, + = im Torraum), `arm` (Handgelenk über der Nase, KL), `rot` (°), `jump` (Hüfte über Anlauf-Höhe, KL), `lean` (Oberkörper beim Wurf, °, + = Richtung Torraum), `fps` (Pose-Bilder pro Sekunde um den Sprung). KL = Körperlänge Schulter–Knöchel.
 - Neues Training automatisch nach > 3 h Pause oder per Button.
 
 ## Bericht
 - `reportText()` → Text für Teilen-Menü (`navigator.share`, Fallback Zwischenablage).
 - `reportHTML()` → eigenständige HTML-Seite (`Wurfbericht-JJJJ-MM-TT.html`), teilen per `navigator.share({files})` oder Download.
+
+## Hallentest und Kalibrieren
+Die Grenzwerte (`TH` in `js/config.js`) sind bisher nur im Demo geprüft. Beim ersten Hallentest:
+1. Aufbau: Handy erhöht (1,5–2 m), schräg von vorn auf die Absprungzone. Linie ablaufen, prüfen, ob die rote Linie auf dem Strich liegt.
+2. fps oben rechts ansehen, mit „Wurf-Videos“ an und aus. Ziel ≥ 25 fps. Fällt es mit Videos deutlich, Videos aus.
+3. Zuruf: Modus „Nach Zuruf“, in der Einrichtung „Mikro testen“. Vom Startpunkt rufen → grün und Piep. Ball prellen, Schuhe quietschen lassen, pfeifen → darf nicht zählen. Sonst Empfindlichkeit ändern.
+4. Würfe für die Grenzen, je 5–10 und bewusst: saubere Würfe; knapper Übertritt (Fuß auf/hinter der Linie); flache Sprünge; Arm unten; wenig Drehung; Oberkörper nach vorn fallen lassen. Reihenfolge notieren.
+5. Danach im Training-Fenster die Messwerte pro Wurf ansehen (Zweifelsfälle mit „▶︎ Video“ prüfen) und „Bericht als Datei“ teilen: der Bericht hat die Tabelle „Messwerte“.
+6. Grenzen in `TH` zwischen die Werte der guten und der bewusst schlechten Würfe legen. Übertritt: liegen echte Übertritte nur knapp im Plus oder saubere Absprünge im Plus, zuerst die Linie prüfen (Ablaufen wiederholen, Kamera fester).
+- cm-Angaben in Log und Bericht sind Schätzungen (`KL_CM` = 140 cm Schulter–Knöchel). Für die Grenzen zählen die Verhältnisse, nicht die genauen cm.
 
 ## Bekannte Grenzen
 - Eine Kamera: Drehung, Sprunghöhe und Oberkörper sind Schätzungen. Übertritt hängt von Kamerawinkel und Linienmarkierung ab.
@@ -138,7 +151,7 @@ Feedback: Sprachansage = zufälliges Lob aus den guten Punkten + Kurz-Tipp des w
 - Kamera am besten erhöht (1,5–2 m), schräg von vorn auf die Absprungzone, gutes Licht, möglichst 60 fps.
 
 ## Ideen / offene Punkte
-- Schwellenwerte nach ersten Hallentests anpassen.
+- Hallentest nach der Checkliste oben, danach `TH` anpassen.
 - Ballflug/Treffer automatisch erkennen (Farberkennung der Ringe).
 - PDF-Bericht direkt erzeugen.
 
@@ -151,3 +164,4 @@ Feedback: Sprachansage = zufälliges Lob aus den guten Punkten + Kurz-Tipp des w
 - 2026-10-01: Einrichtung vor dem Training (Start → Einrichtung → Training starten), „Zurück“ beim Antippen, Linie ablaufen mit Sprachansage.
 - 2026-10-03: Strich am Boden erkennen und Linie einrasten (Ablaufen und Antippen), Hinweis auf gespeicherte Linie, Kamera-Check mit automatischem Nachjustieren, Demo-Modus (`?demo=1`) mit gezeichneter Halle und simulierter Person. Fix: Absprung-Frame beim Anlauf auf die Kamera zu (Boden als Gerade über die Zeit).
 - 2026-10-03: Ansage „Nach Zuruf“ (Mikrofon, Ziel 1–5 s nach dem Ruf, einstellbar) und kurze Videos pro Wurf (Zeitlupe, speichern/teilen).
+- 2026-10-03: Prüfung und Verbesserungen: Zuruf löst nicht mehr bei Dauerlärm, Quietschen, Pfiff aus, nur mit Spieler im Bild; Mikro bleibt nach Stopp aus; Mikro testen in der Einrichtung mit Pegelanzeige; Wurf-Videos in H.264/MP4 und abschaltbar, Anlauf bleibt im Clip; Ansage „Wenn Spieler im Bild steht“ wartet aufs Stehen (vorher Übertritt/Sprung falsch bei kurzer Pause); Messwerte pro Wurf für das Kalibrieren, Grenzen gesammelt in `TH`; automatische Tests in `tests/`.

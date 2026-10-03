@@ -2,7 +2,8 @@
 import { settings } from './store.js';
 import { canvas } from './dom.js';
 import { pick, angDiff } from './utils.js';
-import { inTorraum, lineCenter } from './line.js';
+import { TH } from './config.js';
+import { inTorraum, lineOffset, lineCenter } from './line.js';
 import { LABEL_GOOD, PRIO, wrongSide, tips } from './feedback.js';
 
 // e = Sprung-Ereignis aus tracking.js, t = Landezeit, H = Frame-Verlauf.
@@ -36,14 +37,14 @@ export function evaluate(e, t, H){
     const tw = fr.map(h => h.twist);
     rot = Math.round(Math.max(Math.max(...tw) - Math.min(...tw), Math.abs(angDiff(fr.at(-1).shYaw, fr[0].shYaw))));
   }
-  const need = wrongSide() ? 35 : 25;
+  const need = wrongSide() ? TH.rotWrongSide : TH.rot;
   if(rot===null) res.push({ok:null, txt:'Körperdrehung nicht messbar'});
   else if(rot >= need){ res.push({ok:true, txt:`Körperdrehung ca. ${rot}°`}); good.push('rot'); }
   else if(rot >= need*0.5){ res.push({ok:null, txt:`Körperdrehung ca. ${rot}°, etwas wenig`}); issues.push('rot'); }
   else { res.push({ok:false, txt:`Kaum Körperdrehung (ca. ${rot}°)`}); issues.push('rot'); }
 
   // Sprunghöhe (grob)
-  const jr = (e.base - e.peak)/e.bl, jump = jr >= 0.25 ? 'hoch' : jr >= 0.17 ? 'mittel' : 'flach';
+  const jr = (e.base - e.peak)/e.bl, jump = jr >= TH.jumpHigh ? 'hoch' : jr >= TH.jumpMid ? 'mittel' : 'flach';
   res.push({ok: jump!=='flach', txt:`Sprunghöhe ${jump}`});
   if(jump==='hoch') good.push('jump'); else if(jump==='flach') issues.push('jump');
 
@@ -52,15 +53,22 @@ export function evaluate(e, t, H){
   const lean = Math.atan2(tf.sh.x - tf.hip.x, tf.hip.y - tf.sh.y) * 180/Math.PI, al = Math.abs(lean);
   let dir = 0; if(settings.line){ const l=settings.line, m=lineCenter(l); dir = Math.sign(l.inside.x - m.x); }
   const toward = dir ? Math.sign(lean) === dir : null;
-  if(al < 15){ res.push({ok:true, txt:'Oberkörper beim Wurf aufrecht'}); good.push('lean'); }
-  else if(toward===true && al > 25){ res.push({ok:false, txt:`Oberkörper kippt nach vorn (${Math.round(al)}°)`}); issues.push('lean'); }
+  if(al < TH.leanUpright){ res.push({ok:true, txt:'Oberkörper beim Wurf aufrecht'}); good.push('lean'); }
+  else if(toward===true && al > TH.leanForward){ res.push({ok:false, txt:`Oberkörper kippt nach vorn (${Math.round(al)}°)`}); issues.push('lean'); }
   else if(toward===false){ res.push({ok:true, txt:`Rücklage ${Math.round(al)}°`}); good.push('lean'); }
-  else if(al > 35) res.push({ok:null, txt:`Starke Neigung ${Math.round(al)}°`});
+  else if(al > TH.leanStrong) res.push({ok:null, txt:`Starke Neigung ${Math.round(al)}°`});
   else res.push({ok:true, txt:`Leichte Neigung ${Math.round(al)}°`});
+
+  // Rohe Messwerte zum Kalibrieren der Grenzen (KL = Körperlängen; Linie/Arm/Oberkörper: + = Richtung Torraum/über der Nase).
+  const r2 = x => x==null ? null : Math.round(x*100)/100;
+  const ft = e.tf.foot[e.foot], offs = settings.line ? [ft.toe, ft.heel].map(p => lineOffset({x:p.x/W, y:p.y/Hh})) : null;
+  const win = H.filter(h => h.t >= e.t0 - 1 && h.t <= t);
+  const m = {line: offs ? r2(Math.max(...offs)*Hh/e.bl) : null, arm:r2((a.nose.y - a.wr.y)/e.bl), rot, jump:r2(jr),
+    lean: Math.round(dir ? lean*dir : al), fps: Math.round(win.length/Math.max(0.1, t - (e.t0 - 1)))};
 
   issues.sort((x,y) => PRIO.indexOf(x) - PRIO.indexOf(y));
   const T = tips(), main = issues[0] || null;
   const praise = good.length ? LABEL_GOOD[pick(good)] : null;
   const speech = [praise ? praise + '.' : '', main ? T[main].short : pick(['Alles sauber!','Top Wurf!','Weiter so!'])].join(' ').trim();
-  return {res, issues, good, praise, main, tip: main ? T[main].tip : null, rot, noLine: over===null, speech};
+  return {res, issues, good, praise, main, tip: main ? T[main].tip : null, rot, noLine: over===null, speech, m};
 }

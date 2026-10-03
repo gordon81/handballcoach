@@ -3,7 +3,7 @@ import { settings, sessionEntries } from '../store.js';
 import { $ } from '../dom.js';
 import { esc, colorOf, fmtDate } from '../utils.js';
 import { LABEL_BAD, LABEL_GOOD, tips } from '../feedback.js';
-import { summarize, profileText } from '../summary.js';
+import { summarize, profileText, measureText, MEASURE_HELP } from '../summary.js';
 
 export function renderLog(){
   const list = sessionEntries(), box = $('#logBody');
@@ -19,7 +19,8 @@ export function renderLog(){
   h += `<h3>Würfe</h3>` + [...list].reverse().map(e => {
     const hit = e.hit===true ? ', Treffer' : e.hit===false ? ', daneben' : '';
     return `<div class="entry">${e.clip ? `<button class="vbtn" data-clip="${e.time}">▶︎ Video</button>` : ''}<b>Wurf ${e.nr}</b> ${e.target ? `<span style="color:${colorOf(e.target)}">${esc(e.target)}</span>` : ''}<small>${hit}</small><br>
-      <small>${e.praise ? 'Gut: ' + esc(e.praise) + '. ' : ''}${e.main ? 'Besser: ' + esc(LABEL_BAD[e.main]) : 'Alles sauber'}</small></div>`;
+      <small>${e.praise ? 'Gut: ' + esc(e.praise) + '. ' : ''}${e.main ? 'Besser: ' + esc(LABEL_BAD[e.main]) : 'Alles sauber'}</small>${e.m ? `<br><small class="meas">${esc(measureText(e.m))}</small>` : ''}</div>`;
   }).join('');
+  if(list.some(e => e.m)) h += `<p class="muted"><small>Messwerte: ${esc(MEASURE_HELP)}</small></p>`;
   box.innerHTML = h;
 }
