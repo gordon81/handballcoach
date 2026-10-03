@@ -1,11 +1,13 @@
 // Kurze Videos pro Wurf: Kamerabild mit eingezeichneter Linie und Skelett aufnehmen (ab der Zielansage
 // bis kurz nach der Landung) und im Browser speichern (IndexedDB, die letzten KEEP Clips).
 import { DEMO } from './config.js';
-import { app } from './state.js';
+import { settings } from './store.js';
 import { video, canvas } from './dom.js';
 
 const DB = DEMO ? 'awc-demo-clips' : 'awc-clips', KEEP = 60, MAXW = 720;
-const MIME = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4']
+// H.264 zuerst: auf Handys meist im Hardware-Encoder (spart Rechenzeit für die Pose-Erkennung), und MP4
+// lässt sich überall abspielen und teilen. VP9 nicht: wird oft in Software kodiert und bremst.
+const MIME = ['video/mp4;codecs=avc1.42E01E', 'video/mp4;codecs=avc1', 'video/webm;codecs=h264', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4']
   .find(m => window.MediaRecorder?.isTypeSupported?.(m));
 const comp = document.createElement('canvas'), cg = comp.getContext('2d');
 export const canRecord = !!MIME && !!comp.captureStream;
@@ -48,7 +50,7 @@ export const recAge = t => rec ? t - rec.t0 : null;
 
 export function recStart(t, label = ''){
   recDrop();
-  if(!canRecord || !video.videoWidth) return;
+  if(!canRecord || !settings.clips || !video.videoWidth) return;
   const k = Math.min(1, MAXW / video.videoWidth);
   comp.width = Math.round(video.videoWidth*k/2)*2; comp.height = Math.round(video.videoHeight*k/2)*2;
   const r = {chunks:[], t0:t, label};

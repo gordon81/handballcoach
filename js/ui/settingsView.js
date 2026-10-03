@@ -8,6 +8,7 @@ import { startCamera } from '../source.js';
 import { clearLine } from '../line.js';
 import { openSheet } from './sheets.js';
 import { syncMic } from '../micControl.js';
+import { recDrop } from '../clips.js';
 
 function renderTargets(){
   const box = $('#sTargets'); box.innerHTML = '';
@@ -27,7 +28,7 @@ function showCallRows(){ document.querySelectorAll('.callOnly').forEach(el => el
 export function initSettings(){
   $('#btnSet').onclick = () => {
     $('#sHand').value = settings.hand; $('#sPos').value = settings.pos; $('#sMode').value = settings.mode; $('#sPause').value = settings.pause;
-    $('#sCallDelay').value = settings.callMin===settings.callMax && [1,2,3,4,5].includes(+settings.callMin) ? String(settings.callMin) : 'r'; $('#sSens').value = settings.sens; showCallRows();
+    $('#sCallDelay').value = settings.callMin===settings.callMax && [1,2,3,4,5].includes(+settings.callMin) ? String(settings.callMin) : 'r'; $('#sSens').value = settings.sens; $('#sClips').value = settings.clips ? '1' : '0'; showCallRows();
     $('#sCam').value = settings.camera; $('#sModel').value = settings.model; renderTargets(); openSheet('#setSheet');
   };
   $('#sHand').onchange = e => { settings.hand = e.target.value; store(); };
@@ -36,6 +37,8 @@ export function initSettings(){
   // Feste 1–5 s oder zufällig 1–5 s (gespeichert als Bereich callMin…callMax).
   $('#sCallDelay').onchange = e => { const v = e.target.value; [settings.callMin, settings.callMax] = v==='r' ? [1, 5] : [+v, +v]; store(); };
   $('#sSens').onchange = e => { settings.sens = e.target.value; store(); };
+  // Videos aus: spart Rechenzeit (höhere Bildrate für die Pose-Erkennung) und Speicher.
+  $('#sClips').onchange = e => { settings.clips = e.target.value==='1'; store(); if(!settings.clips) recDrop(); };
   $('#sPause').onchange = e => { settings.pause = Math.max(1, +e.target.value || 4); store(); };
   $('#sCam').onchange = async e => { settings.camera = e.target.value; store(); if(app.source==='cam'){ try{ await startCamera(); }catch(err){ showHint('Kamera-Fehler: ' + err.message, 5000); } } };
   $('#sModel').onchange = async e => { settings.model = e.target.value; store(); if(landmarker){ try{ await ensureModel(); }catch(err){ showHint('Modell-Fehler: ' + err.message, 5000); } } };

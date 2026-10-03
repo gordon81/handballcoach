@@ -93,6 +93,8 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 
 ## Wurf-Videos (`clips.js`)
 - Aufnahme ab der Zielansage bis 0,8 s nach der Landung (ohne Ansage: laufend, alle 6 s neu begonnen). Aufgenommen wird ein Bild aus Kamerabild + Overlay (Linie, Skelett) + Zielname, max. 720 px breit, 30 fps, 2 Mbit/s (~350 KB pro Wurf).
+- Format: H.264 bevorzugt (`video/mp4;codecs=avc1…`, sonst WebM H.264, dann VP8). Grund: H.264 läuft auf Handys meist im Hardware-Encoder und nimmt der Pose-Erkennung keine Rechenzeit weg, und MP4 lässt sich überall abspielen und teilen (WhatsApp, Galerie). VP9 nicht mehr (oft Software-Kodierung).
+- Einstellung „Wurf-Videos: Aufnehmen / Aus“ (`clips`). Aus spart Rechenzeit und Speicher. In der Halle die fps-Anzeige mit und ohne Videos vergleichen: fällt sie deutlich (z. B. von 30 auf 20), Videos ausschalten oder Modell „Lite“ nehmen.
 - Gespeichert in IndexedDB `awc-clips` (Demo: `awc-demo-clips`), Schlüssel = `entry.time`, Log-Eintrag bekommt `clip:true`. Nur die letzten 60 Clips bleiben. „Gesamtes Log löschen“ löscht auch die Clips.
 - Ansehen: Button „▶︎ Video ansehen“ auf der Ergebnis-Karte und „▶︎ Video“ pro Wurf im Training-Fenster. Startet in 0,5×, Schleife, 1× / 0,5× / 0,25×, „Speichern“ teilt die Datei (Android) oder lädt sie herunter.
 - Nur Kamera-Modus (bei Video-Dateien gibt es das Video ja schon).
@@ -110,7 +112,7 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 Feedback: Sprachansage = zufälliges Lob aus den guten Punkten + Kurz-Tipp des wichtigsten Fehlers. Texte in `tips()` (`js/feedback.js`) (short / tip / drill), Labels in `LABEL_GOOD` / `LABEL_BAD`, Reihenfolge in `PRIO`.
 
 ## Daten (localStorage)
-- `awc-settings`: `hand` (R/L), `pos` (LA/RA), `mode` (auto/timer/call), `callMin`, `callMax`, `sens` (low/mid/high), `pause`, `camera`, `model`, `targets[{name,on}]`, `line{pts[],inside,at,snapped,ref{w,h,g}}` (normalisiert 0–1; altes Format `{a,b,inside}` wird beim Laden zu `pts:[a,b]`), `session{id,start,last}`.
+- `awc-settings`: `hand` (R/L), `pos` (LA/RA), `mode` (auto/timer/call), `callMin`, `callMax`, `sens` (low/mid/high), `clips` (Wurf-Videos an/aus), `pause`, `camera`, `model`, `targets[{name,on}]`, `line{pts[],inside,at,snapped,ref{w,h,g}}` (normalisiert 0–1; altes Format `{a,b,inside}` wird beim Laden zu `pts:[a,b]`), `session{id,start,last}`.
 - Demo-Modus: dieselben Daten unter `awc-demo-settings` / `awc-demo-log`.
 - `awc-log`: Array von Würfen `{nr, sid, target, res[{ok,txt}], issues[], good[], praise, main, tip, rot, noLine, hit, time, video}`; max. 1000 Einträge.
 - Neues Training automatisch nach > 3 h Pause oder per Button.
