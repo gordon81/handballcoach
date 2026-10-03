@@ -30,7 +30,7 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
   - `lineWizard.js` – Linie ablaufen: Person geht auf Sprachansage die Linie entlang, Fußpunkte geben die grobe Lage, dann Einrasten auf den Strich am Boden.
   - `lineDetect.js` – Bodenlinie im Kamerabild finden (`snapLine`), Bild ohne Person (`medianFrame`), Punkte glätten/reduzieren (`simplify`).
   - `camCheck.js` – Referenzbild bei der Einrichtung, Kamera-Check beim Öffnen der Einrichtung und beim Start, automatisches Nachjustieren.
-  - `shout.js` + `micControl.js` – Zuruf per Mikrofon erkennen (Lautstärke über Grundpegel), Mikro nur im Modus „Zuruf“ während des Trainings an.
+  - `shout.js` + `shoutDetect.js` + `micControl.js` – Zuruf per Mikrofon erkennen (Pegel im Stimmbereich, Dauer, Klang; `shoutDetect.js` ist die reine Logik ohne Browser), Mikro nur im Modus „Zuruf“ während des Trainings an.
   - `clips.js` – Wurf-Videos aufnehmen (MediaRecorder) und in IndexedDB speichern. `ui/clipView.js` – Video ansehen (Zeitlupe, Speichern/Teilen).
   - `demo/sim.js` – Demo-Modus: gezeichnete Halle, simulierte Person, Ersatz für Kamera und KI.
   - `tracking.js` – Zustandsautomat, Absprung-/Landungserkennung, speichert den Wurf.
@@ -77,11 +77,19 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 - **Landung**: nach > 0,25 s, wenn Fuß wieder am Boden oder Hüfte < 0,04 über Basis; spätestens nach 1,8 s oder 0,4 s ohne Pose.
 - **cool**: Pause nach Wurf (Einstellung, Standard 4 s; im Video-Modus 0,6 s).
 
-## Zuruf (Mikrofon, `shout.js`)
-- Kein Spracherkenner, nur Pegel: RMS alle 30 ms, Grundpegel = Mittel der ersten 0,5 s, danach langsam nachgeführt (nach unten schneller). Ruf = ≥ 120 ms über Grundpegel + Empfindlichkeit (`sens`: low 20 / mid 14 / high 9 dB, mindestens −55 dBFS), danach 1,5 s Sperre. Kurze Knalle (Ballaufprall ~15 ms) zählen nicht.
+## Zuruf (Mikrofon, `shout.js`, `shoutDetect.js`)
+- Kein Spracherkenner, nur Pegel und Klang. Alle 30 ms eine FFT (2048 Punkte): Pegel im Stimmbereich 200–1200 Hz (`v`) und im hohen Bereich 2,5–6 kHz (`hi`). Grundpegel = Mittel der ersten 0,5 s, danach unterhalb der Schwelle langsam nachgeführt (nach unten schneller). Schwelle = Grundpegel + Empfindlichkeit (`sens`: low 20 / mid 14 / high 9 dB, mindestens −75 dB).
+- Ein Ruf zählt am **Ende** des lauten Abschnitts, wenn er
+  - mindestens 120 ms nahe seinem Höchstwert bleibt (Ballaufprall = kurzer Knall + Nachhall, zählt nicht),
+  - höchstens 2 s dauert (länger = Dauerlärm: der Grundpegel zieht dann mit, ~1,5 s),
+  - nach Stimme klingt: in ≥ 60 % der Messungen `v` > `hi` (Schuhquietschen und Pfiffe sind hoch),
+  - aus der Ruhe kommt: davor ≥ 0,3 s unter der Schwelle (sonst sind es Spitzen im Dauerlärm),
+  - und 1,5 s Sperre nach dem letzten Ruf.
+- Zusätzlich muss der Spieler im Bild sein (in den letzten 2 s erkannt), sonst Hinweis „Zuruf gehört, aber niemand im Bild“. So lösen Rufe von anderen Feldern nicht aus.
 - Echo-/Rauschunterdrückung und Pegelautomatik aus (sonst wird der Ruf weggeregelt). Während der eigenen Sprachausgabe (+0,4 s) und 1,2 s nach einer Zielansage wird nicht gehört.
+- Mikro an/aus nur über `syncMic()` (Start/Stopp, Moduswechsel, Wechsel Kamera ↔ Videodatei). Stopp während der Erlaubnis-Abfrage: das Mikro bleibt aus. Liefert das Mikro 2 s lang gar keinen Ton → Hinweis.
 - Warum kein Wort-Erkenner: Web Speech Recognition braucht auf Android Netz (Google-Server), ist in der lauten Halle unzuverlässig und hat Verzögerung. Lautstärke geht offline und sofort.
-- Getestet mit Chromium-Fake-Mikro (WAV mit Hallenrauschen, 5 Ballaufprallen, 2 Rufen): 2 Rufe erkannt, keine Fehlalarme. In der Halle noch nicht getestet.
+- Getestet (siehe Tests): künstliche Pegelverläufe und eine künstliche Hallen-Tonspur über das Fake-Mikrofon von Chromium (Rauschen, Ballaufpralle mit Nachhall, Schuhquietschen, Pfiff, 8 s zweite Gruppe 20 dB lauter, 3 Rufe): genau die 3 Rufe erkannt. In der Halle noch nicht getestet.
 
 ## Wurf-Videos (`clips.js`)
 - Aufnahme ab der Zielansage bis 0,8 s nach der Landung (ohne Ansage: laufend, alle 6 s neu begonnen). Aufgenommen wird ein Bild aus Kamerabild + Overlay (Linie, Skelett) + Zielname, max. 720 px breit, 30 fps, 2 Mbit/s (~350 KB pro Wurf).

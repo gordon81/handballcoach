@@ -7,6 +7,7 @@ import { startCamera, loadFile, curT } from '../source.js';
 import { setState, announce } from '../tracking.js';
 import { cancelMarking } from '../line.js';
 import { clearClips } from '../clips.js';
+import { syncMic } from '../micControl.js';
 import { shareText, shareFile } from '../report.js';
 import { renderLog } from './logView.js';
 import { openSheet } from './sheets.js';
@@ -28,7 +29,7 @@ export function initControls(){
   $('#btnVideo').onclick = () => $('#file').click();
   $('#file').onchange = async e => {
     const f = e.target.files[0]; if(!f) return;
-    try{ await ensureModel(); ensureSession(); loadFile(f); setState('ready', 0); setRunning(true); showHint('Video geladen. Mit ▶︎ abspielen, Linie bei Bedarf unter „Setup“.', 3500); }
+    try{ await ensureModel(); ensureSession(); loadFile(f); setState('ready', 0); setRunning(true); syncMic(); showHint('Video geladen. Mit ▶︎ abspielen, Linie bei Bedarf unter „Setup“.', 3500); }
     catch(err){ showHint('Fehler: ' + (err.message || err), 6000); }
     e.target.value = '';
   };
@@ -40,7 +41,7 @@ export function initControls(){
   $('#fBack').onclick = () => { video.currentTime = Math.max(0, video.currentTime - 2); };
   $('#fRate').onchange = e => { video.playbackRate = +e.target.value; };
   $('#fSeek').oninput = e => { if(video.duration) video.currentTime = e.target.value/1000*video.duration; };
-  $('#fCam').onclick = async () => { try{ await startCamera(); if(app.state!=='off') setState('ready', curT()); }catch(e){ showHint('Kamera-Fehler: ' + (e.message||e), 6000); } };
+  $('#fCam').onclick = async () => { try{ await startCamera(); if(app.state!=='off') setState('ready', curT()); syncMic(); }catch(e){ showHint('Kamera-Fehler: ' + (e.message||e), 6000); } };
 
   /* Training-Fenster */
   $('#btnLog').onclick = () => { renderLog(); openSheet('#logSheet'); };

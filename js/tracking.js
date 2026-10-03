@@ -31,11 +31,14 @@ function stateText(){
 }
 
 // Zuruf des Spielers (Mikrofon): Ziel nach zufälligen callMin…callMax Sekunden ansagen.
+// Nur wenn der Spieler gerade im Bild ist (in den letzten 2 s erkannt): Lärm von anderen Feldern zählt so nicht.
 export function heardCall(){
   if(app.source!=='cam' || app.marking || settings.mode!=='call' || callAt!==null) return;
   if(app.state!=='ready' && app.state!=='cool') return;
+  const now = performance.now()/1000;
+  if(now - lastSeen > 2){ showHint('Zuruf gehört, aber niemand im Bild. Stell dich so hin, dass die Kamera dich sieht.', 2500); return; }
   const lo = Math.max(0, +settings.callMin || 0), hi = Math.max(lo, +settings.callMax || lo);
-  callAt = performance.now()/1000 + lo + Math.random()*(hi - lo);
+  callAt = now + lo + Math.random()*(hi - lo);
   quiet(0.3); beep(); stateText();
 }
 export function resetTracking(t){ H=[]; app.latest=null; visSince=null; ev=null; groundY=groundAt=baseHip=bodyRef=null; app.target=null; hudTarget(null); if(app.state!=='off') setState('ready', t); }
