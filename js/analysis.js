@@ -1,14 +1,13 @@
 // Bewertung eines Wurfs: die sechs Technik-Prüfungen und der Sprachtext danach.
-import { settings } from './store.js';
+import { settings, th } from './store.js';
 import { canvas } from './dom.js';
 import { pick, angDiff } from './utils.js';
-import { TH } from './config.js';
 import { inTorraum, lineOffset, lineCenter } from './line.js';
 import { LABEL_GOOD, PRIO, wrongSide, tips } from './feedback.js';
 
 // e = Sprung-Ereignis aus tracking.js, t = Landezeit, H = Frame-Verlauf.
 export function evaluate(e, t, H){
-  const W = canvas.width, Hh = canvas.height, R = settings.hand==='R';
+  const W = canvas.width, Hh = canvas.height, R = settings.hand==='R', TH = th();
   const res = [], issues = [], good = [];
 
   // Übertritt
@@ -64,7 +63,7 @@ export function evaluate(e, t, H){
   const ft = e.tf.foot[e.foot], offs = settings.line ? [ft.toe, ft.heel].map(p => lineOffset({x:p.x/W, y:p.y/Hh})) : null;
   const win = H.filter(h => h.t >= e.t0 - 1 && h.t <= t);
   const m = {line: offs ? r2(Math.max(...offs)*Hh/e.bl) : null, arm:r2((a.nose.y - a.wr.y)/e.bl), rot, jump:r2(jr),
-    lean: Math.round(dir ? lean*dir : al), fps: Math.round(win.length/Math.max(0.1, t - (e.t0 - 1)))};
+    lean: Math.round(dir ? lean*dir : al), fps: Math.round(win.length/Math.max(0.1, t - (e.t0 - 1))), cam:settings.camPos};
 
   issues.sort((x,y) => PRIO.indexOf(x) - PRIO.indexOf(y));
   const T = tips(), main = issues[0] || null;

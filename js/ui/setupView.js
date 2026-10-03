@@ -11,7 +11,8 @@ import { keepAwake, releaseWake } from '../wakelock.js';
 import { ensureModel } from '../model.js';
 import { startCamera, curT } from '../source.js';
 import { setState, hudTarget } from '../tracking.js';
-import { onLineChange, startTapMarking, finishLinePoints, undoPoint, cancelMarking, clearLine } from '../line.js';
+import { onLineChange, startTapMarking, finishLinePoints, undoPoint, cancelMarking, clearLine, setCamPos } from '../line.js';
+import { CAM_POS } from '../config.js';
 import { wizard, onWizardChange, startWizard, stopWizard, finishWalkNow } from '../lineWizard.js';
 import { checkCamera } from '../camCheck.js';
 
@@ -79,6 +80,11 @@ function micBlock(){
     <div class="btnrow">${btn('micTest', micUse.test ? 'Test beenden' : 'Mikro testen')}</div>
     <p class="muted">Empfindlichkeit:</p><div class="btnrow sens">${['low','mid','high'].map(k => btn('sens', SENS_LABEL[k], settings.sens===k ? 'on' : '', true, k)).join('')}</div></div>`;
 }
+// Kameraposition: 1 Grundlinie (Standard) oder 2 im Feld mit Tor im Bild. Jede Position hat ihre eigene Linie.
+function camPosBlock(){
+  return `<p class="muted">Kameraposition:</p><div class="btnrow campos">${Object.keys(CAM_POS).map(k => btn('camPos', CAM_POS[k].name, settings.camPos===k ? 'on' : '', true, k)).join('')}</div>
+    <p class="muted">${esc(CAM_POS[settings.camPos]?.where || '')}</p>`;
+}
 const FLIP = '<button data-a="flip" class="flip" aria-label="Leiste oben/unten">⇅</button>';   // falls die Leiste die Linie verdeckt
 
 function render(){
@@ -104,8 +110,9 @@ function render(){
       : cam.status==='adjusted' ? `<li><span class="ic mid">!</span><span>Kamera hat sich bewegt: Linie neu ausgerichtet. Passt die rote Linie?</span></li>`
       : cam.status==='moved' ? `<li><span class="ic bad">✗</span><span>Kamera hat sich bewegt: Linie bitte neu ablaufen oder antippen.</span></li>` : '';
     h = `<div class="sheet-h"><h3>Einrichtung</h3><button class="x" data-a="close" aria-label="Schließen">✕</button></div>
+      ${isCam ? camPosBlock() : ''}
       <ul class="checks">
-        <li>${icon(app.source!=='none')}<span>${isCam ? 'Kamera läuft' : app.source==='file' ? 'Video geladen' : 'Kamera aus'}. Ganzer Körper und Linie im Bild?</span></li>
+        <li>${icon(app.source!=='none')}<span>${isCam ? 'Kamera läuft' : app.source==='file' ? 'Video geladen' : 'Kamera aus'}. ${settings.camPos==='court' ? 'Tor, Linie und Absprungzone' : 'Ganzer Körper und Linie'} im Bild?</span></li>
         <li>${icon(!!line)}<span>${line ? `6-m-Linie gesetzt (${line.pts.length} Punkte, ${how})` : '6-m-Linie fehlt'}</span></li>
         ${camLine}
       </ul>
@@ -132,7 +139,14 @@ const ACTIONS = {
   wizCancel(){ stopWizard(); },
   flip(){ $('#stage').classList.toggle('flip'); },
   micTest(){ micUse.test = !micUse.test; micHits = 0; syncMic().then(render); render(); },
-  sens(el){ settings.sens = el.dataset.v; store(); render(); }
+  sens(el){ settings.sens = el.dataset.v; store(); render(); },
+  // Andere Position: deren Linie laden und prüfen, ob die Kamera so steht wie bei deren Einrichtung.
+  camPos(el){
+    if(el.dataset.v===settings.camPos) return;
+    if(app.source==='cam' && app.state!=='off') stopTraining();
+    setCamPos(el.dataset.v); cam = null; wizard.msg = ''; render();
+    if(settings.line) frameReady().then(() => { if(visible && !app.marking && !wizard.phase){ runCamCheck(); render(); } });
+  }
 };
 
 export function initSetup(){

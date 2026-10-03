@@ -63,6 +63,14 @@ export function saveLine(pts, inside, meta = {}){
 }
 export function clearLine(){ settings.line = null; store(); listener(); }
 
+// Kameraposition wechseln: jede Position behält ihre eigene Linie (settings.lines), settings.line ist die aktive.
+export function setCamPos(k){
+  if(k===settings.camPos) return;
+  settings.lines = {...settings.lines, [settings.camPos]:settings.line};
+  settings.camPos = k; settings.line = settings.lines[k] || null;
+  store(); listener();
+}
+
 // Antippen starten; optional mit schon vorhandenen Punkten (z. B. vom Ablaufen).
 export function startTapMarking(points = [], step = 'line'){
   if(app.source==='file') video.pause();

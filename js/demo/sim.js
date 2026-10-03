@@ -40,17 +40,20 @@ const LINES = [
 ];
 const hash = n => { const s = Math.sin(n*127.1 + 311.7)*43758.5453; return s - Math.floor(s); };
 
-/* ---------- Kamera (erhöht neben dem Tor, schräg auf die Absprungzone am linken Flügel) ---------- */
-const BASE = {pos:[-3.4, -2.4, 2.2], look:[-6.6, 3.0, 0.2]};
+/* ---------- Kamera: Position der Einstellung „camPos“ (siehe CAM_POS in config.js) ---------- */
+// base: erhöht auf der Grundlinie zwischen 6-m-Linie und Tor, schräg auf die Absprungzone am linken Flügel.
+// court: im Feld hinter dem 7-m-Punkt, zur anderen Seite versetzt; Tor und Absprungzone im Bild.
+const CAMS = {base:{pos:[-3.4, -2.4, 2.2], look:[-6.6, 3.0, 0.2]}, court:{pos:[2.5, 10.5, 2.0], look:[-3.5, 2.3, 0.5]}};
 const MOVES = [[0, 0, 0], [0.3, 0.15, 4], [-0.25, 0.1, -3.5]];   // dx, dy (m), Schwenk (°) für „Kamera bewegen“
-let moveIdx = 0, cam = null, bg = null;
+let moveIdx = 0, cam = null, bg = null, camKey = null;
 const sub = (a,b) => [a[0]-b[0], a[1]-b[1], a[2]-b[2]], dot = (a,b) => a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
 const cross = (a,b) => [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
 const norm = a => { const l = Math.hypot(...a); return [a[0]/l, a[1]/l, a[2]/l]; };
 const add = (a, b, s = 1) => [a[0]+b[0]*s, a[1]+b[1]*s, a[2]+b[2]*s];
 
 function setCamera(){
-  const [mx, my, yaw] = MOVES[moveIdx], pos = [BASE.pos[0]+mx, BASE.pos[1]+my, BASE.pos[2]];
+  camKey = CAMS[settings.camPos] ? settings.camPos : 'base';
+  const BASE = CAMS[camKey], [mx, my, yaw] = MOVES[moveIdx], pos = [BASE.pos[0]+mx, BASE.pos[1]+my, BASE.pos[2]];
   let f = norm(sub(BASE.look, BASE.pos)); const a = yaw*D2R;
   f = [f[0]*Math.cos(a) - f[1]*Math.sin(a), f[0]*Math.sin(a) + f[1]*Math.cos(a), f[2]];
   const r = norm(cross(f, [0, 0, 1])), u = cross(r, f);
@@ -271,6 +274,7 @@ let running = false, tPrev = 0;
 function tick(now){
   requestAnimationFrame(tick);
   const dt = Math.min(0.05, (now - tPrev)/1000 || 0); tPrev = now;
+  if(camKey !== (CAMS[settings.camPos] ? settings.camPos : 'base')) setCamera();   // Kameraposition gewechselt
   behave(dt);
   const j = joints();
   g.drawImage(bg, 0, 0);

@@ -1,23 +1,23 @@
 // Auswertung eines Trainings (für Log-Ansicht und Bericht).
-import { settings } from './store.js';
+import { settings, th } from './store.js';
 import { PRIO } from './feedback.js';
-import { TH, KL_CM } from './config.js';
+import { KL_CM } from './config.js';
 
 const cm = x => Math.round(x*KL_CM), sgn = x => (x > 0 ? '+' : '') + x;
 // Messwerte eines Wurfs (zum Kalibrieren der Grenzen). cm sind über KL_CM geschätzt.
 export function measures(m){
   if(!m) return null;
   return {line: m.line!=null ? sgn(cm(m.line)) + ' cm' : '–', arm: sgn(cm(m.arm)) + ' cm', rot: m.rot!=null ? m.rot + '°' : '–',
-    jump: cm(m.jump) + ' cm', lean: sgn(m.lean) + '°', fps: m.fps + ''};
+    jump: cm(m.jump) + ' cm', lean: sgn(m.lean) + '°', fps: m.fps + '', cam: m.cam==='court' ? '2' : '1'};
 }
 export function measureText(m){
   const s = measures(m); if(!s) return '';
-  return `Linie ${s.line} · Arm ${s.arm} · Drehung ${s.rot} · Sprung ${s.jump} · Oberkörper ${s.lean} · ${s.fps} fps`;
+  return `Kamera ${s.cam} · Linie ${s.line} · Arm ${s.arm} · Drehung ${s.rot} · Sprung ${s.jump} · Oberkörper ${s.lean} · ${s.fps} fps`;
 }
 export const MEASURE_HELP = 'Linie: Fuß beim Absprung zur 6-m-Linie (+ = im Torraum, also Übertritt). Arm: Handgelenk beim Absprung über (+) oder unter (−) der Nase. '
-  + 'Sprung: Hüfte über der Anlauf-Höhe. Oberkörper beim Wurf (+ = Richtung Torraum). fps: Bilder pro Sekunde der Pose-Erkennung. '
+  + 'Sprung: Hüfte über der Anlauf-Höhe. Oberkörper beim Wurf (+ = Richtung Torraum). fps: Bilder pro Sekunde der Pose-Erkennung. Kamera: Position 1 (Grundlinie) oder 2 (Feld mit Tor). '
   + `cm geschätzt (Schulter–Knöchel = ${KL_CM} cm angenommen).`;
-export const LIMITS_TEXT = () => `Grenzen: Sprung hoch ab ${cm(TH.jumpHigh)} cm, mittel ab ${cm(TH.jumpMid)} cm; Drehung ab ${TH.rot}° (falsche Seite ${TH.rotWrongSide}°); `
+export const LIMITS_TEXT = (TH = th()) => `Grenzen${settings.camPos==='court' ? ' (Kamera 2)' : ''}: Sprung hoch ab ${cm(TH.jumpHigh)} cm, mittel ab ${cm(TH.jumpMid)} cm; Drehung ab ${TH.rot}° (falsche Seite ${TH.rotWrongSide}°); `
   + `Oberkörper aufrecht unter ${TH.leanUpright}°, kippt nach vorn ab ${TH.leanForward}°; Arm über der Nase = oben.`;
 
 export function summarize(list){

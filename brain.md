@@ -26,7 +26,7 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
   - `store.js` – `settings` und `log` im localStorage, Trainings-Sitzungen.
   - `utils.js`, `dom.js` – Helfer, Seitenelemente, Hinweis-Einblendung.
   - `speech.js`, `wakelock.js`, `model.js`, `source.js` – Sprache, Bildschirm wach, KI-Modell laden, Kamera/Video + Layout.
-  - `line.js` – 6-m-Linie: Antippen (mit „Zurück“), Kurve, `inTorraum()`, `saveLine()`.
+  - `line.js` – 6-m-Linie: Antippen (mit „Zurück“), Kurve, `inTorraum()`, `saveLine()`, `setCamPos()` (Kameraposition wechseln, Linie je Position).
   - `lineWizard.js` – Linie ablaufen: Person geht auf Sprachansage die Linie entlang, Fußpunkte geben die grobe Lage, dann Einrasten auf den Strich am Boden.
   - `lineDetect.js` – Bodenlinie im Kamerabild finden (`snapLine`), Bild ohne Person (`medianFrame`), Punkte glätten/reduzieren (`simplify`).
   - `camCheck.js` – Referenzbild bei der Einrichtung, Kamera-Check beim Öffnen der Einrichtung und beim Start, automatisches Nachjustieren.
@@ -52,6 +52,11 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 - Kein Build-Schritt, keine Abhängigkeiten im Repo.
 
 ## Einrichtung (vor dem Training)
+- **Kameraposition** (oben in der Einrichtung, `settings.camPos`, Texte in `CAM_POS` in `config.js`):
+  - **1 · Grundlinie** (`base`, Standard): auf der Grundlinie zwischen 6-m-Linie und Tor, erhöht, schräg von vorn auf die Absprungzone.
+  - **2 · Feld mit Tor** (`court`): im Feld hinter dem 7-m-Punkt, zur anderen Seite versetzt (vom Flügel aus gesehen), erhöht. Tor und Absprungzone sind im Bild, der Sprung wird von der Seite gesehen. Der Spieler ist weiter weg (im Demo ~12 m, ~150 px groß bei 720p), also auf gutes Licht und das Modell „Full“ achten, falls die Erkennung hakt.
+  - Jede Position hat ihre eigene 6-m-Linie (`settings.lines.base` / `.court`, aktiv ist `settings.line`). Beim Wechsel wird die Linie der neuen Position geladen und der Kamera-Check läuft.
+  - Prüfungen und Ablauf sind für beide Positionen gleich, nur die Sprunghöhe hat eigene Grenzen (`TH_POS.court`, siehe Prüfungen). Jeder Wurf speichert die Position in `m.cam`.
 - **Start** lädt KI und Kamera und öffnet die Einrichtung; erst danach „Training starten“ (im Kamera-Modus nur mit gesetzter 6-m-Linie). Der Button „Setup“ öffnet die Einrichtung jederzeit. Video-Modus: Analyse startet direkt, Linie optional.
 - **Linie antippen**: Punkte entlang des Bogens, „↶ Zurück“ nimmt den letzten Punkt (bzw. den Torraum-Schritt) zurück, „Fertig“, dann 1 Punkt im Torraum. Die Leiste steht dabei oben, „⇅“ schiebt sie nach unten.
 - **Linie ablaufen** (`lineWizard.js`): Ansage „ans äußere Ende stellen“ → steht die Person 1,5 s still, „los, langsam auf der Linie gehen“ → gesammelt wird der Bodenpunkt des aufstehenden Fußes (Mitte Ferse/Spitze) → nach ≥ 0,8 Körperlängen Weg und ~1 s Stillstand (oder „Fertig“, max. 30 s) werden die Punkte geglättet (gleitender Median) und auf 3–7 Punkte in gleichen Abständen reduziert → „zwei Schritte in den Torraum und stehen bleiben“ → Stillstand mit genug Abstand zur Linie = Torraum-Punkt. Klappt das nicht (20 s), Torraum-Punkt antippen.
@@ -62,7 +67,7 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 
 ## Demo-Modus (am Schreibtisch testen)
 - `?demo=1` an die Adresse hängen (oder auf der Startseite „Demo ohne Kamera“). Eigener Speicher (`awc-demo-settings`, `awc-demo-log`), das echte Training bleibt unberührt.
-- `demo/sim.js` zeichnet eine Halle in Perspektive (Holzboden, gebogene 6-m-Linie, gestrichelte 9-m-Linie, Tor, dazu Basketball-, Volleyball-, Badminton- und grüne Linien als Störer) und eine Person. Das Bild geht per `canvas.captureStream()` ins `<video>`, die Körperpunkte kommen im MediaPipe-Format (`landmarks` + `worldLandmarks`) statt aus der KI. Einrichtung, Linienerkennung, Kamera-Check und Analyse laufen unverändert.
+- `demo/sim.js` zeichnet eine Halle in Perspektive (Kamera je nach gewählter Kameraposition 1 oder 2, `CAMS`) (Holzboden, gebogene 6-m-Linie, gestrichelte 9-m-Linie, Tor, dazu Basketball-, Volleyball-, Badminton- und grüne Linien als Störer) und eine Person. Das Bild geht per `canvas.captureStream()` ins `<video>`, die Körperpunkte kommen im MediaPipe-Format (`landmarks` + `worldLandmarks`) statt aus der KI. Einrichtung, Linienerkennung, Kamera-Check und Analyse laufen unverändert.
 - Im Modus „Zuruf“ ruft die Person am Startpunkt (Hinweis „Demo: Spieler ruft“), Button „Zuruf“ in der Demo-Leiste ruft von Hand.
 - Die Person reagiert auf die Ansagen: ans Ende der Linie, Linie entlanggehen, zwei Schritte in den Torraum; im Training bei Ansage Anlauf und Sprungwurf. Würfe im Wechsel: gut, gut, Übertritt, flach mit Arm unten.
 - „Kamera bewegen“ verschiebt/schwenkt die Kamera (3 Stellungen) → Einrichtung/Start merkt es und richtet die Linie neu aus.
@@ -73,6 +78,7 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 - `unit.mjs` (Node): Ruf-Erkennung mit künstlichen Pegelverläufen: Ruf, Ballaufpralle, Quietschen, Pfiff, Dauerlärm + Ruf darüber, Sperre, eigene Ansage, Empfindlichkeit.
 - `browser.mjs` (Playwright, headless Chromium, eigener kleiner Webserver `server.mjs`):
   - Demo von vorn bis hinten (Pause 1 s): Linie ablaufen (eingerastet, Median < 4 px, max < 12 px), 8 Würfe genau wie simuliert bewertet (gut, gut, Übertritt, flach + Arm unten), Videos gespeichert und abspielbar (MP4), „Videos aus“ → keine Clips, Zuruf-Modus (Ziel 2 s nach dem Ruf), Zuruf ohne Spieler im Bild ignoriert, Wurf ohne Ansage (Aufnahme beginnt nicht mitten im Anlauf neu, Clip gespeichert), „Kamera bewegen“ → Linie neu ausgerichtet, Mikro-Test in der Einrichtung (an, Ruf gezählt, Empfindlichkeit, aus); keine Fehler in der Konsole.
+  - Demo mit Kameraposition 2: Linie ablaufen (eingerastet, genau), 4 Würfe wie simuliert bewertet, Wechsel 1 ↔ 2 behält die Linie jeder Position.
   - Mikrofon über das Fake-Mikrofon von Chromium mit der künstlichen Hallen-Tonspur aus `wav.mjs`: genau die 3 Rufe; Stopp während des Starts → Mikro bleibt aus.
 - Nach jeder Änderung an Erkennung, Ablauf oder Zuruf `npm test` laufen lassen.
 
@@ -116,18 +122,18 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 2. **leg – Sprungbein**: Rechtshänder links, Linkshänder rechts.
 3. **arm – Wurfarm**: bestes Frame im Fenster −0,04 … +0,08 s um den Absprung. Handgelenk über Nase = gut, über Schulter = mittel (Tipp), sonst zu tief.
 4. **rot – Körperdrehung**: Schulter-Yaw minus Hüft-Yaw aus worldLandmarks (x/z-Ebene). Wert = max(Spannweite der Verwindung, Änderung Schulter-Yaw) vom Absprung bis Wurf + 0,1 s. Grenze 25°, bei „falscher Seite“ (RH auf RA, LH auf LA) 35°; ≥ Grenze gut, ≥ halbe Grenze mittel (Tipp), darunter schlecht.
-5. **jump – Sprunghöhe**: (Basis − Hüft-Höchstpunkt) / Körperlänge: ≥ 0,25 hoch, ≥ 0,17 mittel, sonst flach.
+5. **jump – Sprunghöhe**: (Basis − Hüft-Höchstpunkt) / Körperlänge: ≥ 0,25 hoch, ≥ 0,17 mittel, sonst flach. Kameraposition 2: ≥ 0,36 hoch, ≥ 0,30 mittel (`TH_POS.court`). Grund: auf Position 1 läuft der Spieler in der Luft auf die erhöhte Kamera zu, die Hüfte sinkt im Bild, die Höhe wird zu klein gemessen; von der Seite (Position 2) passt sie fast zur echten Höhe. Im Demo dieselben Würfe: Position 1 0,32 / 0,26 / 0,13, Position 2 0,42 / 0,38 / 0,24.
 6. **lean – Oberkörper** beim Wurf (Frame mit max. Handgelenk-Geschwindigkeit): < 15° aufrecht; > 25° Richtung Torraum = kippt nach vorn; weg vom Torraum = Rücklage (ok).
 
-Alle Grenzwerte stehen in `TH` (`js/config.js`), nicht verstreut im Code.
+Alle Grenzwerte stehen in `TH` (`js/config.js`), Abweichungen je Kameraposition in `TH_POS`; der Code holt sie über `th()` (`store.js`).
 
 Feedback: Sprachansage = zufälliges Lob aus den guten Punkten + Kurz-Tipp des wichtigsten Fehlers. Texte in `tips()` (`js/feedback.js`) (short / tip / drill), Labels in `LABEL_GOOD` / `LABEL_BAD`, Reihenfolge in `PRIO`.
 
 ## Daten (localStorage)
-- `awc-settings`: `hand` (R/L), `pos` (LA/RA), `mode` (auto/timer/call), `callMin`, `callMax`, `sens` (low/mid/high), `clips` (Wurf-Videos an/aus), `pause`, `camera`, `model`, `targets[{name,on}]`, `line{pts[],inside,at,snapped,ref{w,h,g}}` (normalisiert 0–1; altes Format `{a,b,inside}` wird beim Laden zu `pts:[a,b]`), `session{id,start,last}`.
+- `awc-settings`: `hand` (R/L), `pos` (LA/RA), `camPos` (base/court), `lines{base,court}` (Linie je Kameraposition), `mode` (auto/timer/call), `callMin`, `callMax`, `sens` (low/mid/high), `clips` (Wurf-Videos an/aus), `pause`, `camera`, `model`, `targets[{name,on}]`, `line{pts[],inside,at,snapped,ref{w,h,g}}` (normalisiert 0–1; altes Format `{a,b,inside}` wird beim Laden zu `pts:[a,b]`), `session{id,start,last}`.
 - Demo-Modus: dieselben Daten unter `awc-demo-settings` / `awc-demo-log`.
 - `awc-log`: Array von Würfen `{nr, sid, target, res[{ok,txt}], issues[], good[], praise, main, tip, rot, noLine, m, hit, time, video, clip}`; max. 1000 Einträge.
-  - `m` = rohe Messwerte zum Kalibrieren: `line` (Fuß zur Linie beim Absprung, KL, + = im Torraum), `arm` (Handgelenk über der Nase, KL), `rot` (°), `jump` (Hüfte über Anlauf-Höhe, KL), `lean` (Oberkörper beim Wurf, °, + = Richtung Torraum), `fps` (Pose-Bilder pro Sekunde um den Sprung). KL = Körperlänge Schulter–Knöchel.
+  - `m` = rohe Messwerte zum Kalibrieren: `line` (Fuß zur Linie beim Absprung, KL, + = im Torraum), `arm` (Handgelenk über der Nase, KL), `rot` (°), `jump` (Hüfte über Anlauf-Höhe, KL), `lean` (Oberkörper beim Wurf, °, + = Richtung Torraum), `fps` (Pose-Bilder pro Sekunde um den Sprung), `cam` (Kameraposition base/court). KL = Körperlänge Schulter–Knöchel.
 - Neues Training automatisch nach > 3 h Pause oder per Button.
 
 ## Bericht
@@ -141,7 +147,8 @@ Die Grenzwerte (`TH` in `js/config.js`) sind bisher nur im Demo geprüft. Beim e
 3. Zuruf: Modus „Nach Zuruf“, in der Einrichtung „Mikro testen“. Vom Startpunkt rufen → grün und Piep. Ball prellen, Schuhe quietschen lassen, pfeifen → darf nicht zählen. Sonst Empfindlichkeit ändern.
 4. Würfe für die Grenzen, je 5–10 und bewusst: saubere Würfe; knapper Übertritt (Fuß auf/hinter der Linie); flache Sprünge; Arm unten; wenig Drehung; Oberkörper nach vorn fallen lassen. Reihenfolge notieren.
 5. Danach im Training-Fenster die Messwerte pro Wurf ansehen (Zweifelsfälle mit „▶︎ Video“ prüfen) und „Bericht als Datei“ teilen: der Bericht hat die Tabelle „Messwerte“.
-6. Grenzen in `TH` zwischen die Werte der guten und der bewusst schlechten Würfe legen. Übertritt: liegen echte Übertritte nur knapp im Plus oder saubere Absprünge im Plus, zuerst die Linie prüfen (Ablaufen wiederholen, Kamera fester).
+6. Grenzen in `TH` (Position 1) bzw. `TH_POS.court` (Position 2) zwischen die Werte der guten und der bewusst schlechten Würfe legen. Übertritt: liegen echte Übertritte nur knapp im Plus oder saubere Absprünge im Plus, zuerst die Linie prüfen (Ablaufen wiederholen, Kamera fester).
+- Beide Kamerapositionen getrennt kalibrieren (Spalte „Kamera“ im Bericht). Auch Oberkörper und Drehung können sich je Position unterscheiden; dann weitere Werte in `TH_POS` eintragen.
 - cm-Angaben in Log und Bericht sind Schätzungen (`KL_CM` = 140 cm Schulter–Knöchel). Für die Grenzen zählen die Verhältnisse, nicht die genauen cm.
 
 ## Bekannte Grenzen
@@ -152,7 +159,7 @@ Die Grenzwerte (`TH` in `js/config.js`) sind bisher nur im Demo geprüft. Beim e
 
 ## Ideen / offene Punkte
 - Hallentest nach der Checkliste oben, danach `TH` anpassen.
-- Ballflug/Treffer automatisch erkennen (Farberkennung der Ringe).
+- Ballflug/Treffer automatisch erkennen (Farberkennung der Ringe). Kameraposition 2 hat das Tor im Bild, dafür die passende Position.
 - PDF-Bericht direkt erzeugen.
 
 ## Historie
@@ -165,3 +172,4 @@ Die Grenzwerte (`TH` in `js/config.js`) sind bisher nur im Demo geprüft. Beim e
 - 2026-10-03: Strich am Boden erkennen und Linie einrasten (Ablaufen und Antippen), Hinweis auf gespeicherte Linie, Kamera-Check mit automatischem Nachjustieren, Demo-Modus (`?demo=1`) mit gezeichneter Halle und simulierter Person. Fix: Absprung-Frame beim Anlauf auf die Kamera zu (Boden als Gerade über die Zeit).
 - 2026-10-03: Ansage „Nach Zuruf“ (Mikrofon, Ziel 1–5 s nach dem Ruf, einstellbar) und kurze Videos pro Wurf (Zeitlupe, speichern/teilen).
 - 2026-10-03: Prüfung und Verbesserungen: Zuruf löst nicht mehr bei Dauerlärm, Quietschen, Pfiff aus, nur mit Spieler im Bild; Mikro bleibt nach Stopp aus; Mikro testen in der Einrichtung mit Pegelanzeige; Wurf-Videos in H.264/MP4 und abschaltbar, Anlauf bleibt im Clip; Ansage „Wenn Spieler im Bild steht“ wartet aufs Stehen (vorher Übertritt/Sprung falsch bei kurzer Pause); Messwerte pro Wurf für das Kalibrieren, Grenzen gesammelt in `TH`; automatische Tests in `tests/`.
+- 2026-10-03: Zweite Kameraposition „Feld mit Tor“ (hinter dem 7-m-Punkt, Tor und Absprungzone im Bild) in der Einrichtung, eigene Linie je Position, eigene Sprunghöhen-Grenzen, Demo und Test für Position 2.

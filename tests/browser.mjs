@@ -1,6 +1,6 @@
 // Browser-Tests mit Playwright (headless Chromium):
 //  1. Demo-Modus von vorn bis hinten: Linie ablaufen, Würfe, Wurf-Videos, Zuruf-Modus, Wurf ohne Ansage,
-//     Kamera bewegt, Mikro-Test in der Einrichtung.
+//     Kamera bewegt, Mikro-Test in der Einrichtung. Dazu Kameraposition 2 (Feld, Tor im Bild): Linie, Würfe, Linie je Position.
 //  2. Mikrofon: echte Web-Audio-Kette mit Fake-Mikrofon (künstliche Hallen-Tonspur aus wav.mjs).
 // Start: im Ordner tests „npm test“ (einmalig vorher „npm install“, Browser: „npx playwright install chromium“).
 import { test, before, after } from 'node:test';
@@ -178,6 +178,58 @@ test('Demo: Einrichtung, Würfe, Videos, Zuruf, Kamera bewegt', {timeout:300000}
     assert.equal(await page.evaluate(() => M.store.settings.sens), 'low');
     await page.click('#setup [data-a=micTest]');
     await until(page, () => !M.shout.mic.on, null, 3000, 'Mikro aus nach „Test beenden“');
+  });
+
+  assert.deepEqual(errors, [], 'Fehler in der Browser-Konsole');
+  await page.close();
+});
+
+test('Demo Kameraposition 2 (Feld, Tor im Bild): Linie, Würfe, eigene Linie je Position', {timeout:200000}, async t => {
+  const page = await browser.newPage({viewport:{width:1280, height:800}});
+  const errors = []; page.on('pageerror', e => errors.push(e.message));
+  page.on('console', m => { if(m.type()==='error') errors.push(m.text()); });
+  await page.addInitScript(() => { if(!sessionStorage.getItem('init')){ sessionStorage.setItem('init', '1'); localStorage.clear(); localStorage.setItem('awc-demo-settings', JSON.stringify({pause:1})); } });
+  await page.goto(srv.url + '?demo=1');
+  await modules(page);
+
+  await t.test('Position 2 wählen, Linie ablaufen: am Boden erkannt, genau', async () => {
+    await page.click('#btnStart');
+    await page.click('#setup [data-a=camPos][data-v=court]');
+    assert.equal(await page.evaluate(() => M.store.settings.camPos), 'court');
+    assert.match(await page.textContent('#setup'), /Tor, Linie und Absprungzone/);
+    await sleep(1000);   // Demo-Kamera auf Position 2
+    await page.click('#setup [data-a=wizard]');
+    await until(page, () => M.store.settings.line?.pts?.length >= 2, null, 90000, 'Linie gespeichert');
+    const line = await page.evaluate(() => M.store.settings.line);
+    assert.ok(line.snapped, 'Linie sollte am Boden eingerastet sein');
+    const e = stats(await px(page, line.pts));
+    assert.ok(e.med < 4 && e.max < 12, `Linienfehler Median ${e.med.toFixed(1)} px, max ${e.max.toFixed(1)} px`);
+  });
+
+  await t.test('4 Würfe, Bewertung wie simuliert', async () => {
+    await page.click('#setup [data-a=start]');
+    await until(page, () => M.store.log.length >= 4, null, 90000, '4 Würfe');
+    const log = await page.evaluate(() => M.store.log.slice(0, 4).map(e => ({issues:e.issues, m:e.m})));
+    log.forEach((e, i) => {
+      const has = x => e.issues.includes(x);
+      assert.equal(has('over'), i===2, `Wurf ${i+1}: Übertritt ${JSON.stringify(e.issues)} ${JSON.stringify(e.m)}`);
+      assert.equal(has('jump'), i===3, `Wurf ${i+1}: Sprung flach ${JSON.stringify(e.issues)} ${JSON.stringify(e.m)}`);
+      assert.equal(has('arm'), i===3, `Wurf ${i+1}: Arm ${JSON.stringify(e.issues)}`);
+      assert.ok(!has('leg'), `Wurf ${i+1}: Sprungbein`);
+      assert.equal(e.m.cam, 'court', `Wurf ${i+1}: Kameraposition im Messwert`);
+    });
+  });
+
+  await t.test('Jede Position behält ihre Linie', async () => {
+    await page.click('#btnStart');   // Stopp
+    const p2 = await page.evaluate(() => M.store.settings.line.pts);
+    await page.click('#btnLine');
+    await page.click('#setup [data-a=camPos][data-v=base]');
+    assert.equal(await page.evaluate(() => M.store.settings.line), null, 'Position 1 hat noch keine Linie');
+    assert.match(await page.textContent('#setup'), /6-m-Linie fehlt/);
+    await page.click('#setup [data-a=camPos][data-v=court]');
+    assert.deepEqual(await page.evaluate(() => M.store.settings.line.pts), p2, 'Linie von Position 2 wieder da');
+    await until(page, () => /Kamera steht wie bei der Einrichtung/.test(document.querySelector('#setup').textContent), null, 5000, 'Kamera-Check ok');
   });
 
   assert.deepEqual(errors, [], 'Fehler in der Browser-Konsole');

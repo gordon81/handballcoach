@@ -65,7 +65,7 @@
 #micChip.silent{background:var(--bad);color:#fff}
 .mictest{margin-top:10px;padding-top:8px;border-top:1px solid var(--line)}
 .mictest .muted{margin:8px 0 0}
-.btnrow.sens{margin-top:4px}
+.btnrow.sens,.btnrow.campos{margin-top:4px}
 .btnrow.sens button{padding:9px 4px}
 
 /* Demo-Modus: Leiste oben und Link auf der Startseite */
