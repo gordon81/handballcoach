@@ -4,6 +4,8 @@
 import { app } from './state.js';
 import { settings, store } from './store.js';
 import { $, video, canvas } from './dom.js';
+import { snapLine, simplify } from './lineDetect.js';
+import { makeRef } from './camCheck.js';
 
 // Altes Format {a, b, inside} (gerade Linie aus 2 Punkten) übernehmen.
 if(settings.line && settings.line.a) settings.line = {pts:[settings.line.a, settings.line.b], inside:settings.line.inside};
@@ -46,7 +48,12 @@ export function lineCenter(l){ return {x:l.pts.reduce((a,p)=>a+p.x,0)/l.pts.leng
 let listener = () => {};
 export function onLineChange(fn){ listener = fn; }
 
-export function saveLine(pts, inside){ settings.line = {pts, inside}; store(); listener(); }
+// meta: snapped (am Boden eingerastet), ref (Referenzbild für den Kamera-Check, sonst aktuelles Bild).
+export function saveLine(pts, inside, meta = {}){
+  settings.line = {pts, inside, at:Date.now(), snapped:false, ...meta};
+  if(!settings.line.ref) settings.line.ref = makeRef();
+  store(); listener();
+}
 export function clearLine(){ settings.line = null; store(); listener(); }
 
 // Antippen starten; optional mit schon vorhandenen Punkten (z. B. vom Ablaufen).
@@ -69,7 +76,11 @@ export function initLineMarking(){
   canvas.addEventListener('pointerdown', e => {
     if(!app.marking) return;
     const r = canvas.getBoundingClientRect(), p = {x:(e.clientX-r.left)/r.width, y:(e.clientY-r.top)/r.height};
-    if(app.markStep==='inside'){ const pts = app.marking; cancelMarking(); saveLine(pts, p); return; }
+    if(app.markStep==='inside'){
+      // Angetippte Punkte auf den gemalten Strich in der Nähe einrasten, wenn er sicher gefunden wird.
+      const pts = app.marking, sn = snapLine(pts, 0.03), sp = sn ? simplify(sn.pts, canvas.width/canvas.height) : [];
+      cancelMarking(); saveLine(sp.length >= 2 ? sp : pts, p, {snapped:sp.length >= 2}); return;
+    }
     app.marking.push(p); listener();
   });
 }

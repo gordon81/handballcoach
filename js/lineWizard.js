@@ -1,13 +1,18 @@
 // Linie ablaufen: Eine Person geht auf Sprachansage die 6-m-Linie entlang, die Pose-Erkennung
-// sammelt die Fußpunkte und macht daraus die Linie. Danach zwei Schritte in den Torraum = Torraum-Seite.
+// sammelt die Fußpunkte als grobe Lage. Im Kamerabild wird dann der gemalte Strich am Boden gesucht
+// und die Linie darauf eingerastet (sonst bleiben die Fußpunkte). Danach zwei Schritte in den Torraum = Torraum-Seite.
 import { canvas } from './dom.js';
 import { dist } from './utils.js';
 import { say } from './speech.js';
 import { curve, saveLine } from './line.js';
+import { grabFrame, medianFrame, snapLine, simplify } from './lineDetect.js';
+import { makeRef } from './camCheck.js';
 
 // phase: null | 'wait' (an den Anfang stellen) | 'walk' (Linie entlang) | 'inside' (in den Torraum)
-export const wizard = {phase:null, msg:'', path:[], pts:null};
+// snapped: Linie am Boden erkannt (true) oder nur aus Fußpunkten (false)
+export const wizard = {phase:null, msg:'', path:[], pts:null, snapped:false};
 let hist = [], start = null, moved = false, phaseT = 0, lastT = 0, listener = () => {};
+let frames = [], frameT = 0, bodyLen = 0, bgImg = null;   // Bilder während des Laufs (Median ohne Person)
 export function onWizardChange(fn){ listener = fn; }
 
 function setPhase(phase, msg, speak){
@@ -16,11 +21,11 @@ function setPhase(phase, msg, speak){
   listener();
 }
 export function startWizard(){
-  wizard.path = []; wizard.pts = null; moved = false;
+  wizard.path = []; wizard.pts = null; wizard.snapped = false; moved = false; frames = []; bgImg = null;
   setPhase('wait', 'Stell dich ans äußere Ende der 6-m-Linie, Füße auf der Linie, und warte kurz.',
     'Stell dich ans äußere Ende der Sechs-Meter-Linie und warte kurz.');
 }
-export function stopWizard(msg){ wizard.phase = null; wizard.path = []; wizard.pts = null; wizard.msg = msg || ''; listener(); }
+export function stopWizard(msg){ wizard.phase = null; wizard.path = []; wizard.pts = null; wizard.msg = msg || ''; frames = []; listener(); }
 // Lauf vorzeitig beenden (Button „Fertig“).
 export function finishWalkNow(){ if(wizard.phase==='walk') finishWalk(); }
 
@@ -41,12 +46,13 @@ export function wizardFrame(f, t){
 
   if(wizard.phase==='wait'){
     if(still && t-phaseT > 1.5){
-      start = f.hip; moved = false;
+      start = f.hip; moved = false; frames = [grabFrame()]; frameT = t;
       setPhase('walk', 'Langsam auf der Linie nach innen gehen, am Ende stehen bleiben.',
         'Los, langsam auf der Linie gehen. Am Ende stehen bleiben.');
     }
   } else if(wizard.phase==='walk'){
-    wizard.path.push(gp);
+    wizard.path.push(gp); bodyLen = f.bodyLen;
+    if(t-frameT > 1.2){ frames.push(grabFrame()); frameT = t; if(frames.length > 6) frames.splice(1, 1); }
     if(!moved && dist(f.hip, start) > 0.8*f.bodyLen) moved = true;
     if((moved && still) || t-phaseT > 30) finishWalk();
   } else if(wizard.phase==='inside'){
@@ -56,8 +62,8 @@ export function wizardFrame(f, t){
       const p = gp, c = curve(wizard.pts), ar = canvas.width/canvas.height;
       const dLine = Math.min(...c.map(q => Math.hypot((q.x-p.x)*ar, q.y-p.y)));
       if(dLine > 0.15*f.bodyLen/canvas.height){
-        saveLine(wizard.pts, p);
-        stopWizard('Linie gespeichert. Prüfe im Bild, ob die rote Linie passt.');
+        saveLine(wizard.pts, p, {snapped:wizard.snapped, ref:makeRef(bgImg || undefined)});
+        stopWizard(wizard.snapped ? 'Linie am Boden erkannt und gespeichert. Passt die rote Linie?' : 'Linie aus den Fußpunkten gespeichert (Strich am Boden nicht sicher erkannt). Passt die rote Linie?');
         say('Linie gespeichert.');
       }
     } else if(t-phaseT > 20){
@@ -67,22 +73,13 @@ export function wizardFrame(f, t){
 }
 
 function finishWalk(){
-  const pts = reduce(wizard.path);
+  const ar = canvas.width/canvas.height, pts = simplify(wizard.path, ar);
   if(pts.length < 2){ stopWizard('Zu wenig Weg erkannt. Nochmal ablaufen oder Punkte antippen.'); say('Das hat nicht geklappt.'); return; }
-  wizard.pts = pts; start = null; moved = false;
-  setPhase('inside', 'Jetzt zwei Schritte in den Torraum gehen und stehen bleiben.',
+  // Gemalten Strich in der Nähe der Fußpunkte suchen (Bild ohne Person: Median der Lauf-Bilder).
+  frames.push(grabFrame()); bgImg = medianFrame(frames); frames = [];
+  const sn = snapLine(pts, 0.3*bodyLen/canvas.height, bgImg), sp = sn ? simplify(sn.pts, ar) : [];
+  wizard.snapped = sp.length >= 2;
+  wizard.pts = wizard.snapped ? sp : pts; start = null; moved = false;
+  setPhase('inside', (wizard.snapped ? 'Linie am Boden erkannt (gelb). ' : 'Linie aus den Fußpunkten (gelb). ') + 'Jetzt zwei Schritte in den Torraum gehen und stehen bleiben.',
     'Gut. Jetzt zwei Schritte in den Torraum gehen und stehen bleiben.');
-}
-
-// Fußpunkte glätten und in gleichen Abständen auf 3–7 Linienpunkte reduzieren.
-function reduce(path){
-  if(path.length < 5) return [];
-  const med = a => { const s = [...a].sort((x,y) => x-y); return s[s.length>>1]; };
-  const sm = path.map((_, i) => { const w = path.slice(Math.max(0, i-3), i+4); return {x:med(w.map(p => p.x)), y:med(w.map(p => p.y))}; });
-  const ar = canvas.width/canvas.height, d = [0];
-  for(let i=1; i<sm.length; i++) d.push(d[i-1] + Math.hypot((sm[i].x-sm[i-1].x)*ar, sm[i].y-sm[i-1].y));
-  const len = d.at(-1); if(len < 0.05) return [];
-  const n = Math.max(3, Math.min(7, Math.round(len/0.06) + 1)), out = [];
-  for(let k=0; k<n; k++){ let i = d.findIndex(v => v >= len*k/(n-1)); if(i < 0) i = sm.length-1; out.push(sm[i]); }
-  return out;
 }

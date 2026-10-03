@@ -1,6 +1,7 @@
 // Videoquelle: Live-Kamera oder geladene Videodatei, plus Bildgröße/Overlay-Layout.
 import { app } from './state.js';
 import { settings } from './store.js';
+import { DEMO } from './config.js';
 import { $, video, canvas } from './dom.js';
 import { resetTracking } from './tracking.js';
 
@@ -8,8 +9,11 @@ let stream = null, fileURL = null;
 
 export async function startCamera(){
   stopSource();
-  if(!navigator.mediaDevices?.getUserMedia) throw new Error('Keine Kamera verfügbar. Die Seite muss über https geöffnet werden.');
-  stream = await navigator.mediaDevices.getUserMedia({audio:false, video:{facingMode:{ideal:settings.camera}, width:{ideal:1280}, height:{ideal:720}, frameRate:{ideal:60}}});
+  if(DEMO) stream = (await import('./demo/sim.js')).startDemo();   // gezeichnete Halle statt Kamera
+  else {
+    if(!navigator.mediaDevices?.getUserMedia) throw new Error('Keine Kamera verfügbar. Die Seite muss über https geöffnet werden.');
+    stream = await navigator.mediaDevices.getUserMedia({audio:false, video:{facingMode:{ideal:settings.camera}, width:{ideal:1280}, height:{ideal:720}, frameRate:{ideal:60}}});
+  }
   video.srcObject = stream; app.source = 'cam';
   await video.play(); afterSource();
 }

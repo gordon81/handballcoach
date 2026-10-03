@@ -27,7 +27,10 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
   - `utils.js`, `dom.js` – Helfer, Seitenelemente, Hinweis-Einblendung.
   - `speech.js`, `wakelock.js`, `model.js`, `source.js` – Sprache, Bildschirm wach, KI-Modell laden, Kamera/Video + Layout.
   - `line.js` – 6-m-Linie: Antippen (mit „Zurück“), Kurve, `inTorraum()`, `saveLine()`.
-  - `lineWizard.js` – Linie ablaufen: Person geht auf Sprachansage die Linie entlang, Fußpunkte werden zur Linie.
+  - `lineWizard.js` – Linie ablaufen: Person geht auf Sprachansage die Linie entlang, Fußpunkte geben die grobe Lage, dann Einrasten auf den Strich am Boden.
+  - `lineDetect.js` – Bodenlinie im Kamerabild finden (`snapLine`), Bild ohne Person (`medianFrame`), Punkte glätten/reduzieren (`simplify`).
+  - `camCheck.js` – Referenzbild bei der Einrichtung, Kamera-Check beim Öffnen der Einrichtung und beim Start, automatisches Nachjustieren.
+  - `demo/sim.js` – Demo-Modus: gezeichnete Halle, simulierte Person, Ersatz für Kamera und KI.
   - `tracking.js` – Zustandsautomat, Absprung-/Landungserkennung, speichert den Wurf.
   - `analysis.js` – `evaluate()`: die sechs Prüfungen und der Sprachtext.
   - `feedback.js` – Labels, `PRIO`, `tips()`.
@@ -37,7 +40,7 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 - `brain.md` – diese Datei.
 
 ## Technik
-- Pose-Erkennung: `@mediapipe/tasks-vision@0.10.14` (PoseLandmarker, runningMode `VIDEO`, 1 Person), geladen von cdn.jsdelivr.net.
+- Pose-Erkennung: `@mediapipe/tasks-vision@0.10.14` (PoseLandmarker, runningMode `VIDEO`, 1 Person), erst bei Bedarf per `import()` von cdn.jsdelivr.net geladen (Demo braucht es nicht).
 - Modelle von storage.googleapis.com: `lite` (~5,8 MB, Standard) oder `full` (~9,4 MB). GPU-Delegate mit CPU-Fallback.
 - 2D-Landmarks (Pixel) für Füße, Hüfte, Arm, Linie; `worldLandmarks` (3D, Meter) nur für die Körperdrehung.
 - Sprache: Web Speech API (`speechSynthesis`, de-DE). Muss einmal per Nutzer-Geste freigeschaltet werden (Start-Button sagt „Los geht's“).
@@ -49,14 +52,24 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 - **Start** lädt KI und Kamera und öffnet die Einrichtung; erst danach „Training starten“ (im Kamera-Modus nur mit gesetzter 6-m-Linie). Der Button „Setup“ öffnet die Einrichtung jederzeit. Video-Modus: Analyse startet direkt, Linie optional.
 - **Linie antippen**: Punkte entlang des Bogens, „↶ Zurück“ nimmt den letzten Punkt (bzw. den Torraum-Schritt) zurück, „Fertig“, dann 1 Punkt im Torraum. Die Leiste steht dabei oben, „⇅“ schiebt sie nach unten.
 - **Linie ablaufen** (`lineWizard.js`): Ansage „ans äußere Ende stellen“ → steht die Person 1,5 s still, „los, langsam auf der Linie gehen“ → gesammelt wird der Bodenpunkt des aufstehenden Fußes (Mitte Ferse/Spitze) → nach ≥ 0,8 Körperlängen Weg und ~1 s Stillstand (oder „Fertig“, max. 30 s) werden die Punkte geglättet (gleitender Median) und auf 3–7 Punkte in gleichen Abständen reduziert → „zwei Schritte in den Torraum und stehen bleiben“ → Stillstand mit genug Abstand zur Linie = Torraum-Punkt. Klappt das nicht (20 s), Torraum-Punkt antippen.
-- Noch nicht in der Halle getestet; nur mit simulierten Posen geprüft.
+- **Strich am Boden erkennen** (`lineDetect.js`): Während des Ablaufens werden alle ~1,2 s Bilder gesammelt, der pixelweise Median entfernt die Person. Quer zur Fußpunkt-Kurve wird in ±0,3 Körperlängen nach einem Streifen gesucht, der sich zu beiden Seiten vom Boden abhebt (Farbabstand, Breiten 1–6 px bei 640 px Bildbreite). Die Stärke ist gedeckelt, ein glatter Pfad (dynamische Programmierung) mit Strafe für Sprünge und für Abstand zu den Fußpunkten wählt den Strich: von mehreren Linien gewinnt die nächstgelegene (Basketball-, Volleyball-Linien). Sicher (≥ 50 % der Stellen klar) → Linie eingerastet („am Boden erkannt“), sonst bleiben die Fußpunkte. Angetippte Punkte werden ebenso eingerastet (Band ±3 % Bildhöhe).
+- **Gespeicherte Linie**: `line.at` (Datum), `line.snapped`, `line.ref` (Referenzbild 160 px Graustufen, base64). Beim Start mit vorhandener Linie: Hinweis „Linie von der letzten Einrichtung gefunden“, Button „Mit dieser Linie starten“, „Korrigieren“ = Antippen mit den alten Punkten.
+- **Kamera bewegt** (`camCheck.js`): beim Öffnen der Einrichtung und bei „Training starten“ wird das aktuelle Bild mit der Referenz verglichen (weichgezeichnete Kanten). Unterschied < 0,4 × mittlere Kantenstärke = unverändert. Sonst: beste Verschiebung suchen, Linie mitschieben und neu einrasten (Band ±6 %) → „neu ausgerichtet, bitte prüfen“ (Start erst beim zweiten Tippen). Klappt das nicht → „bitte neu einrichten“ (zweites Tippen auf Start startet trotzdem, z. B. wenn nur das Licht anders ist).
+- Noch nicht in der Halle getestet; geprüft im Demo-Modus (siehe unten).
+
+## Demo-Modus (am Schreibtisch testen)
+- `?demo=1` an die Adresse hängen (oder auf der Startseite „Demo ohne Kamera“). Eigener Speicher (`awc-demo-settings`, `awc-demo-log`), das echte Training bleibt unberührt.
+- `demo/sim.js` zeichnet eine Halle in Perspektive (Holzboden, gebogene 6-m-Linie, gestrichelte 9-m-Linie, Tor, dazu Basketball-, Volleyball-, Badminton- und grüne Linien als Störer) und eine Person. Das Bild geht per `canvas.captureStream()` ins `<video>`, die Körperpunkte kommen im MediaPipe-Format (`landmarks` + `worldLandmarks`) statt aus der KI. Einrichtung, Linienerkennung, Kamera-Check und Analyse laufen unverändert.
+- Die Person reagiert auf die Ansagen: ans Ende der Linie, Linie entlanggehen, zwei Schritte in den Torraum; im Training bei Ansage Anlauf und Sprungwurf. Würfe im Wechsel: gut, gut, Übertritt, flach mit Arm unten.
+- „Kamera bewegen“ verschiebt/schwenkt die Kamera (3 Stellungen) → Einrichtung/Start merkt es und richtet die Linie neu aus.
+- Automatischer Test (Playwright, headless Chromium): Ablaufen → Linie auf ≤ 2 px genau (außer äußerstes Ende ~8 px), 8 Würfe genau wie simuliert bewertet, Hinweis nach Neuladen, Nachjustieren nach „Kamera bewegen“, Antippen mit 8 px Fehler wird eingerastet.
 
 ## Ablauf (Zustandsautomat)
 `off` → `ready` → `runup` → `air` → `cool` → `ready` …
 - **ready**: Kamera-Modus „auto“ sagt ein Ziel an, sobald der Spieler ≥ 0,6 s sichtbar ist; Modus „timer“ nach 1,5 s. Im Video-Modus keine Ansagen.
 - **runup**: Ziel angesagt, wartet auf Sprung (Timeout 8 s → zurück zu ready).
 - **air**: Sprung erkannt, wenn Hüfte > 0,12 × Körperlänge über Basis UND beide Füße > 0,04 × Körperlänge über Boden, 2 Frames in Folge.
-  - Körperlänge = Abstand Schultermitte–Knöchelmitte. Boden = 80. Perzentil des tiefsten Fußpunkts, Basis-Hüfte = Median, jeweils aus Frames 0,8–0,15 s vorher.
+  - Körperlänge = Abstand Schultermitte–Knöchelmitte. Boden = Gerade über die Zeit durch den tiefsten Fußpunkt (Regression + 80. Perzentil der Abweichung), Basis-Hüfte = Median, jeweils aus Frames 0,8–0,15 s vorher. Die Gerade nötig, weil der Fußpunkt im Bild wandert, wenn der Spieler auf die Kamera zuläuft; mit festem Boden lag der Absprung-Frame dann schon in der Luft (im Demo gefunden: Übertritt übersehen).
   - Absprung-Frame = letzter Frame mit Fuß < 0,035 × Körperlänge über Boden; Sprungbein = der tiefere Fuß dort.
 - **Landung**: nach > 0,25 s, wenn Fuß wieder am Boden oder Hüfte < 0,04 über Basis; spätestens nach 1,8 s oder 0,4 s ohne Pose.
 - **cool**: Pause nach Wurf (Einstellung, Standard 4 s; im Video-Modus 0,6 s).
@@ -74,7 +87,8 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 Feedback: Sprachansage = zufälliges Lob aus den guten Punkten + Kurz-Tipp des wichtigsten Fehlers. Texte in `tips()` (`js/feedback.js`) (short / tip / drill), Labels in `LABEL_GOOD` / `LABEL_BAD`, Reihenfolge in `PRIO`.
 
 ## Daten (localStorage)
-- `awc-settings`: `hand` (R/L), `pos` (LA/RA), `mode` (auto/timer), `pause`, `camera`, `model`, `targets[{name,on}]`, `line{pts[],inside}` (normalisiert 0–1; altes Format `{a,b,inside}` wird beim Laden zu `pts:[a,b]`), `session{id,start,last}`.
+- `awc-settings`: `hand` (R/L), `pos` (LA/RA), `mode` (auto/timer), `pause`, `camera`, `model`, `targets[{name,on}]`, `line{pts[],inside,at,snapped,ref{w,h,g}}` (normalisiert 0–1; altes Format `{a,b,inside}` wird beim Laden zu `pts:[a,b]`), `session{id,start,last}`.
+- Demo-Modus: dieselben Daten unter `awc-demo-settings` / `awc-demo-log`.
 - `awc-log`: Array von Würfen `{nr, sid, target, res[{ok,txt}], issues[], good[], praise, main, tip, rot, noLine, hit, time, video}`; max. 1000 Einträge.
 - Neues Training automatisch nach > 3 h Pause oder per Button.
 
@@ -101,3 +115,4 @@ Feedback: Sprachansage = zufälliges Lob aus den guten Punkten + Kurz-Tipp des w
 - 2026-10-01: Aufteilung in `index.html`, `css/` und `js/`-Module (gleiches Verhalten, kein Build).
 - 2026-10-01: Fix: Startanleitung (`#empty`) blieb trotz `hidden` sichtbar (CSS `display:flex`) und fing alle Tipps ab; Hinweis-Text ist jetzt durchlässig (`pointer-events:none`) und steht beim Linie-Markieren oben.
 - 2026-10-01: Einrichtung vor dem Training (Start → Einrichtung → Training starten), „Zurück“ beim Antippen, Linie ablaufen mit Sprachansage.
+- 2026-10-03: Strich am Boden erkennen und Linie einrasten (Ablaufen und Antippen), Hinweis auf gespeicherte Linie, Kamera-Check mit automatischem Nachjustieren, Demo-Modus (`?demo=1`) mit gezeichneter Halle und simulierter Person. Fix: Absprung-Frame beim Anlauf auf die Kamera zu (Boden als Gerade über die Zeit).

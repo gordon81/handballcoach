@@ -11,12 +11,14 @@ import { initSheets } from './ui/sheets.js';
 import { initControls } from './ui/controls.js';
 import { initSettings } from './ui/settingsView.js';
 import { initSetup } from './ui/setupView.js';
+import { DEMO } from './config.js';
 
 initLineMarking();
 initSheets();
 initControls();
 initSettings();
 initSetup();
+if(DEMO){ const a = $('#demoLink'); a.textContent = 'Demo-Modus aktiv: „Start“ drücken. Hier zurück zur echten Kamera.'; a.href = './'; }
 document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible' && app.state!=='off') keepAwake(); });
 
 let fpsN = 0, fpsT0 = performance.now(), lastVT = -1;

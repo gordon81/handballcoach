@@ -10,7 +10,10 @@ Settings → Pages → Deploy from a branch → `main` / `(root)` → Save.
 ## Nutzung
 1. Handy aufs Stativ, schräg auf die Absprungzone, ganzer Körper im Bild.
 2. **Start** → Kamera erlauben.
-3. **Linie**: 2 Punkte auf der 6-m-Linie, dann 1 Punkt im Torraum antippen.
+3. **Einrichtung**: eine Person läuft die 6-m-Linie auf Ansage ab (die App sucht dabei den Strich am Boden und rastet die Linie ein) oder Punkte antippen. Gespeicherte Linie wird wiederverwendet; hat sich die Kamera bewegt, richtet die App die Linie neu aus.
 4. Spieler stellt sich ins Bild → Ziel wird angesagt → Wurf → Sprach-Feedback.
 5. **Video**: Clips (z. B. Bundesliga) laden und mit 0,5× analysieren.
 6. **Log**: Stärken, Schwerpunkte mit Übungen, Trefferquote je Ziel. **Bericht teilen** (Text, z. B. WhatsApp) oder **Bericht als Datei** (HTML, im Browser öffnen oder als PDF drucken).
+
+## Ohne Halle testen (Demo-Modus)
+https://gordon81.github.io/handballcoach/?demo=1 (oder lokal http://localhost:8000/?demo=1): gezeichnete Halle mit gebogener 6-m-Linie und einer simulierten Person, die die Linie abläuft und wirft. „Kamera bewegen“ prüft das Nachjustieren.

@@ -12,14 +12,14 @@ import { renderLog } from './ui/logView.js';
 
 const LABELS = {off:'Gestoppt', ready:'Bereit', runup:'Anlauf', air:'Sprung', cool:'Pause'};
 let H=[], visSince=null, lastSeen=-1, lastTarget=null;
-let groundY=null, baseHip=null, bodyRef=null, ev=null;
+let groundY=null, groundAt=null, baseHip=null, bodyRef=null, ev=null;
 
 export function setState(s, t){
   app.state = s; app.stateT = t;
   const el = $('#state'); el.dataset.s = s;
   el.textContent = (s==='ready' && app.source==='file') ? 'Analyse aktiv' : LABELS[s];
 }
-export function resetTracking(t){ H=[]; app.latest=null; visSince=null; ev=null; groundY=baseHip=bodyRef=null; app.target=null; hudTarget(null); if(app.state!=='off') setState('ready', t); }
+export function resetTracking(t){ H=[]; app.latest=null; visSince=null; ev=null; groundY=groundAt=baseHip=bodyRef=null; app.target=null; hudTarget(null); if(app.state!=='off') setState('ready', t); }
 export function hudTarget(name){ const el=$('#target'); el.textContent = name || ''; el.style.color = name ? colorOf(name) : ''; }
 
 // Ein Ergebnis der KI pro Videobild verarbeiten (aus der Hauptschleife).
@@ -62,7 +62,7 @@ function step(f, t){
   if(app.state==='air'){ airFrame(f, t, false); return; }
   const w = H.filter(h => !h.air && h.t >= t-0.8 && h.t <= t-0.15);
   if(w.length >= 4){
-    groundY = pct(w.map(h=>h.low), 0.8);
+    groundAt = groundFit(w); groundY = groundAt(t);
     baseHip = pct(w.map(h=>h.hip.y), 0.5);
     bodyRef = pct(w.map(h=>h.bodyLen), 0.5);
   }
@@ -72,11 +72,20 @@ function step(f, t){
   if(f.cand && prev?.cand) startAir(t);
 }
 
+// Boden als Gerade über die Zeit: läuft der Spieler auf die Kamera zu (oder weg), wandert der Fußpunkt
+// im Bild nach unten (oben). Ein fester Boden würde den Absprung dann zu spät (zu früh) ansetzen.
+function groundFit(w){
+  const n = w.length, mt = w.reduce((a,h)=>a+h.t,0)/n, ml = w.reduce((a,h)=>a+h.low,0)/n;
+  let sxy = 0, sxx = 0; for(const h of w){ sxy += (h.t-mt)*(h.low-ml); sxx += (h.t-mt)**2; }
+  const b = sxx > 1e-6 ? sxy/sxx : 0, off = pct(w.map(h => h.low - (ml + b*(h.t-mt))), 0.8);
+  return t => ml + b*(t-mt) + off;
+}
+
 function startAir(t){
-  const gy = groundY, bl = bodyRef;
+  const ga = groundAt, bl = bodyRef;
   let j = H.length-1;
-  while(j > 0 && H[j].low < gy - 0.035*bl) j--;
-  const tf = H[j];
+  while(j > 0 && H[j].low < ga(H[j].t) - 0.035*bl) j--;
+  const tf = H[j], gy = ga(tf.t);
   const foot = tf.foot[0].y >= tf.foot[1].y ? 0 : 1;      // 0 = links, 1 = rechts
   const win = H.filter(h => h.t >= tf.t-0.04 && h.t <= tf.t+0.08);
   const armF = win.reduce((b,h) => (h.wr.y-h.nose.y) < (b.wr.y-b.nose.y) ? h : b, tf);
