@@ -162,8 +162,12 @@ function standing(t){
 }
 
 function tick(t){
-  // Wurf ohne Ansage: auch dann aufnehmen, aber den Clip kurz halten (alle 6 s neu beginnen).
-  if(app.state==='ready' && app.source==='cam' && !app.marking){ const a = recAge(t); if(a===null || a > 6) recStart(t); }
+  // Wurf ohne Ansage: auch dann aufnehmen. Den Clip kurz halten (nach 6 s neu beginnen), aber nur, wenn
+  // der Spieler gerade steht oder nicht im Bild ist, sonst fehlte im Clip der Anlauf. Spätestens nach 15 s.
+  if(app.state==='ready' && app.source==='cam' && !app.marking){
+    const a = recAge(t), calm = !H.length || t - H.at(-1).t > 0.5 || standing(t);
+    if(a===null || (a > 6 && calm) || a > 15) recStart(t);
+  }
   if(app.state==='cool' && t-app.stateT >= (app.source==='file' ? 0.6 : settings.pause)) setState('ready', t);
   else if(app.state==='ready' && app.source==='cam' && !app.marking){
     if(settings.mode==='call'){ if(callAt!==null && t >= callAt){ callAt = null; announce(t); } }

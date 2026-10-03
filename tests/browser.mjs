@@ -1,6 +1,6 @@
 // Browser-Tests mit Playwright (headless Chromium):
-//  1. Demo-Modus von vorn bis hinten: Linie ablaufen, Würfe, Wurf-Videos, Zuruf-Modus, Kamera bewegt,
-//     Mikro-Test in der Einrichtung.
+//  1. Demo-Modus von vorn bis hinten: Linie ablaufen, Würfe, Wurf-Videos, Zuruf-Modus, Wurf ohne Ansage,
+//     Kamera bewegt, Mikro-Test in der Einrichtung.
 //  2. Mikrofon: echte Web-Audio-Kette mit Fake-Mikrofon (künstliche Hallen-Tonspur aus wav.mjs).
 // Start: im Ordner tests „npm test“ (einmalig vorher „npm install“, Browser: „npx playwright install chromium“).
 import { test, before, after } from 'node:test';
@@ -122,6 +122,25 @@ test('Demo: Einrichtung, Würfe, Videos, Zuruf, Kamera bewegt', {timeout:300000}
     await sleep(1000);
     await page.evaluate(() => M.shout.shoutNow());
     await until(page, () => M.app.state==='runup', null, 4000, 'Ansage nach Zuruf mit Spieler im Bild');
+  });
+
+  await t.test('Wurf ohne Ansage: Aufnahme beginnt nicht mitten im Anlauf neu', async () => {
+    await page.evaluate(() => { M.store.settings.callMin = M.store.settings.callMax = 60; });   // Zuruf ohne Ansage
+    // Laufende Aufnahme fast 6 s alt (danach würde sie neu beginnen), dann ohne Ansage werfen.
+    await until(page, () => M.app.state==='ready' && M.clips.recAge(performance.now()/1000) > 5.6, null, 40000, 'Aufnahme ~6 s alt');
+    const r = await page.evaluate(async () => {
+      const ages = [], n = M.store.log.length, iv = setInterval(() => ages.push(M.clips.recAge(performance.now()/1000)), 30);
+      M.sim._test.shoot();
+      await new Promise(res => { const c = setInterval(() => { if(M.store.log.length > n){ clearInterval(c); res(); } }, 50); setTimeout(res, 8000); });
+      clearInterval(iv);
+      const restarts = ages.filter((a, i) => i && a !== null && ages[i-1] !== null && a < ages[i-1] - 0.5).length;
+      return {restarts, n, n1:M.store.log.length};
+    });
+    assert.equal(r.n1, r.n + 1, 'Wurf ohne Ansage erkannt');
+    assert.equal(r.restarts, 0, 'Aufnahme wurde während des Anlaufs neu begonnen');
+    await until(page, () => M.store.log.at(-1).clip, null, 3000, 'Clip gespeichert');
+    assert.equal(await page.evaluate(() => M.store.log.at(-1).target), null);
+    await page.evaluate(() => { M.store.settings.callMin = M.store.settings.callMax = 2; });
   });
 
   await t.test('Kamera bewegt: Linie wird neu ausgerichtet', async () => {

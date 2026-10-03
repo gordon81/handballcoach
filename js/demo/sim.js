@@ -306,4 +306,5 @@ export function truthError(pts){
   const ref = []; for(let th=100; th<=180; th+=0.25){ const p = proj([...linePt(th), 0]); ref.push({x:p.x/W, y:p.y/H}); }
   return pts.map(p => Math.min(...ref.map(q => Math.hypot((p.x-q.x)*W/H, p.y-q.y))));
 }
-export const _test = {proj:(...a) => proj(...a), linePt};   // für automatische Tests
+// Für automatische Tests. shoot(): Wurf ohne Ansage starten.
+export const _test = {proj:(...a) => proj(...a), linePt, shoot(){ if(!shot) startShot(); }};

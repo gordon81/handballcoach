@@ -72,7 +72,7 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 - Einmalig: `cd tests && npm install` (Playwright), Browser bei Bedarf `npx playwright install chromium`. Dann `npm test` (~2 min) oder nur `npm run unit` (Sekunden, ohne Browser).
 - `unit.mjs` (Node): Ruf-Erkennung mit künstlichen Pegelverläufen: Ruf, Ballaufpralle, Quietschen, Pfiff, Dauerlärm + Ruf darüber, Sperre, eigene Ansage, Empfindlichkeit.
 - `browser.mjs` (Playwright, headless Chromium, eigener kleiner Webserver `server.mjs`):
-  - Demo von vorn bis hinten (Pause 1 s): Linie ablaufen (eingerastet, Median < 4 px, max < 12 px), 8 Würfe genau wie simuliert bewertet (gut, gut, Übertritt, flach + Arm unten), Videos gespeichert und abspielbar (MP4), „Videos aus“ → keine Clips, Zuruf-Modus (Ziel 2 s nach dem Ruf), Zuruf ohne Spieler im Bild ignoriert, „Kamera bewegen“ → Linie neu ausgerichtet, Mikro-Test in der Einrichtung (an, Ruf gezählt, Empfindlichkeit, aus); keine Fehler in der Konsole.
+  - Demo von vorn bis hinten (Pause 1 s): Linie ablaufen (eingerastet, Median < 4 px, max < 12 px), 8 Würfe genau wie simuliert bewertet (gut, gut, Übertritt, flach + Arm unten), Videos gespeichert und abspielbar (MP4), „Videos aus“ → keine Clips, Zuruf-Modus (Ziel 2 s nach dem Ruf), Zuruf ohne Spieler im Bild ignoriert, Wurf ohne Ansage (Aufnahme beginnt nicht mitten im Anlauf neu, Clip gespeichert), „Kamera bewegen“ → Linie neu ausgerichtet, Mikro-Test in der Einrichtung (an, Ruf gezählt, Empfindlichkeit, aus); keine Fehler in der Konsole.
   - Mikrofon über das Fake-Mikrofon von Chromium mit der künstlichen Hallen-Tonspur aus `wav.mjs`: genau die 3 Rufe; Stopp während des Starts → Mikro bleibt aus.
 - Nach jeder Änderung an Erkennung, Ablauf oder Zuruf `npm test` laufen lassen.
 
@@ -102,7 +102,7 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 - Getestet (siehe Tests): künstliche Pegelverläufe und eine künstliche Hallen-Tonspur über das Fake-Mikrofon von Chromium (Rauschen, Ballaufpralle mit Nachhall, Schuhquietschen, Pfiff, 8 s zweite Gruppe 20 dB lauter, 3 Rufe): genau die 3 Rufe erkannt. In der Halle noch nicht getestet.
 
 ## Wurf-Videos (`clips.js`)
-- Aufnahme ab der Zielansage bis 0,8 s nach der Landung (ohne Ansage: laufend, alle 6 s neu begonnen). Aufgenommen wird ein Bild aus Kamerabild + Overlay (Linie, Skelett) + Zielname, max. 720 px breit, 30 fps, 2 Mbit/s (~350 KB pro Wurf).
+- Aufnahme ab der Zielansage bis 0,8 s nach der Landung (ohne Ansage: laufend, nach 6 s neu begonnen, aber nur, wenn der Spieler gerade steht oder nicht im Bild ist, damit der Anlauf im Clip bleibt; spätestens nach 15 s). Aufgenommen wird ein Bild aus Kamerabild + Overlay (Linie, Skelett) + Zielname, max. 720 px breit, 30 fps, 2 Mbit/s (~350 KB pro Wurf).
 - Format: H.264 bevorzugt (`video/mp4;codecs=avc1…`, sonst WebM H.264, dann VP8). Grund: H.264 läuft auf Handys meist im Hardware-Encoder und nimmt der Pose-Erkennung keine Rechenzeit weg, und MP4 lässt sich überall abspielen und teilen (WhatsApp, Galerie). VP9 nicht mehr (oft Software-Kodierung).
 - Einstellung „Wurf-Videos: Aufnehmen / Aus“ (`clips`). Aus spart Rechenzeit und Speicher. In der Halle die fps-Anzeige mit und ohne Videos vergleichen: fällt sie deutlich (z. B. von 30 auf 20), Videos ausschalten oder Modell „Lite“ nehmen.
 - Gespeichert in IndexedDB `awc-clips` (Demo: `awc-demo-clips`), Schlüssel = `entry.time`, Log-Eintrag bekommt `clip:true`. Nur die letzten 60 Clips bleiben. „Gesamtes Log löschen“ löscht auch die Clips.
