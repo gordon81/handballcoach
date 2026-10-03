@@ -152,6 +152,15 @@ export function announce(t){
   if(app.source==='cam') recStart(t, c.name);   // Clip ab der Ansage
 }
 
+// Steht der Spieler (Hüfte in den letzten 0,6 s kaum bewegt)? Sonst käme die Ansage schon beim
+// Zurückgehen, und der Anlauf begänne aus dem Gehen (Absprung und Übertritt werden dann falsch erkannt).
+function standing(t){
+  const w = H.filter(h => h.t >= t - 0.6);
+  if(w.length < 4 || w[0].t > t - 0.5) return false;
+  const xs = w.map(h => h.hip.x), ys = w.map(h => h.hip.y), bl = pct(w.map(h => h.bodyLen), 0.5);
+  return Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) < 0.15*bl;
+}
+
 function tick(t){
   // Wurf ohne Ansage: auch dann aufnehmen, aber den Clip kurz halten (alle 6 s neu beginnen).
   if(app.state==='ready' && app.source==='cam' && !app.marking){ const a = recAge(t); if(a===null || a > 6) recStart(t); }
@@ -159,7 +168,7 @@ function tick(t){
   else if(app.state==='ready' && app.source==='cam' && !app.marking){
     if(settings.mode==='call'){ if(callAt!==null && t >= callAt){ callAt = null; announce(t); } }
     else if(settings.mode==='timer'){ if(t-app.stateT >= 1.5) announce(t); }
-    else if(visSince!==null && t-visSince >= 0.6 && t-app.stateT >= 0.5) announce(t);
+    else if(visSince!==null && t-visSince >= 0.6 && t-app.stateT >= 0.5 && standing(t)) announce(t);
   }
   else if(app.state==='runup' && t-app.stateT > 8){ app.target=null; hudTarget(null); setState('ready', t); }
 }
