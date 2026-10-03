@@ -1,11 +1,12 @@
 // Einrichtung vor dem Training: Kamera prüfen, 6-m-Linie ablaufen oder antippen, dann starten.
 // Gibt es schon eine Linie, wird sie angeboten; hat sich die Kamera bewegt, wird neu justiert.
 import { app } from '../state.js';
-import { settings, ensureSession } from '../store.js';
+import { settings, store, ensureSession } from '../store.js';
 import { $, showHint } from '../dom.js';
 import { esc, fmtDate } from '../utils.js';
-import { say, unlockBeep } from '../speech.js';
-import { syncMic } from '../micControl.js';
+import { say, beep, unlockBeep } from '../speech.js';
+import { syncMic, micUse } from '../micControl.js';
+import { mic, onShout } from '../shout.js';
 import { keepAwake, releaseWake } from '../wakelock.js';
 import { ensureModel } from '../model.js';
 import { startCamera, curT } from '../source.js';
@@ -15,6 +16,7 @@ import { wizard, onWizardChange, startWizard, stopWizard, finishWalkNow } from '
 import { checkCamera } from '../camCheck.js';
 
 let visible = false, cam = null;   // cam = letztes Ergebnis des Kamera-Checks
+let micHits = 0;                   // erkannte Rufe beim Mikro-Test
 
 // Kamera mit dem Bild von der Einrichtung vergleichen; bewegt → Linie neu ausrichten oder neu einrichten lassen.
 function runCamCheck(){
@@ -60,11 +62,23 @@ export function showSetup(check = true){
   if(check && !open && !app.marking && !wizard.phase) runCamCheck();
   render();
 }
-export function hideSetup(){ visible = false; render(); }
+export function hideSetup(){ visible = false; if(micUse.test){ micUse.test = false; syncMic(); } render(); }
+export const refreshSetup = () => render();
 export function toggleSetup(){ visible && !app.marking && !wizard.phase ? hideSetup() : showSetup(); }
 
 const icon = ok => ok ? '<span class="ic ok">✓</span>' : '<span class="ic mid">•</span>';
-const btn = (a, label, cls='', on=true) => `<button data-a="${a}" class="${cls}" ${on?'':'disabled'}>${label}</button>`;
+const btn = (a, label, cls='', on=true, v='') => `<button data-a="${a}" ${v ? `data-v="${v}"` : ''} class="${cls}" ${on?'':'disabled'}>${label}</button>`;
+const SENS_LABEL = {low:'Laute Halle', mid:'Mittel', high:'Leise Halle'};
+
+// Zuruf-Modus: Mikro vorher testen und die Empfindlichkeit vor Ort wählen.
+function micBlock(){
+  const msg = micHits ? `✓ Ruf erkannt (${micHits}×). Passt die Empfindlichkeit? Ballaufpralle und Quietschen dürfen nicht zählen.`
+    : mic.on ? (mic.silent ? 'Das Mikrofon liefert keinen Ton. Erlaubnis prüfen.' : 'Ruf jetzt laut („Hey!“) von deinem Startpunkt. Der Balken muss über den weißen Strich.')
+    : 'Vor dem Training testen, wie laut der Ruf sein muss.';
+  return `<div class="mictest"><p><b>Zuruf-Mikrofon:</b> ${esc(msg)}</p><span class="meter"><i class="lvl"></i><i class="thr"></i></span>
+    <div class="btnrow">${btn('micTest', micUse.test ? 'Test beenden' : 'Mikro testen')}</div>
+    <p class="muted">Empfindlichkeit:</p><div class="btnrow sens">${['low','mid','high'].map(k => btn('sens', SENS_LABEL[k], settings.sens===k ? 'on' : '', true, k)).join('')}</div></div>`;
+}
 const FLIP = '<button data-a="flip" class="flip" aria-label="Leiste oben/unten">⇅</button>';   // falls die Leiste die Linie verdeckt
 
 function render(){
@@ -97,6 +111,7 @@ function render(){
       </ul>
       ${wizard.msg ? `<p class="muted">${esc(wizard.msg)}</p>` : ''}
       <div class="btnrow">${btn('wizard','Linie ablaufen')}${btn('tap','Linie antippen')}${line ? btn('fix','Korrigieren') + btn('clear','Löschen') : ''}</div>
+      ${isCam && settings.mode==='call' ? micBlock() : ''}
       ${isCam && app.state==='off' ? `<button class="wide primaryBtn" data-a="start" ${line ? '' : 'disabled'}>${line && cam?.status==='ok' ? 'Mit dieser Linie starten' : 'Training starten'}</button>` : ''}`;
   }
   box.innerHTML = h;
@@ -115,10 +130,14 @@ const ACTIONS = {
   walkDone: finishWalkNow,
   tapInside(){ const pts = wizard.pts; stopWizard(); startTapMarking(pts, 'inside'); },
   wizCancel(){ stopWizard(); },
-  flip(){ $('#stage').classList.toggle('flip'); }
+  flip(){ $('#stage').classList.toggle('flip'); },
+  micTest(){ micUse.test = !micUse.test; micHits = 0; syncMic().then(render); render(); },
+  sens(el){ settings.sens = el.dataset.v; store(); render(); }
 };
 
 export function initSetup(){
   onLineChange(render); onWizardChange(render);
-  $('#setup').addEventListener('click', e => { const a = e.target.closest('[data-a]')?.dataset.a; if(a && ACTIONS[a]) ACTIONS[a](); });
+  $('#setup').addEventListener('click', e => { const el = e.target.closest('[data-a]'), a = el?.dataset.a; if(a && ACTIONS[a]) ACTIONS[a](el); });
+  // Mikro-Test: erkannter Ruf mit Piep quittieren (im Training macht das tracking.js).
+  onShout(() => { if(micUse.test && app.state==='off'){ micHits++; beep(); render(); } });
 }

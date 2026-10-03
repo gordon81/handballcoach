@@ -9,6 +9,7 @@ import { clearLine } from '../line.js';
 import { openSheet } from './sheets.js';
 import { syncMic } from '../micControl.js';
 import { recDrop } from '../clips.js';
+import { refreshSetup } from './setupView.js';
 
 function renderTargets(){
   const box = $('#sTargets'); box.innerHTML = '';
@@ -33,10 +34,10 @@ export function initSettings(){
   };
   $('#sHand').onchange = e => { settings.hand = e.target.value; store(); };
   $('#sPos').onchange = e => { settings.pos = e.target.value; store(); };
-  $('#sMode').onchange = e => { settings.mode = e.target.value; store(); showCallRows(); syncMic(); };
+  $('#sMode').onchange = e => { settings.mode = e.target.value; store(); showCallRows(); syncMic(); refreshSetup(); };
   // Feste 1–5 s oder zufällig 1–5 s (gespeichert als Bereich callMin…callMax).
   $('#sCallDelay').onchange = e => { const v = e.target.value; [settings.callMin, settings.callMax] = v==='r' ? [1, 5] : [+v, +v]; store(); };
-  $('#sSens').onchange = e => { settings.sens = e.target.value; store(); };
+  $('#sSens').onchange = e => { settings.sens = e.target.value; store(); refreshSetup(); };
   // Videos aus: spart Rechenzeit (höhere Bildrate für die Pose-Erkennung) und Speicher.
   $('#sClips').onchange = e => { settings.clips = e.target.value==='1'; store(); if(!settings.clips) recDrop(); };
   $('#sPause').onchange = e => { settings.pause = Math.max(1, +e.target.value || 4); store(); };

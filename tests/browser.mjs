@@ -1,5 +1,6 @@
 // Browser-Tests mit Playwright (headless Chromium):
-//  1. Demo-Modus von vorn bis hinten: Linie ablaufen, Würfe, Wurf-Videos, Zuruf-Modus, Kamera bewegt.
+//  1. Demo-Modus von vorn bis hinten: Linie ablaufen, Würfe, Wurf-Videos, Zuruf-Modus, Kamera bewegt,
+//     Mikro-Test in der Einrichtung.
 //  2. Mikrofon: echte Web-Audio-Kette mit Fake-Mikrofon (künstliche Hallen-Tonspur aus wav.mjs).
 // Start: im Ordner tests „npm test“ (einmalig vorher „npm install“, Browser: „npx playwright install chromium“).
 import { test, before, after } from 'node:test';
@@ -132,6 +133,19 @@ test('Demo: Einrichtung, Würfe, Videos, Zuruf, Kamera bewegt', {timeout:300000}
     await until(page, () => /neu ausgerichtet/.test(document.querySelector('#setup').textContent), null, 10000, 'Hinweis neu ausgerichtet');
     const e = stats(await px(page, await page.evaluate(() => M.store.settings.line.pts)));
     assert.ok(e.med < 4 && e.max < 12, `Linienfehler nach Bewegung: Median ${e.med.toFixed(1)} px, max ${e.max.toFixed(1)} px`);
+  });
+
+  await t.test('Mikro-Test in der Einrichtung', async () => {
+    assert.ok(await page.isVisible('#setup .mictest'), 'Mikro-Test im Zuruf-Modus sichtbar');
+    await page.click('#setup [data-a=micTest]');
+    await until(page, () => M.shout.mic.on, null, 3000, 'Mikro an');
+    assert.ok(await page.isVisible('#micChip'), 'Mikro-Anzeige oben im Bild');
+    await page.evaluate(() => M.shout.shoutNow());
+    assert.match(await page.textContent('#setup .mictest'), /Ruf erkannt \(1×\)/);
+    await page.click('#setup [data-a=sens][data-v=low]');
+    assert.equal(await page.evaluate(() => M.store.settings.sens), 'low');
+    await page.click('#setup [data-a=micTest]');
+    await until(page, () => !M.shout.mic.on, null, 3000, 'Mikro aus nach „Test beenden“');
   });
 
   assert.deepEqual(errors, [], 'Fehler in der Browser-Konsole');

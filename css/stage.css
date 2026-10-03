@@ -52,6 +52,21 @@
 .btnrow button.flip{flex:none;min-width:44px}
 .btnrow button.primaryBtn{background:var(--orange);color:#1a1000;border-color:transparent}
 .btnrow button{white-space:nowrap}
+#setup .btnrow button.on{background:var(--blue);border-color:transparent}
+/* Mikrofon-Pegel: Balken, weißer Strich = Schwelle, grün = Ruf erkannt */
+.meter{position:relative;display:block;height:10px;background:var(--panel2);border-radius:5px;overflow:hidden;margin-top:6px}
+.meter .lvl{position:absolute;left:0;top:0;bottom:0;background:var(--blue);transition:width .05s linear}
+.meter.hot .lvl{background:var(--orange)}
+.meter.flash .lvl{background:var(--ok);width:100% !important}
+.meter .thr{position:absolute;top:0;bottom:0;width:2px;background:#fff}
+#micChip{display:flex;align-items:center;gap:6px}
+#micChip[hidden]{display:none}
+#micChip .meter{width:56px;margin:0}
+#micChip.silent{background:var(--bad);color:#fff}
+.mictest{margin-top:10px;padding-top:8px;border-top:1px solid var(--line)}
+.mictest .muted{margin:8px 0 0}
+.btnrow.sens{margin-top:4px}
+.btnrow.sens button{padding:9px 4px}
 
 /* Demo-Modus: Leiste oben und Link auf der Startseite */
 #demoBar{position:absolute;top:48px;left:10px;z-index:16;display:flex;gap:8px;align-items:center}

@@ -7,6 +7,7 @@ import { processFrame, heardCall } from './tracking.js';
 import { onShout } from './shout.js';
 import { recFrame } from './clips.js';
 import { initClipView } from './ui/clipView.js';
+import { initMicMeter } from './ui/micMeter.js';
 import { wizardFrame } from './lineWizard.js';
 import { initLineMarking } from './line.js';
 import { draw } from './draw.js';
@@ -22,6 +23,7 @@ initControls();
 initSettings();
 initSetup();
 initClipView();
+initMicMeter();
 onShout(heardCall);
 if(DEMO){ const a = $('#demoLink'); a.textContent = 'Demo-Modus aktiv: „Start“ drücken. Hier zurück zur echten Kamera.'; a.href = './'; }
 document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible' && app.state!=='off') keepAwake(); });
