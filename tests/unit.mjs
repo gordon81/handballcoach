@@ -46,6 +46,22 @@ test('Dauerlärm (zweite Gruppe, Musik) löst nicht aus, danach wird ein Ruf dar
   assert.equal(hits.length, 1, `Ruf über dem Lärm: ${hits}`); assert.ok(hits[0] > 22);
 });
 
+test('Dauerlärm mit kurzen Einbrüchen: Grundpegel zieht trotzdem mit, Ruf darüber wird erkannt', () => {
+  // Wie eine zweite Gruppe: schwankt, alle 0,3 s kurz 5 dB leiser (unter der Schwelle, sobald der Grundpegel
+  // etwas nachgezogen hat). Ruf 6 s nach Lärmbeginn.
+  const babble = s => noise(s, -30, -35).map((m, i) => i % 10 === 9 ? {v:-35, hi:-40} : m);
+  const seq = [...noise(2), ...babble(6), ...shout(400, -8).map(m => ({v:Math.max(m.v, -30), hi:Math.max(m.hi, -35)})), ...babble(3)];
+  const hits = run(seq);
+  assert.equal(hits.length, 1, `Ruf über dem Lärm: ${hits}`); assert.ok(hits[0] > 8 && hits[0] < 9.5, `Treffer bei ${hits}`);
+});
+
+test('Mikrofon liefert anfangs keinen Ton: Grundpegel bleibt richtig, der erste Ruf zählt', () => {
+  // Beim Start kommen oft ein paar Messungen ganz ohne Ton (−200 dB), bevor das Mikrofon läuft.
+  const silence = s => Array.from({length:n(s)}, () => ({v:-200, hi:-200}));
+  const hits = run([...silence(0.3), ...noise(1), ...shout(), ...noise(2), ...bounce(), ...noise(2)]);
+  assert.equal(hits.length, 1, `Treffer bei ${hits}`); assert.ok(near(hits, 1.3, 1.2), `Treffer bei ${hits}`);
+});
+
 test('Lauter Ruf (1,5 s) mit Nachhall zählt, aber nur einmal', () => {
   assert.equal(run([...noise(2), ...shout(1500, -20), ...noise(2)]).length, 1);
 });
