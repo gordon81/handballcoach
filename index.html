@@ -59,9 +59,9 @@
     <label class="row">Wurfhand <select id="sHand"><option value="R">Rechts</option><option value="L">Links</option></select></label>
     <label class="row">Position <select id="sPos"><option value="LA">Linksaußen</option><option value="RA">Rechtsaußen</option></select></label>
     <label class="row">Ansage <select id="sMode"><option value="auto">Wenn Spieler im Bild steht</option><option value="timer">Nach fester Pause</option><option value="call">Nach Zuruf (Mikrofon)</option></select></label>
-    <div class="row callOnly">Ziel nach Zuruf (s) <span class="range"><input type="number" id="sCallMin" min="0" max="10" step="0.5" aria-label="frühestens"> bis <input type="number" id="sCallMax" min="0" max="10" step="0.5" aria-label="spätestens"></span></div>
+    <label class="row callOnly">Ziel nach Zuruf <select id="sCallDelay"><option value="1">1 s</option><option value="2">2 s</option><option value="3">3 s</option><option value="4">4 s</option><option value="5">5 s</option><option value="r">Zufällig 1–5 s</option></select></label>
     <label class="row callOnly">Mikrofon-Empfindlichkeit <select id="sSens"><option value="low">Niedrig (laute Halle)</option><option value="mid">Mittel</option><option value="high">Hoch (leise Halle)</option></select></label>
-    <p class="muted callOnly">Ruf laut („Hey!“), wenn du bereit bist. Ein Piep bestätigt, das Ziel kommt zufällig im eingestellten Zeitraum danach. Das Handy erkennt nur die Lautstärke, kein bestimmtes Wort.</p>
+    <p class="muted callOnly">Ruf laut („Hey!“), wenn du bereit bist. Ein Piep bestätigt, das Ziel kommt nach der eingestellten Zeit. Das Handy erkennt nur die Lautstärke, kein bestimmtes Wort.</p>
     <label class="row">Pause nach Wurf (s) <input type="number" id="sPause" min="1" max="30" step="1"></label>
     <label class="row">Kamera <select id="sCam"><option value="environment">Rückkamera</option><option value="user">Frontkamera</option></select></label>
     <label class="row">KI-Modell <select id="sModel"><option value="lite">Lite (schneller)</option><option value="full">Full (genauer)</option></select></label>
