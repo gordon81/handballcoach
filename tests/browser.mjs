@@ -111,7 +111,11 @@ test('Demo: Einrichtung, Würfe, Videos, Zuruf, Kamera bewegt', {timeout:300000}
   });
 
   await t.test('Zuruf ohne Spieler im Bild wird ignoriert', async () => {
+    // Person ruft nicht mehr von selbst; ein schon gehörter Ruf läuft vorher ab (Ansage, Wurf, Pause).
+    await page.evaluate(() => M.sim._test.autoCall(false));
     await until(page, () => M.app.state==='ready', null, 15000, 'bereit');
+    await sleep(2500);
+    await until(page, () => M.app.state==='ready', null, 15000, 'bereit ohne offenen Zuruf');
     await page.evaluate(() => { window.origDetect = M.sim.detector.detectForVideo; M.sim.detector.detectForVideo = () => null; });
     await sleep(2500);
     await page.evaluate(() => M.shout.shoutNow());
@@ -122,6 +126,7 @@ test('Demo: Einrichtung, Würfe, Videos, Zuruf, Kamera bewegt', {timeout:300000}
     await sleep(1000);
     await page.evaluate(() => M.shout.shoutNow());
     await until(page, () => M.app.state==='runup', null, 4000, 'Ansage nach Zuruf mit Spieler im Bild');
+    await page.evaluate(() => M.sim._test.autoCall(true));
   });
 
   await t.test('Wurf ohne Ansage: Aufnahme beginnt nicht mitten im Anlauf neu', async () => {

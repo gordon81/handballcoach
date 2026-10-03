@@ -124,7 +124,7 @@ function turnTo(a, dt){ let da = ((a - P.a + 3*Math.PI) % (2*Math.PI)) - Math.PI
 function stand(dt, face){ P.s = Math.max(0, P.s - dt*4); if(face!==undefined) turnTo(face, dt); }
 const toward = T => Math.atan2(T[1]-P.y, T[0]-P.x);
 
-let called = false, readyFor = 0;
+let called = false, readyFor = 0, autoCall = true;   // autoCall: Person ruft von selbst (Tests schalten das ab)
 export const demo = {calls:[]};   // Zeitpunkte der Zurufe (für Tests)
 
 // Verhalten: reagiert auf die Ansagen der App wie ein Mensch, der zuhört.
@@ -148,7 +148,7 @@ function behave(dt){
   if(moveTo(S, app.state==='cool' ? 2 : 1.4, dt)){
     stand(dt, toward(linePt(150)));
     // Modus „Zuruf“: am Startpunkt kurz stehen, dann rufen (einmal pro Wurf).
-    if(app.state==='ready' && settings.mode==='call' && !called){ readyFor += dt; if(readyFor > 0.8){ called = true; demo.calls.push(performance.now()); shoutNow(); showHint('Demo: Spieler ruft „Hey!“', 1200); } }
+    if(app.state==='ready' && settings.mode==='call' && !called && autoCall){ readyFor += dt; if(readyFor > 0.8){ called = true; demo.calls.push(performance.now()); shoutNow(); showHint('Demo: Spieler ruft „Hey!“', 1200); } }
   }
   if(app.state!=='ready') readyFor = 0;
 }
@@ -307,4 +307,4 @@ export function truthError(pts){
   return pts.map(p => Math.min(...ref.map(q => Math.hypot((p.x-q.x)*W/H, p.y-q.y))));
 }
 // Für automatische Tests. shoot(): Wurf ohne Ansage starten.
-export const _test = {proj:(...a) => proj(...a), linePt, shoot(){ if(!shot) startShot(); }};
+export const _test = {proj:(...a) => proj(...a), linePt, shoot(){ if(!shot) startShot(); }, autoCall(on){ autoCall = on; }};
