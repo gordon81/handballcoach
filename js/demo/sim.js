@@ -6,6 +6,7 @@ import { app } from '../state.js';
 import { settings } from '../store.js';
 import { wizard } from '../lineWizard.js';
 import { showHint } from '../dom.js';
+import { shoutNow } from '../shout.js';
 
 const W = 1280, H = 720, F = W/2/Math.tan(33*Math.PI/180);   // ca. 66° Bildwinkel
 const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
@@ -123,6 +124,9 @@ function turnTo(a, dt){ let da = ((a - P.a + 3*Math.PI) % (2*Math.PI)) - Math.PI
 function stand(dt, face){ P.s = Math.max(0, P.s - dt*4); if(face!==undefined) turnTo(face, dt); }
 const toward = T => Math.atan2(T[1]-P.y, T[0]-P.x);
 
+let called = false, readyFor = 0;
+export const demo = {calls:[]};   // Zeitpunkte der Zurufe (für Tests)
+
 // Verhalten: reagiert auf die Ansagen der App wie ein Mensch, der zuhört.
 function behave(dt){
   if(shot){ shotStep(dt); return; }
@@ -140,8 +144,13 @@ function behave(dt){
     return;
   }
   if(ph==='inside'){ const T = linePt(walkTh ?? 128, 5.1); if(moveTo(T, 0.8, dt, 0.6)) stand(dt); return; }
-  if(app.state==='runup' && !app.marking){ startShot(); return; }
-  if(moveTo(S, app.state==='cool' ? 2 : 1.4, dt)) stand(dt, toward(linePt(150)));
+  if(app.state==='runup' && !app.marking){ called = false; startShot(); return; }
+  if(moveTo(S, app.state==='cool' ? 2 : 1.4, dt)){
+    stand(dt, toward(linePt(150)));
+    // Modus „Zuruf“: am Startpunkt kurz stehen, dann rufen (einmal pro Wurf).
+    if(app.state==='ready' && settings.mode==='call' && !called){ readyFor += dt; if(readyFor > 0.8){ called = true; demo.calls.push(performance.now()); shoutNow(); showHint('Demo: Spieler ruft „Hey!“', 1200); } }
+  }
+  if(app.state!=='ready') readyFor = 0;
 }
 
 // Sprungwurf: Anlauf, Absprung links (Rechtshänder), Ausholen, Drehung, Wurf, Landung.
@@ -284,8 +293,9 @@ export function moveCamera(){ moveIdx = (moveIdx + 1) % MOVES.length; setCamera(
 
 function addBar(){
   const bar = document.createElement('div'); bar.id = 'demoBar';
-  bar.innerHTML = '<span class="chip">Demo</span><button data-d="move">Kamera bewegen</button><a href="./">Beenden</a>';
+  bar.innerHTML = '<span class="chip">Demo</span><button data-d="move">Kamera bewegen</button><button data-d="call">Zuruf</button><a href="./">Beenden</a>';
   bar.addEventListener('click', e => {
+    if(e.target.dataset.d==='call'){ demo.calls.push(performance.now()); shoutNow(); }
     if(e.target.dataset.d==='move'){ moveCamera(); showHint('Kamera bewegt. Tippe auf „Setup“ oder „Start“: die App merkt es und justiert neu.', 4000); }
   });
   document.getElementById('stage').appendChild(bar);

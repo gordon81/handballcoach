@@ -4,7 +4,8 @@ import { app } from '../state.js';
 import { settings, ensureSession } from '../store.js';
 import { $, showHint } from '../dom.js';
 import { esc, fmtDate } from '../utils.js';
-import { say } from '../speech.js';
+import { say, unlockBeep } from '../speech.js';
+import { syncMic } from '../micControl.js';
 import { keepAwake, releaseWake } from '../wakelock.js';
 import { ensureModel } from '../model.js';
 import { startCamera, curT } from '../source.js';
@@ -50,9 +51,9 @@ export function startTraining(){
     if(c && (c.status==='adjusted' || (c.status==='moved' && prev!=='moved'))){ showSetup(false); return; }
   }
   cancelMarking(); stopWizard(); hideSetup();
-  say('Los geht’s'); ensureSession(); setState('ready', curT()); setRunning(true); keepAwake();
+  say('Los geht’s'); unlockBeep(); ensureSession(); setState('ready', curT()); setRunning(true); keepAwake(); syncMic();
 }
-export function stopTraining(){ setState('off', curT()); app.target=null; hudTarget(null); setRunning(false); releaseWake(); }
+export function stopTraining(){ setState('off', curT()); app.target=null; hudTarget(null); setRunning(false); releaseWake(); syncMic(); }
 
 export function showSetup(check = true){
   const open = visible; visible = true;

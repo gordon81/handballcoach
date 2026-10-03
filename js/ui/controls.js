@@ -6,6 +6,7 @@ import { ensureModel } from '../model.js';
 import { startCamera, loadFile, curT } from '../source.js';
 import { setState, announce } from '../tracking.js';
 import { cancelMarking } from '../line.js';
+import { clearClips } from '../clips.js';
 import { shareText, shareFile } from '../report.js';
 import { renderLog } from './logView.js';
 import { openSheet } from './sheets.js';
@@ -43,7 +44,7 @@ export function initControls(){
 
   /* Training-Fenster */
   $('#btnLog').onclick = () => { renderLog(); openSheet('#logSheet'); };
-  $('#logClear').onclick = () => { if(confirm('Alle Würfe aller Trainings löschen?')){ clearLog(); renderLog(); } };
+  $('#logClear').onclick = () => { if(confirm('Alle Würfe aller Trainings löschen?')){ clearLog(); clearClips(); renderLog(); } };
   $('#repShare').onclick = shareText;
   $('#repFile').onclick = shareFile;
   $('#newSession').onclick = () => { if(confirm('Neues Training starten? Das aktuelle bleibt im Speicher.')){ ensureSession(true); renderLog(); showHint('Neues Training gestartet', 1800); } };

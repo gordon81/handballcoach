@@ -18,7 +18,7 @@ export function renderLog(){
     ${keys.map(k => `<div style="color:${colorOf(k)}">${esc(k)}</div><div>${s.byT[k].clean}/${s.byT[k].n}</div><div>${s.byT[k].rated ? s.byT[k].hit+'/'+s.byT[k].rated : '–'}</div>`).join('')}</div>`;
   h += `<h3>Würfe</h3>` + [...list].reverse().map(e => {
     const hit = e.hit===true ? ', Treffer' : e.hit===false ? ', daneben' : '';
-    return `<div class="entry"><b>Wurf ${e.nr}</b> ${e.target ? `<span style="color:${colorOf(e.target)}">${esc(e.target)}</span>` : ''}<small>${hit}</small><br>
+    return `<div class="entry">${e.clip ? `<button class="vbtn" data-clip="${e.time}">▶︎ Video</button>` : ''}<b>Wurf ${e.nr}</b> ${e.target ? `<span style="color:${colorOf(e.target)}">${esc(e.target)}</span>` : ''}<small>${hit}</small><br>
       <small>${e.praise ? 'Gut: ' + esc(e.praise) + '. ' : ''}${e.main ? 'Besser: ' + esc(LABEL_BAD[e.main]) : 'Alles sauber'}</small></div>`;
   }).join('');
   box.innerHTML = h;

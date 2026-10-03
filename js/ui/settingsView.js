@@ -7,6 +7,7 @@ import { landmarker, ensureModel } from '../model.js';
 import { startCamera } from '../source.js';
 import { clearLine } from '../line.js';
 import { openSheet } from './sheets.js';
+import { syncMic } from '../micControl.js';
 
 function renderTargets(){
   const box = $('#sTargets'); box.innerHTML = '';
@@ -21,14 +22,24 @@ function renderTargets(){
   });
 }
 
+function showCallRows(){ document.querySelectorAll('.callOnly').forEach(el => el.hidden = settings.mode!=='call'); }
+
 export function initSettings(){
   $('#btnSet').onclick = () => {
     $('#sHand').value = settings.hand; $('#sPos').value = settings.pos; $('#sMode').value = settings.mode; $('#sPause').value = settings.pause;
+    $('#sCallMin').value = settings.callMin; $('#sCallMax').value = settings.callMax; $('#sSens').value = settings.sens; showCallRows();
     $('#sCam').value = settings.camera; $('#sModel').value = settings.model; renderTargets(); openSheet('#setSheet');
   };
   $('#sHand').onchange = e => { settings.hand = e.target.value; store(); };
   $('#sPos').onchange = e => { settings.pos = e.target.value; store(); };
-  $('#sMode').onchange = e => { settings.mode = e.target.value; store(); };
+  $('#sMode').onchange = e => { settings.mode = e.target.value; store(); showCallRows(); syncMic(); };
+  const range = () => {
+    let lo = Math.max(0, Math.min(10, +$('#sCallMin').value || 0)), hi = Math.max(0, Math.min(10, +$('#sCallMax').value || 0));
+    if(hi < lo) [lo, hi] = [hi, lo];
+    settings.callMin = lo; settings.callMax = hi; $('#sCallMin').value = lo; $('#sCallMax').value = hi; store();
+  };
+  $('#sCallMin').onchange = range; $('#sCallMax').onchange = range;
+  $('#sSens').onchange = e => { settings.sens = e.target.value; store(); };
   $('#sPause').onchange = e => { settings.pause = Math.max(1, +e.target.value || 4); store(); };
   $('#sCam').onchange = async e => { settings.camera = e.target.value; store(); if(app.source==='cam'){ try{ await startCamera(); }catch(err){ showHint('Kamera-Fehler: ' + err.message, 5000); } } };
   $('#sModel').onchange = async e => { settings.model = e.target.value; store(); if(landmarker){ try{ await ensureModel(); }catch(err){ showHint('Modell-Fehler: ' + err.message, 5000); } } };

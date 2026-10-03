@@ -30,6 +30,8 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
   - `lineWizard.js` – Linie ablaufen: Person geht auf Sprachansage die Linie entlang, Fußpunkte geben die grobe Lage, dann Einrasten auf den Strich am Boden.
   - `lineDetect.js` – Bodenlinie im Kamerabild finden (`snapLine`), Bild ohne Person (`medianFrame`), Punkte glätten/reduzieren (`simplify`).
   - `camCheck.js` – Referenzbild bei der Einrichtung, Kamera-Check beim Öffnen der Einrichtung und beim Start, automatisches Nachjustieren.
+  - `shout.js` + `micControl.js` – Zuruf per Mikrofon erkennen (Lautstärke über Grundpegel), Mikro nur im Modus „Zuruf“ während des Trainings an.
+  - `clips.js` – Wurf-Videos aufnehmen (MediaRecorder) und in IndexedDB speichern. `ui/clipView.js` – Video ansehen (Zeitlupe, Speichern/Teilen).
   - `demo/sim.js` – Demo-Modus: gezeichnete Halle, simulierte Person, Ersatz für Kamera und KI.
   - `tracking.js` – Zustandsautomat, Absprung-/Landungserkennung, speichert den Wurf.
   - `analysis.js` – `evaluate()`: die sechs Prüfungen und der Sprachtext.
@@ -60,19 +62,32 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 ## Demo-Modus (am Schreibtisch testen)
 - `?demo=1` an die Adresse hängen (oder auf der Startseite „Demo ohne Kamera“). Eigener Speicher (`awc-demo-settings`, `awc-demo-log`), das echte Training bleibt unberührt.
 - `demo/sim.js` zeichnet eine Halle in Perspektive (Holzboden, gebogene 6-m-Linie, gestrichelte 9-m-Linie, Tor, dazu Basketball-, Volleyball-, Badminton- und grüne Linien als Störer) und eine Person. Das Bild geht per `canvas.captureStream()` ins `<video>`, die Körperpunkte kommen im MediaPipe-Format (`landmarks` + `worldLandmarks`) statt aus der KI. Einrichtung, Linienerkennung, Kamera-Check und Analyse laufen unverändert.
+- Im Modus „Zuruf“ ruft die Person am Startpunkt (Hinweis „Demo: Spieler ruft“), Button „Zuruf“ in der Demo-Leiste ruft von Hand.
 - Die Person reagiert auf die Ansagen: ans Ende der Linie, Linie entlanggehen, zwei Schritte in den Torraum; im Training bei Ansage Anlauf und Sprungwurf. Würfe im Wechsel: gut, gut, Übertritt, flach mit Arm unten.
 - „Kamera bewegen“ verschiebt/schwenkt die Kamera (3 Stellungen) → Einrichtung/Start merkt es und richtet die Linie neu aus.
 - Automatischer Test (Playwright, headless Chromium): Ablaufen → Linie auf ≤ 2 px genau (außer äußerstes Ende ~8 px), 8 Würfe genau wie simuliert bewertet, Hinweis nach Neuladen, Nachjustieren nach „Kamera bewegen“, Antippen mit 8 px Fehler wird eingerastet.
 
 ## Ablauf (Zustandsautomat)
 `off` → `ready` → `runup` → `air` → `cool` → `ready` …
-- **ready**: Kamera-Modus „auto“ sagt ein Ziel an, sobald der Spieler ≥ 0,6 s sichtbar ist; Modus „timer“ nach 1,5 s. Im Video-Modus keine Ansagen.
+- **ready**: Kamera-Modus „auto“ sagt ein Ziel an, sobald der Spieler ≥ 0,6 s sichtbar ist; Modus „timer“ nach 1,5 s; Modus „call“ (Nach Zuruf): Spieler ruft laut, Piep als Quittung, Ziel nach zufällig `callMin`…`callMax` s (Standard 1–5). Ein Ruf in der Pause nach dem Wurf zählt auch, die Ansage kommt dann frühestens nach der Pause. Im Video-Modus keine Ansagen.
 - **runup**: Ziel angesagt, wartet auf Sprung (Timeout 8 s → zurück zu ready).
 - **air**: Sprung erkannt, wenn Hüfte > 0,12 × Körperlänge über Basis UND beide Füße > 0,04 × Körperlänge über Boden, 2 Frames in Folge.
   - Körperlänge = Abstand Schultermitte–Knöchelmitte. Boden = Gerade über die Zeit durch den tiefsten Fußpunkt (Regression + 80. Perzentil der Abweichung), Basis-Hüfte = Median, jeweils aus Frames 0,8–0,15 s vorher. Die Gerade nötig, weil der Fußpunkt im Bild wandert, wenn der Spieler auf die Kamera zuläuft; mit festem Boden lag der Absprung-Frame dann schon in der Luft (im Demo gefunden: Übertritt übersehen).
   - Absprung-Frame = letzter Frame mit Fuß < 0,035 × Körperlänge über Boden; Sprungbein = der tiefere Fuß dort.
 - **Landung**: nach > 0,25 s, wenn Fuß wieder am Boden oder Hüfte < 0,04 über Basis; spätestens nach 1,8 s oder 0,4 s ohne Pose.
 - **cool**: Pause nach Wurf (Einstellung, Standard 4 s; im Video-Modus 0,6 s).
+
+## Zuruf (Mikrofon, `shout.js`)
+- Kein Spracherkenner, nur Pegel: RMS alle 30 ms, Grundpegel = Mittel der ersten 0,5 s, danach langsam nachgeführt (nach unten schneller). Ruf = ≥ 120 ms über Grundpegel + Empfindlichkeit (`sens`: low 20 / mid 14 / high 9 dB, mindestens −55 dBFS), danach 1,5 s Sperre. Kurze Knalle (Ballaufprall ~15 ms) zählen nicht.
+- Echo-/Rauschunterdrückung und Pegelautomatik aus (sonst wird der Ruf weggeregelt). Während der eigenen Sprachausgabe (+0,4 s) und 1,2 s nach einer Zielansage wird nicht gehört.
+- Warum kein Wort-Erkenner: Web Speech Recognition braucht auf Android Netz (Google-Server), ist in der lauten Halle unzuverlässig und hat Verzögerung. Lautstärke geht offline und sofort.
+- Getestet mit Chromium-Fake-Mikro (WAV mit Hallenrauschen, 5 Ballaufprallen, 2 Rufen): 2 Rufe erkannt, keine Fehlalarme. In der Halle noch nicht getestet.
+
+## Wurf-Videos (`clips.js`)
+- Aufnahme ab der Zielansage bis 0,8 s nach der Landung (ohne Ansage: laufend, alle 6 s neu begonnen). Aufgenommen wird ein Bild aus Kamerabild + Overlay (Linie, Skelett) + Zielname, max. 720 px breit, 30 fps, 2 Mbit/s (~350 KB pro Wurf).
+- Gespeichert in IndexedDB `awc-clips` (Demo: `awc-demo-clips`), Schlüssel = `entry.time`, Log-Eintrag bekommt `clip:true`. Nur die letzten 60 Clips bleiben. „Gesamtes Log löschen“ löscht auch die Clips.
+- Ansehen: Button „▶︎ Video ansehen“ auf der Ergebnis-Karte und „▶︎ Video“ pro Wurf im Training-Fenster. Startet in 0,5×, Schleife, 1× / 0,5× / 0,25×, „Speichern“ teilt die Datei (Android) oder lädt sie herunter.
+- Nur Kamera-Modus (bei Video-Dateien gibt es das Video ja schon).
 
 ## Prüfungen (in `evaluate()`, `js/analysis.js`), Priorität für den Tipp
 1. **over – Übertritt**: Fußspitze oder Ferse des Sprungbeins im Absprung-Frame auf der Torraum-Seite der markierten 6-m-Linie. Ohne Linie: nicht geprüft.
@@ -87,7 +102,7 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 Feedback: Sprachansage = zufälliges Lob aus den guten Punkten + Kurz-Tipp des wichtigsten Fehlers. Texte in `tips()` (`js/feedback.js`) (short / tip / drill), Labels in `LABEL_GOOD` / `LABEL_BAD`, Reihenfolge in `PRIO`.
 
 ## Daten (localStorage)
-- `awc-settings`: `hand` (R/L), `pos` (LA/RA), `mode` (auto/timer), `pause`, `camera`, `model`, `targets[{name,on}]`, `line{pts[],inside,at,snapped,ref{w,h,g}}` (normalisiert 0–1; altes Format `{a,b,inside}` wird beim Laden zu `pts:[a,b]`), `session{id,start,last}`.
+- `awc-settings`: `hand` (R/L), `pos` (LA/RA), `mode` (auto/timer/call), `callMin`, `callMax`, `sens` (low/mid/high), `pause`, `camera`, `model`, `targets[{name,on}]`, `line{pts[],inside,at,snapped,ref{w,h,g}}` (normalisiert 0–1; altes Format `{a,b,inside}` wird beim Laden zu `pts:[a,b]`), `session{id,start,last}`.
 - Demo-Modus: dieselben Daten unter `awc-demo-settings` / `awc-demo-log`.
 - `awc-log`: Array von Würfen `{nr, sid, target, res[{ok,txt}], issues[], good[], praise, main, tip, rot, noLine, hit, time, video}`; max. 1000 Einträge.
 - Neues Training automatisch nach > 3 h Pause oder per Button.
@@ -105,7 +120,6 @@ Feedback: Sprachansage = zufälliges Lob aus den guten Punkten + Kurz-Tipp des w
 ## Ideen / offene Punkte
 - Schwellenwerte nach ersten Hallentests anpassen.
 - Ballflug/Treffer automatisch erkennen (Farberkennung der Ringe).
-- Zeitlupen-Wiederholung des letzten Wurfs mit eingezeichnetem Skelett.
 - PDF-Bericht direkt erzeugen.
 
 ## Historie
@@ -116,3 +130,4 @@ Feedback: Sprachansage = zufälliges Lob aus den guten Punkten + Kurz-Tipp des w
 - 2026-10-01: Fix: Startanleitung (`#empty`) blieb trotz `hidden` sichtbar (CSS `display:flex`) und fing alle Tipps ab; Hinweis-Text ist jetzt durchlässig (`pointer-events:none`) und steht beim Linie-Markieren oben.
 - 2026-10-01: Einrichtung vor dem Training (Start → Einrichtung → Training starten), „Zurück“ beim Antippen, Linie ablaufen mit Sprachansage.
 - 2026-10-03: Strich am Boden erkennen und Linie einrasten (Ablaufen und Antippen), Hinweis auf gespeicherte Linie, Kamera-Check mit automatischem Nachjustieren, Demo-Modus (`?demo=1`) mit gezeichneter Halle und simulierter Person. Fix: Absprung-Frame beim Anlauf auf die Kamera zu (Boden als Gerade über die Zeit).
+- 2026-10-03: Ansage „Nach Zuruf“ (Mikrofon, Ziel 1–5 s nach dem Ruf, einstellbar) und kurze Videos pro Wurf (Zeitlupe, speichern/teilen).

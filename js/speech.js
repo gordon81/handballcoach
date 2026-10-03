@@ -1,11 +1,22 @@
-// Sprachausgabe (Web Speech API, Deutsch).
+// Sprachausgabe (Web Speech API, Deutsch) und kurzer Piepton.
 
 const synth = window.speechSynthesis;
-let voice = null;
+let voice = null, actx = null;
 function pickVoice(){ if(!synth) return; const vs=synth.getVoices(); voice = vs.find(v=>/^de/i.test(v.lang)) || null; }
 if(synth){ pickVoice(); synth.onvoiceschanged = pickVoice; }
 
 export function say(text){
   if(!synth) return;
   try{ synth.cancel(); const u=new SpeechSynthesisUtterance(text); u.lang='de-DE'; if(voice) u.voice=voice; u.rate=1.05; synth.speak(u); }catch(e){}
+}
+
+// Piep als Quittung („Zuruf gehört“). Beim ersten Mal aus einem Klick heraus aufrufen (unlock), sonst bleibt es stumm.
+export function unlockBeep(){ try{ actx ??= new AudioContext(); actx.resume(); }catch(e){} }
+export function beep(freq = 880, ms = 120){
+  try{
+    unlockBeep();
+    const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime;
+    o.frequency.value = freq; g.gain.setValueAtTime(0.25, t); g.gain.exponentialRampToValueAtTime(0.001, t + ms/1000);
+    o.connect(g).connect(actx.destination); o.start(t); o.stop(t + ms/1000);
+  }catch(e){}
 }

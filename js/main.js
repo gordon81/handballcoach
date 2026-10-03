@@ -3,7 +3,10 @@ import { app } from './state.js';
 import { $, video } from './dom.js';
 import { landmarker } from './model.js';
 import { keepAwake } from './wakelock.js';
-import { processFrame } from './tracking.js';
+import { processFrame, heardCall } from './tracking.js';
+import { onShout } from './shout.js';
+import { recFrame } from './clips.js';
+import { initClipView } from './ui/clipView.js';
 import { wizardFrame } from './lineWizard.js';
 import { initLineMarking } from './line.js';
 import { draw } from './draw.js';
@@ -18,6 +21,8 @@ initSheets();
 initControls();
 initSettings();
 initSetup();
+initClipView();
+onShout(heardCall);
 if(DEMO){ const a = $('#demoLink'); a.textContent = 'Demo-Modus aktiv: „Start“ drücken. Hier zurück zur echten Kamera.'; a.href = './'; }
 document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible' && app.state!=='off') keepAwake(); });
 
@@ -34,6 +39,7 @@ function loop(){
   processFrame(res, t);
   wizardFrame(app.latest, t);
   draw();
+  recFrame();
   fpsN++; if(pn - fpsT0 > 1000){ $('#fps').textContent = Math.round(fpsN*1000/(pn-fpsT0)) + ' fps'; fpsN = 0; fpsT0 = pn; }
   if(app.source==='file' && video.duration) $('#fSeek').value = Math.round(vt/video.duration*1000);
 }

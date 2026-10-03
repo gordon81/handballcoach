@@ -5,19 +5,38 @@ import { app } from './state.js';
 import { settings, log, store, ensureSession } from './store.js';
 import { $, canvas, showHint } from './dom.js';
 import { dist, mid, pct, pick, angDiff, colorOf } from './utils.js';
-import { say } from './speech.js';
+import { say, beep } from './speech.js';
+import { quiet } from './shout.js';
+import { recStart, recDrop, recFinish, recAge } from './clips.js';
 import { evaluate } from './analysis.js';
-import { showCard } from './ui/card.js';
+import { showCard, clipReady } from './ui/card.js';
 import { renderLog } from './ui/logView.js';
 
 const LABELS = {off:'Gestoppt', ready:'Bereit', runup:'Anlauf', air:'Sprung', cool:'Pause'};
 let H=[], visSince=null, lastSeen=-1, lastTarget=null;
+let callAt=null;   // Modus „Zuruf“: Zeitpunkt der Zielansage nach dem Ruf
 let groundY=null, groundAt=null, baseHip=null, bodyRef=null, ev=null;
 
 export function setState(s, t){
   app.state = s; app.stateT = t;
-  const el = $('#state'); el.dataset.s = s;
-  el.textContent = (s==='ready' && app.source==='file') ? 'Analyse aktiv' : LABELS[s];
+  if(s==='off' || s==='air'){ callAt = null; }
+  if(s==='off') recDrop();
+  stateText();
+}
+function stateText(){
+  const el = $('#state'), s = app.state; el.dataset.s = s;
+  el.textContent = (s==='ready' && app.source==='file') ? 'Analyse aktiv'
+    : callAt!==null && (s==='ready' || s==='cool') ? 'Zuruf gehört'
+    : s==='ready' && settings.mode==='call' && app.source==='cam' ? 'Warte auf Zuruf' : LABELS[s];
+}
+
+// Zuruf des Spielers (Mikrofon): Ziel nach zufälligen callMin…callMax Sekunden ansagen.
+export function heardCall(){
+  if(app.source!=='cam' || app.marking || settings.mode!=='call' || callAt!==null) return;
+  if(app.state!=='ready' && app.state!=='cool') return;
+  const lo = Math.max(0, +settings.callMin || 0), hi = Math.max(lo, +settings.callMax || lo);
+  callAt = performance.now()/1000 + lo + Math.random()*(hi - lo);
+  quiet(0.3); beep(); stateText();
 }
 export function resetTracking(t){ H=[]; app.latest=null; visSince=null; ev=null; groundY=groundAt=baseHip=bodyRef=null; app.target=null; hudTarget(null); if(app.state!=='off') setState('ready', t); }
 export function hudTarget(name){ const el=$('#target'); el.textContent = name || ''; el.style.color = name ? colorOf(name) : ''; }
@@ -116,6 +135,7 @@ function finish(t){
     tip:r.tip, rot:r.rot, noLine:r.noLine, hit:null, time:Date.now(), video:app.source==='file'};
   log.push(entry); if(log.length > 1000) log.shift(); store();
   showCard(entry); renderLog();
+  if(recAge(t)!==null) recFinish(entry.time).then(ok => { if(ok){ entry.clip = true; store(); clipReady(entry); renderLog(); } });
   app.target = null; hudTarget(null);
   setState('cool', t);
 }
@@ -125,13 +145,17 @@ export function announce(t){
   const list = settings.targets.filter(x => x.on && x.name.trim());
   if(!list.length){ showHint('Keine Ziele aktiv (Einstellungen)', 2500); return; }
   let c; do{ c = pick(list); } while(list.length > 1 && c.name === lastTarget);
-  app.target = lastTarget = c.name; say(c.name); hudTarget(c.name); setState('runup', t);
+  app.target = lastTarget = c.name; say(c.name); quiet(1.2); hudTarget(c.name); setState('runup', t);
+  if(app.source==='cam') recStart(t, c.name);   // Clip ab der Ansage
 }
 
 function tick(t){
+  // Wurf ohne Ansage: auch dann aufnehmen, aber den Clip kurz halten (alle 6 s neu beginnen).
+  if(app.state==='ready' && app.source==='cam' && !app.marking){ const a = recAge(t); if(a===null || a > 6) recStart(t); }
   if(app.state==='cool' && t-app.stateT >= (app.source==='file' ? 0.6 : settings.pause)) setState('ready', t);
   else if(app.state==='ready' && app.source==='cam' && !app.marking){
-    if(settings.mode==='timer'){ if(t-app.stateT >= 1.5) announce(t); }
+    if(settings.mode==='call'){ if(callAt!==null && t >= callAt){ callAt = null; announce(t); } }
+    else if(settings.mode==='timer'){ if(t-app.stateT >= 1.5) announce(t); }
     else if(visSince!==null && t-visSince >= 0.6 && t-app.stateT >= 0.5) announce(t);
   }
   else if(app.state==='runup' && t-app.stateT > 8){ app.target=null; hudTarget(null); setState('ready', t); }
