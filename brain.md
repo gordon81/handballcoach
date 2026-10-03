@@ -1,6 +1,7 @@
 # brain.md – Handballcoach (Außenwurf-Coach)
 
 Projektgedächtnis für Menschen und KI-Assistenten. Vor Änderungen lesen, nach größeren Änderungen aktualisieren.
+Bedienungsanleitung für Nutzer: [`DOKUMENTATION.md`](DOKUMENTATION.md).
 
 ## Ziel
 Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
@@ -40,6 +41,7 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
   - `ui/` – `setupView.js` (Einrichtung vor dem Training, Start/Stopp), `controls.js` (Buttons, Video-Leiste, Training-Fenster), `settingsView.js`, `card.js` (Ergebnis-Karte), `logView.js`, `sheets.js`.
 - `tests/` – automatische Tests (siehe „Tests“), nicht Teil der App.
 - `README.md` – Kurzbeschreibung für GitHub.
+- `DOKUMENTATION.md` – Anleitung für Nutzer: Bedienung, Einrichtung, Modi, Demo, Hallentest, wo Log, Videos und Einstellungen liegen und wie man sie löscht. Bei Änderungen an Bedienung oder Speicher mitpflegen.
 - `brain.md` – diese Datei.
 
 ## Technik
