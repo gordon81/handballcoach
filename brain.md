@@ -45,6 +45,7 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 - `tests/` (Wurzel) – automatische Tests (siehe „Tests“), nicht Teil der App.
 - `README.md` – Kurzbeschreibung für GitHub.
 - `DOKUMENTATION.md` – Anleitung für Nutzer: Bedienung, Einrichtung, Modi, Demo, Hallentest, wo Log, Videos und Einstellungen liegen und wie man sie löscht. Bei Änderungen an Bedienung oder Speicher mitpflegen.
+- `PLAYBOOK.md` – Vorschläge für weitere Übungen und Trainings (Übungskarten, Prüfbarkeit, Aufwand, TODO-Liste, Reihenfolge). Planung, noch nicht gebaut.
 - `brain.md` – diese Datei.
 
 ## Technik
@@ -164,6 +165,7 @@ Die Grenzwerte (`TH` in `aussenspieler/js/config.js`) sind bisher nur im Demo ge
 - Kamera am besten erhöht (1,5–2 m), schräg von vorn auf die Absprungzone, gutes Licht, möglichst 60 fps.
 
 ## Ideen / offene Punkte
+- Weitere Übungen und Trainingsarten mit Prioritäten: [`PLAYBOOK.md`](PLAYBOOK.md).
 - Hallentest nach der Checkliste oben, danach `TH` anpassen.
 - Ballflug/Treffer automatisch erkennen (Farberkennung der Ringe). Kameraposition 2 hat das Tor im Bild, dafür die passende Position.
 - PDF-Bericht direkt erzeugen.
