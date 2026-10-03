@@ -17,3 +17,6 @@ Settings → Pages → Deploy from a branch → `main` / `(root)` → Save.
 
 ## Ohne Halle testen (Demo-Modus)
 https://gordon81.github.io/handballcoach/?demo=1 (oder lokal http://localhost:8000/?demo=1): gezeichnete Halle mit gebogener 6-m-Linie und einer simulierten Person, die die Linie abläuft und wirft. „Kamera bewegen“ prüft das Nachjustieren.
+
+## Automatische Tests
+`cd tests && npm install && npm test` (Node + Playwright, headless Chromium): Demo-Modus von der Linie bis zu den Würfen, Wurf-Videos, Zuruf-Modus und Ruf-Erkennung mit Fake-Mikrofon. Details in `brain.md`.

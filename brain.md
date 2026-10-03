@@ -38,6 +38,7 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
   - `feedback.js` – Labels, `PRIO`, `tips()`.
   - `draw.js` – Overlay (Linie, Skelett). `summary.js` + `report.js` – Auswertung und Bericht.
   - `ui/` – `setupView.js` (Einrichtung vor dem Training, Start/Stopp), `controls.js` (Buttons, Video-Leiste, Training-Fenster), `settingsView.js`, `card.js` (Ergebnis-Karte), `logView.js`, `sheets.js`.
+- `tests/` – automatische Tests (siehe „Tests“), nicht Teil der App.
 - `README.md` – Kurzbeschreibung für GitHub.
 - `brain.md` – diese Datei.
 
@@ -65,7 +66,15 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 - Im Modus „Zuruf“ ruft die Person am Startpunkt (Hinweis „Demo: Spieler ruft“), Button „Zuruf“ in der Demo-Leiste ruft von Hand.
 - Die Person reagiert auf die Ansagen: ans Ende der Linie, Linie entlanggehen, zwei Schritte in den Torraum; im Training bei Ansage Anlauf und Sprungwurf. Würfe im Wechsel: gut, gut, Übertritt, flach mit Arm unten.
 - „Kamera bewegen“ verschiebt/schwenkt die Kamera (3 Stellungen) → Einrichtung/Start merkt es und richtet die Linie neu aus.
-- Automatischer Test (Playwright, headless Chromium): Ablaufen → Linie auf ≤ 2 px genau (außer äußerstes Ende ~8 px), 8 Würfe genau wie simuliert bewertet, Hinweis nach Neuladen, Nachjustieren nach „Kamera bewegen“, Antippen mit 8 px Fehler wird eingerastet.
+- Automatische Tests laufen über den Demo-Modus, siehe „Tests“.
+
+## Tests (`tests/`)
+- Einmalig: `cd tests && npm install` (Playwright), Browser bei Bedarf `npx playwright install chromium`. Dann `npm test` (~2 min) oder nur `npm run unit` (Sekunden, ohne Browser).
+- `unit.mjs` (Node): Ruf-Erkennung mit künstlichen Pegelverläufen: Ruf, Ballaufpralle, Quietschen, Pfiff, Dauerlärm + Ruf darüber, Sperre, eigene Ansage, Empfindlichkeit.
+- `browser.mjs` (Playwright, headless Chromium, eigener kleiner Webserver `server.mjs`):
+  - Demo von vorn bis hinten (Pause 1 s): Linie ablaufen (eingerastet, Median < 4 px, max < 12 px), 8 Würfe genau wie simuliert bewertet (gut, gut, Übertritt, flach + Arm unten), Videos gespeichert und abspielbar (MP4), „Videos aus“ → keine Clips, Zuruf-Modus (Ziel 2 s nach dem Ruf), Zuruf ohne Spieler im Bild ignoriert, „Kamera bewegen“ → Linie neu ausgerichtet; keine Fehler in der Konsole.
+  - Mikrofon über das Fake-Mikrofon von Chromium mit der künstlichen Hallen-Tonspur aus `wav.mjs`: genau die 3 Rufe; Stopp während des Starts → Mikro bleibt aus.
+- Nach jeder Änderung an Erkennung, Ablauf oder Zuruf `npm test` laufen lassen.
 
 ## Ablauf (Zustandsautomat)
 `off` → `ready` → `runup` → `air` → `cool` → `ready` …

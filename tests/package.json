@@ -1,0 +1,13 @@
+{
+  "name": "handballcoach-tests",
+  "private": true,
+  "type": "module",
+  "description": "Automatische Tests für den Außenwurf-Coach (Node-Unit-Tests und Playwright im Demo-Modus)",
+  "scripts": {
+    "test": "node --test --test-concurrency=1 unit.mjs browser.mjs",
+    "unit": "node --test unit.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.62.1"
+  }
+}
