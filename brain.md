@@ -14,11 +14,14 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 ## Ort, Repo, Hosting
 - Lokal: `/home/gordon/Projekte/handballcoach`
 - Repo: https://github.com/gordon81/handballcoach (Branch `main`)
-- Live: https://gordon81.github.io/handballcoach/ (GitHub Pages, Deploy from branch `main` / root)
-- Kamera und ES-Module funktionieren nur über https oder localhost, nicht per `file://`. Lokal testen: `python3 -m http.server` im Projektordner, dann http://localhost:8000.
+- Live: https://gordon81.github.io/handballcoach/ (GitHub Pages, Deploy from branch `main` / root) = Startmenü; Außenwurf-Coach unter https://gordon81.github.io/handballcoach/aussenspieler/ (Demo: `aussenspieler/?demo=1`).
+- Daten (localStorage `awc-*`, IndexedDB `awc-clips`) gehören zur Origin `gordon81.github.io`, nicht zum Pfad: der Umzug nach `aussenspieler/` hat nichts gelöscht. Neue Trainings eigene Schlüssel-Präfixe geben.
+- Kamera und ES-Module funktionieren nur über https oder localhost, nicht per `file://`. Lokal testen: `python3 -m http.server` im Projektordner, dann http://localhost:8000 (Menü) bzw. http://localhost:8000/aussenspieler/.
 
 ## Dateien
-- `index.html` – nur das HTML-Gerüst; bindet die CSS-Dateien und `js/main.js` ein.
+- `index.html` (Wurzel) – Startmenü: eine Karte (ein `<a>` in `#trainings`) pro Trainingsart, Stil inline. Neue Trainingsart = eigener Ordner mit eigener `index.html` + eine Zeile im Menü.
+- `aussenspieler/` – Außenwurf-Coach (die folgenden Dateien bis `ui/` liegen in diesem Ordner, Pfade darin relativ):
+- `index.html` – nur das HTML-Gerüst; bindet die CSS-Dateien und `js/main.js` ein. Link „← Alle Trainings“ (`../`) zurück ins Menü.
 - `css/` – `base.css` (Farben, Schriften, Grundstil), `stage.css` (Kamerabild, HUD, Zielansage, Hinweis, Ergebnis-Karte), `controls.css` (Video- und Button-Leiste), `sheets.css` (Einstellungen, Training).
 - `js/` – ES-Module, ohne Build direkt vom Browser geladen:
   - `main.js` – Einstieg: verbindet die Bedienung, Hauptschleife (ein KI-Durchlauf pro Videobild).
@@ -39,7 +42,7 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
   - `feedback.js` – Labels, `PRIO`, `tips()`.
   - `draw.js` – Overlay (Linie, Skelett). `summary.js` + `report.js` – Auswertung und Bericht.
   - `ui/` – `setupView.js` (Einrichtung vor dem Training, Start/Stopp), `controls.js` (Buttons, Video-Leiste, Training-Fenster), `settingsView.js`, `card.js` (Ergebnis-Karte), `logView.js`, `sheets.js`.
-- `tests/` – automatische Tests (siehe „Tests“), nicht Teil der App.
+- `tests/` (Wurzel) – automatische Tests (siehe „Tests“), nicht Teil der App.
 - `README.md` – Kurzbeschreibung für GitHub.
 - `DOKUMENTATION.md` – Anleitung für Nutzer: Bedienung, Einrichtung, Modi, Demo, Hallentest, wo Log, Videos und Einstellungen liegen und wie man sie löscht. Bei Änderungen an Bedienung oder Speicher mitpflegen.
 - `brain.md` – diese Datei.
@@ -81,6 +84,7 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 - `browser.mjs` (Playwright, headless Chromium, eigener kleiner Webserver `server.mjs`):
   - Demo von vorn bis hinten (Pause 1 s): Linie ablaufen (eingerastet, Median < 4 px, max < 12 px), 8 Würfe genau wie simuliert bewertet (gut, gut, Übertritt, flach + Arm unten), Videos gespeichert und abspielbar (MP4), „Videos aus“ → keine Clips, Zuruf-Modus (Ziel 2 s nach dem Ruf), Zuruf ohne Spieler im Bild ignoriert, Wurf ohne Ansage (Aufnahme beginnt nicht mitten im Anlauf neu, Clip gespeichert), „Kamera bewegen“ → Linie neu ausgerichtet, Mikro-Test in der Einrichtung (an, Ruf gezählt, Empfindlichkeit, aus); keine Fehler in der Konsole.
   - Demo mit Kameraposition 2: Linie ablaufen (eingerastet, genau), 4 Würfe wie simuliert bewertet, Wechsel 1 ↔ 2 behält die Linie jeder Position.
+  - Startmenü: Karte öffnet `aussenspieler/`, „← Alle Trainings“ führt zurück, kein Querscrollen bei 390 px.
   - Mikrofon über das Fake-Mikrofon von Chromium mit der künstlichen Hallen-Tonspur aus `wav.mjs`: genau die 3 Rufe; Stopp während des Starts → Mikro bleibt aus.
 - Nach jeder Änderung an Erkennung, Ablauf oder Zuruf `npm test` laufen lassen.
 
@@ -117,7 +121,7 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 - Ansehen: Button „▶︎ Video ansehen“ auf der Ergebnis-Karte und „▶︎ Video“ pro Wurf im Training-Fenster. Startet in 0,5×, Schleife, 1× / 0,5× / 0,25×, „Speichern“ teilt die Datei (Android) oder lädt sie herunter.
 - Nur Kamera-Modus (bei Video-Dateien gibt es das Video ja schon).
 
-## Prüfungen (in `evaluate()`, `js/analysis.js`), Priorität für den Tipp
+## Prüfungen (in `evaluate()`, `aussenspieler/js/analysis.js`), Priorität für den Tipp
 1. **over – Übertritt**: Fußspitze oder Ferse des Sprungbeins im Absprung-Frame auf der Torraum-Seite der markierten 6-m-Linie. Ohne Linie: nicht geprüft.
    - Die 6-m-Linie ist **gebogen** (Viertelkreise mit 6 m Radius um die Pfosten + 3 m gerades Stück). Markierung daher als beliebig viele Punkte entlang des Bogens (≥ 2, empfohlen 4–6) oder per Ablaufen, danach 1 Punkt im Torraum (siehe Einrichtung).
    - `curve()` legt eine Catmull-Rom-Kurve durch die Punkte; `lineSide()` nimmt das Kreuzprodukt zum nächstgelegenen Kurvenstück (Endstücke verlängert, Abstand seitenverhältnis-korrigiert). Funktioniert im perspektivischen Bild ohne Kalibrierung.
@@ -127,9 +131,9 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 5. **jump – Sprunghöhe**: (Basis − Hüft-Höchstpunkt) / Körperlänge: ≥ 0,25 hoch, ≥ 0,17 mittel, sonst flach. Kameraposition 2: ≥ 0,36 hoch, ≥ 0,30 mittel (`TH_POS.court`). Grund: auf Position 1 läuft der Spieler in der Luft auf die erhöhte Kamera zu, die Hüfte sinkt im Bild, die Höhe wird zu klein gemessen; von der Seite (Position 2) passt sie fast zur echten Höhe. Im Demo dieselben Würfe: Position 1 0,32 / 0,26 / 0,13, Position 2 0,42 / 0,38 / 0,24.
 6. **lean – Oberkörper** beim Wurf (Frame mit max. Handgelenk-Geschwindigkeit): < 15° aufrecht; > 25° Richtung Torraum = kippt nach vorn; weg vom Torraum = Rücklage (ok).
 
-Alle Grenzwerte stehen in `TH` (`js/config.js`), Abweichungen je Kameraposition in `TH_POS`; der Code holt sie über `th()` (`store.js`).
+Alle Grenzwerte stehen in `TH` (`aussenspieler/js/config.js`), Abweichungen je Kameraposition in `TH_POS`; der Code holt sie über `th()` (`store.js`).
 
-Feedback: Sprachansage = zufälliges Lob aus den guten Punkten + Kurz-Tipp des wichtigsten Fehlers. Texte in `tips()` (`js/feedback.js`) (short / tip / drill), Labels in `LABEL_GOOD` / `LABEL_BAD`, Reihenfolge in `PRIO`.
+Feedback: Sprachansage = zufälliges Lob aus den guten Punkten + Kurz-Tipp des wichtigsten Fehlers. Texte in `tips()` (`aussenspieler/js/feedback.js`) (short / tip / drill), Labels in `LABEL_GOOD` / `LABEL_BAD`, Reihenfolge in `PRIO`.
 
 ## Daten (localStorage)
 - `awc-settings`: `hand` (R/L), `pos` (LA/RA), `camPos` (base/court), `lines{base,court}` (Linie je Kameraposition), `mode` (auto/timer/call), `callMin`, `callMax`, `sens` (low/mid/high), `clips` (Wurf-Videos an/aus), `pause`, `camera`, `model`, `targets[{name,on}]`, `line{pts[],inside,at,snapped,ref{w,h,g}}` (normalisiert 0–1; altes Format `{a,b,inside}` wird beim Laden zu `pts:[a,b]`), `session{id,start,last}`.
@@ -143,7 +147,7 @@ Feedback: Sprachansage = zufälliges Lob aus den guten Punkten + Kurz-Tipp des w
 - `reportHTML()` → eigenständige HTML-Seite (`Wurfbericht-JJJJ-MM-TT.html`), teilen per `navigator.share({files})` oder Download.
 
 ## Hallentest und Kalibrieren
-Die Grenzwerte (`TH` in `js/config.js`) sind bisher nur im Demo geprüft. Beim ersten Hallentest:
+Die Grenzwerte (`TH` in `aussenspieler/js/config.js`) sind bisher nur im Demo geprüft. Beim ersten Hallentest:
 1. Aufbau: Handy erhöht (1,5–2 m), schräg von vorn auf die Absprungzone. Linie ablaufen, prüfen, ob die rote Linie auf dem Strich liegt.
 2. fps oben rechts ansehen, mit „Wurf-Videos“ an und aus. Ziel ≥ 25 fps. Fällt es mit Videos deutlich, Videos aus.
 3. Zuruf: Modus „Nach Zuruf“, in der Einrichtung „Mikro testen“. Vom Startpunkt rufen → grün und Piep. Ball prellen, Schuhe quietschen lassen, pfeifen → darf nicht zählen. Sonst Empfindlichkeit ändern.
@@ -176,3 +180,4 @@ Die Grenzwerte (`TH` in `js/config.js`) sind bisher nur im Demo geprüft. Beim e
 - 2026-10-03: Prüfung und Verbesserungen: Zuruf löst nicht mehr bei Dauerlärm, Quietschen, Pfiff aus, nur mit Spieler im Bild; Mikro bleibt nach Stopp aus; Mikro testen in der Einrichtung mit Pegelanzeige; Wurf-Videos in H.264/MP4 und abschaltbar, Anlauf bleibt im Clip; Ansage „Wenn Spieler im Bild steht“ wartet aufs Stehen (vorher Übertritt/Sprung falsch bei kurzer Pause); Messwerte pro Wurf für das Kalibrieren, Grenzen gesammelt in `TH`; automatische Tests in `tests/`.
 - 2026-10-03: Zweite Kameraposition „Feld mit Tor“ (hinter dem 7-m-Punkt, Tor und Absprungzone im Bild) in der Einrichtung, eigene Linie je Position, eigene Sprunghöhen-Grenzen, Demo und Test für Position 2.
 - 2026-10-03: Fix Zuruf: die ersten Rufe nach dem Mikro-Start gingen verloren (Messungen ohne Ton zogen den Grundpegel auf −200 dB). Fix: Ruf über Dauerlärm wurde manchmal verpasst, weil der Grundpegel bei kurzen Einbrüchen des Lärms nicht mehr nachzog.
+- 2026-10-03: Außenwurf-Coach in den Ordner `aussenspieler/` verschoben, im Wurzelverzeichnis ein Startmenü für mehrere Trainingsarten. Neue Adresse: https://gordon81.github.io/handballcoach/aussenspieler/ (Daten bleiben erhalten).

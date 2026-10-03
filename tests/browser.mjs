@@ -27,8 +27,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 async function modules(page){
   await page.evaluate(async () => {
     const im = p => import(p);
-    window.M = {store:await im('/js/store.js'), app:(await im('/js/state.js')).app, sim:await im('/js/demo/sim.js'),
-      clips:await im('/js/clips.js'), shout:await im('/js/shout.js')};
+    window.M = {store:await im('/aussenspieler/js/store.js'), app:(await im('/aussenspieler/js/state.js')).app, sim:await im('/aussenspieler/js/demo/sim.js'),
+      clips:await im('/aussenspieler/js/clips.js'), shout:await im('/aussenspieler/js/shout.js')};
   });
 }
 async function until(page, fn, arg, ms, what){
@@ -44,7 +44,7 @@ test('Demo: Einrichtung, Würfe, Videos, Zuruf, Kamera bewegt', {timeout:300000}
   const errors = []; page.on('pageerror', e => errors.push(e.message));
   page.on('console', m => { if(m.type()==='error') errors.push(m.text()); });
   await page.addInitScript(() => { if(!sessionStorage.getItem('init')){ sessionStorage.setItem('init', '1'); localStorage.clear(); localStorage.setItem('awc-demo-settings', JSON.stringify({pause:1})); } });
-  await page.goto(srv.url + '?demo=1');
+  await page.goto(srv.url + 'aussenspieler/?demo=1');
   await modules(page);
 
   await t.test('Linie ablaufen: am Boden erkannt, genau', async () => {
@@ -189,7 +189,7 @@ test('Demo Kameraposition 2 (Feld, Tor im Bild): Linie, Würfe, eigene Linie je 
   const errors = []; page.on('pageerror', e => errors.push(e.message));
   page.on('console', m => { if(m.type()==='error') errors.push(m.text()); });
   await page.addInitScript(() => { if(!sessionStorage.getItem('init')){ sessionStorage.setItem('init', '1'); localStorage.clear(); localStorage.setItem('awc-demo-settings', JSON.stringify({pause:1})); } });
-  await page.goto(srv.url + '?demo=1');
+  await page.goto(srv.url + 'aussenspieler/?demo=1');
   await modules(page);
 
   await t.test('Position 2 wählen, Linie ablaufen: am Boden erkannt, genau', async () => {
@@ -238,7 +238,7 @@ test('Demo Kameraposition 2 (Feld, Tor im Bild): Linie, Würfe, eigene Linie je 
 
 test('Mikrofon: Rufe erkannt, Lärm nicht (Fake-Mikrofon)', {timeout:120000}, async t => {
   const page = await browser.newPage();
-  await page.goto(srv.url);
+  await page.goto(srv.url + 'aussenspieler/');
   await modules(page);
 
   await t.test('Stopp während des Starts: Mikrofon bleibt aus', async () => {
@@ -259,5 +259,20 @@ test('Mikrofon: Rufe erkannt, Lärm nicht (Fake-Mikrofon)', {timeout:120000}, as
     assert.equal(r.hits.length, SHOUTS.length, `erkannt bei ${r.hits.map(h => h.toFixed(1))} s; Pegel/Grund/Schwelle: ${lv.join(' ')}`);
     r.hits.forEach((h, i) => assert.ok(h > SHOUTS[i] && h < SHOUTS[i] + 1.8, `Ruf ${i+1} bei ${h.toFixed(2)} s, erwartet kurz nach ${SHOUTS[i]} s`));
   });
+  await page.close();
+});
+
+test('Startmenü: Karte öffnet den Außenwurf-Coach, „Alle Trainings“ führt zurück', {timeout:60000}, async () => {
+  const page = await browser.newPage({viewport:{width:390, height:800}});
+  const errors = []; page.on('pageerror', e => errors.push(e.message));
+  await page.goto(srv.url);
+  await page.click('#trainings a[href="aussenspieler/"]');
+  await page.waitForSelector('#btnStart');
+  assert.ok(page.url().endsWith('/aussenspieler/'), page.url());
+  await page.click('a[href="../"]');
+  await page.waitForSelector('#trainings');
+  assert.equal(new URL(page.url()).pathname, '/');
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'kein Querscrollen am Handy');
+  assert.deepEqual(errors, []);
   await page.close();
 });

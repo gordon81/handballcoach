@@ -2,7 +2,9 @@
 
 Web-App fürs Handy: Zielansage per Sprache, KI-Technik-Check (Übertritt, Sprungbein, Wurfarm, Körperdrehung, Sprunghöhe, Oberkörper), nach jedem Wurf ein Lob und ein Verbesserungstipp, Abschlussbericht zum Teilen oder Herunterladen. Läuft komplett im Browser mit Google MediaPipe Pose, ohne Server und ohne Kosten.
 
-**App öffnen:** https://gordon81.github.io/handballcoach/
+**Startmenü (alle Trainings):** https://gordon81.github.io/handballcoach/
+
+**Außenwurf-Coach öffnen:** https://gordon81.github.io/handballcoach/aussenspieler/
 
 ## Einrichtung GitHub Pages
 Settings → Pages → Deploy from a branch → `main` / `(root)` → Save.
@@ -16,7 +18,7 @@ Settings → Pages → Deploy from a branch → `main` / `(root)` → Save.
 6. **Log**: Stärken, Schwerpunkte mit Übungen, Trefferquote je Ziel. **Bericht teilen** (Text, z. B. WhatsApp) oder **Bericht als Datei** (HTML, im Browser öffnen oder als PDF drucken).
 
 ## Ohne Halle testen (Demo-Modus)
-https://gordon81.github.io/handballcoach/?demo=1 (oder lokal http://localhost:8000/?demo=1): gezeichnete Halle mit gebogener 6-m-Linie und einer simulierten Person, die die Linie abläuft und wirft. „Kamera bewegen“ prüft das Nachjustieren.
+https://gordon81.github.io/handballcoach/aussenspieler/?demo=1 (oder lokal http://localhost:8000/aussenspieler/?demo=1): gezeichnete Halle mit gebogener 6-m-Linie und einer simulierten Person, die die Linie abläuft und wirft. „Kamera bewegen“ prüft das Nachjustieren.
 
 ## Automatische Tests
 `cd tests && npm install && npm test` (Node + Playwright, headless Chromium): Demo-Modus von der Linie bis zu den Würfen, Wurf-Videos, Zuruf-Modus und Ruf-Erkennung mit Fake-Mikrofon. Details in `brain.md`.

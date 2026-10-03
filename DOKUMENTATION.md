@@ -3,8 +3,8 @@
 Anleitung für Trainer und Spieler: was die App macht, wie man sie bedient und wo sie ihre Daten ablegt.
 Technische Details für Änderungen am Code stehen in [`brain.md`](brain.md).
 
-**App:** https://gordon81.github.io/handballcoach/
-**Demo ohne Kamera:** https://gordon81.github.io/handballcoach/?demo=1
+**App:** https://gordon81.github.io/handballcoach/aussenspieler/ (Startmenü mit allen Trainings: https://gordon81.github.io/handballcoach/)
+**Demo ohne Kamera:** https://gordon81.github.io/handballcoach/aussenspieler/?demo=1
 
 ---
 
@@ -296,7 +296,7 @@ Die Grenzwerte der Prüfungen sind bisher nur im Demo geprüft. Beim ersten Hall
 3. **Zuruf:** Modus „Nach Zuruf“, in der Einrichtung „Mikro testen“. Vom Startpunkt rufen → grün und Piep. Ball prellen, Schuhe quietschen lassen, pfeifen → darf nicht zählen. Sonst Empfindlichkeit ändern.
 4. **Würfe für die Grenzen,** je 5–10 und bewusst: saubere Würfe, knapper Übertritt (Fuß auf/hinter der Linie), flache Sprünge, Arm unten, wenig Drehung, Oberkörper nach vorn fallen lassen. Reihenfolge notieren.
 5. **Auswerten:** im Log die Messwerte pro Wurf ansehen (Zweifelsfälle mit „▶︎ Video“ prüfen) und „Bericht als Datei“ teilen; der Bericht enthält die Tabelle „Messwerte“.
-6. **Grenzen anpassen:** zwischen die Werte der guten und der bewusst schlechten Würfe legen (im Code `TH` bzw. `TH_POS.court` in `js/config.js`, siehe `brain.md`). Beim Übertritt zuerst die Linie prüfen, wenn echte Übertritte nur knapp im Plus oder saubere Absprünge im Plus liegen.
+6. **Grenzen anpassen:** zwischen die Werte der guten und der bewusst schlechten Würfe legen (im Code `TH` bzw. `TH_POS.court` in `aussenspieler/js/config.js`, siehe `brain.md`). Beim Übertritt zuerst die Linie prüfen, wenn echte Übertritte nur knapp im Plus oder saubere Absprünge im Plus liegen.
 7. Beide Kamerapositionen getrennt testen (Spalte „Kamera“ im Bericht).
 
 ---

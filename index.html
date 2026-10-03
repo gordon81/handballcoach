@@ -4,97 +4,41 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#121a22">
-<title>Außenwurf-Coach</title>
+<title>Handballcoach</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/base.css">
-<link rel="stylesheet" href="css/stage.css">
-<link rel="stylesheet" href="css/controls.css">
-<link rel="stylesheet" href="css/sheets.css">
+<style>
+  /* Startmenü: eine Karte pro Trainingsart. Farben wie in der App (aussenspieler/css/base.css). */
+  :root{
+    --bg:#121a22; --panel:#1b2530; --panel2:#243241; --line:#33465a;
+    --text:#eef2f5; --muted:#93a3b3; --orange:#ff8a1f;
+    --head:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+    --body:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:var(--body)}
+  body{padding:calc(env(safe-area-inset-top,0px) + 28px) 16px calc(env(safe-area-inset-bottom,0px) + 28px)}
+  main{max-width:520px;margin:0 auto}
+  h1{font-family:var(--head);font-weight:800;font-size:40px;line-height:1;margin:0 0 6px;text-transform:uppercase;letter-spacing:.5px}
+  h1 + p{color:var(--muted);margin:0 0 24px}
+  nav{display:grid;gap:12px}
+  nav a{display:block;padding:18px 18px 16px;border-radius:14px;background:var(--panel);border:1px solid var(--line);
+    border-left:5px solid var(--orange);color:inherit;text-decoration:none}
+  nav a:active,nav a:hover{background:var(--panel2)}
+  nav a:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+  nav b{display:block;font-family:var(--head);font-weight:800;font-size:26px;text-transform:uppercase;letter-spacing:.4px}
+  nav span{display:block;color:var(--muted);margin-top:4px;line-height:1.35}
+</style>
 </head>
 <body>
-<main id="stage">
-  <video id="video" playsinline muted></video>
-  <canvas id="overlay"></canvas>
-  <div id="empty">
-    <h1>Außenwurf-Coach<span>Zielansage, Technik-Check und Feedback per Sprache</span></h1>
-    <div class="rings" aria-hidden="true"><i class="o"></i><i class="o"></i><i class="b"></i><i class="b"></i></div>
-    <ol>
-      <li><b>Handy aufs Stativ</b>, seitlich-schräg auf die Absprungzone, ganzer Körper im Bild.</li>
-      <li><b>Start</b> drücken: Kamera und KI-Modell werden geladen, die Einrichtung öffnet sich.</li>
-      <li><b>6-m-Linie einrichten:</b> eine Person läuft sie auf Ansage ab, oder du tippst Punkte entlang des Bogens an.</li>
-      <li><b>Training starten:</b> das Handy ruft das Ziel, Anlauf, Wurf, Feedback.</li>
-    </ol>
-    <a class="demoLink" id="demoLink" href="?demo=1">Demo ohne Kamera: gezeichnete Halle mit simulierter Person</a>
-  </div>
-  <div id="hud"><span class="chip" id="state" data-s="off">Gestoppt</span><span class="chip" id="micChip" hidden>Mikro <span class="meter"><i class="lvl"></i><i class="thr"></i></span></span><span class="chip" id="fps">– fps</span></div>
-  <div id="target"></div>
-  <div id="hint"></div>
-  <section id="card" aria-live="polite"></section>
-  <section id="setup" hidden></section>
+<main>
+  <h1>Handballcoach</h1>
+  <p>Alleine trainieren: Aufgabe wählen, Handy aufs Stativ, los.</p>
+  <!-- Neue Trainingsart = eine neue Zeile (Ordner mit eigener index.html). -->
+  <nav id="trainings">
+    <a href="aussenspieler/"><b>Außenspieler: Würfe</b><span>Zielansage, Technik-Check und Feedback per Sprache</span></a>
+  </nav>
 </main>
-
-<div id="filebar" hidden>
-  <button id="fPlay">▶︎</button>
-  <button id="fBack">−2 s</button>
-  <select id="fRate" aria-label="Geschwindigkeit"><option value="0.25">0,25×</option><option value="0.5" selected>0,5×</option><option value="1">1×</option></select>
-  <input type="range" id="fSeek" min="0" max="1000" value="0" aria-label="Position">
-  <button id="fCam">Kamera</button>
-</div>
-
-<nav id="bar">
-  <button id="btnStart" class="primary">Start</button>
-  <button id="btnLine">Setup</button>
-  <button id="btnCall">Ansage</button>
-  <button id="btnVideo">Video</button>
-  <button id="btnLog">Log</button>
-  <button id="btnSet" aria-label="Einstellungen">⚙︎</button>
-</nav>
-<input type="file" id="file" accept="video/*" hidden>
-
-<div class="sheet" id="setSheet" hidden>
-  <div class="sheet-in">
-    <div class="sheet-h"><h2>Einstellungen</h2><button class="x" data-close aria-label="Schließen">✕</button></div>
-    <label class="row">Wurfhand <select id="sHand"><option value="R">Rechts</option><option value="L">Links</option></select></label>
-    <label class="row">Position <select id="sPos"><option value="LA">Linksaußen</option><option value="RA">Rechtsaußen</option></select></label>
-    <label class="row">Ansage <select id="sMode"><option value="auto">Wenn Spieler im Bild steht</option><option value="timer">Nach fester Pause</option><option value="call">Nach Zuruf (Mikrofon)</option></select></label>
-    <label class="row callOnly">Ziel nach Zuruf <select id="sCallDelay"><option value="1">1 s</option><option value="2">2 s</option><option value="3">3 s</option><option value="4">4 s</option><option value="5">5 s</option><option value="r">Zufällig 1–5 s</option></select></label>
-    <label class="row callOnly">Mikrofon-Empfindlichkeit <select id="sSens"><option value="low">Niedrig (laute Halle)</option><option value="mid">Mittel</option><option value="high">Hoch (leise Halle)</option></select></label>
-    <p class="muted callOnly">Ruf laut („Hey!“), wenn du bereit bist. Ein Piep bestätigt, das Ziel kommt nach der eingestellten Zeit. Das Handy erkennt nur die Lautstärke, kein bestimmtes Wort.</p>
-    <label class="row">Wurf-Videos <select id="sClips"><option value="1">Aufnehmen</option><option value="0">Aus</option></select></label>
-    <label class="row">Pause nach Wurf (s) <input type="number" id="sPause" min="1" max="30" step="1"></label>
-    <label class="row">Kamera <select id="sCam"><option value="environment">Rückkamera</option><option value="user">Frontkamera</option></select></label>
-    <label class="row">KI-Modell <select id="sModel"><option value="lite">Lite (schneller)</option><option value="full">Full (genauer)</option></select></label>
-    <h3>Ziele für die Ansage</h3>
-    <div id="sTargets"></div>
-    <button class="wide" id="sAddT">Ziel hinzufügen</button>
-    <button class="wide" id="sClearLine">6-m-Linie löschen</button>
-    <h3>So prüft die App</h3>
-    <p class="muted">Übertritt: Fußspitze oder Ferse des Sprungbeins beim letzten Bodenkontakt auf der Torraum-Seite der markierten (gebogenen) 6-m-Linie. Sprungbein: Rechtshänder links, Linkshänder rechts. Wurfarm: Handgelenk beim Absprung über dem Kopf. Körperdrehung: wie weit Schultern gegenüber der Hüfte in der Luft aufdrehen (3D-Schätzung der KI). Oberkörper, Sprunghöhe und Drehung sind Schätzungen aus einer Kamera.</p>
-    <p class="muted">Tipp: Kamera erhöht (1,5–2 m). Position 1: auf der Grundlinie zwischen 6-m-Linie und Tor, schräg auf die Absprungzone. Position 2: im Feld hinter dem 7-m-Punkt, zur anderen Seite versetzt, Tor und Absprungzone im Bild. Die Position wählst du in der Einrichtung, jede hat ihre eigene 6-m-Linie. Gutes Licht und 60 fps verbessern die Erkennung.</p>
-  </div>
-</div>
-
-<div class="sheet" id="clipSheet" hidden>
-  <div class="sheet-in">
-    <div class="sheet-h"><h2 id="clipTitle">Wurf</h2><button class="x" data-close aria-label="Schließen">✕</button></div>
-    <video id="clipVideo" playsinline muted loop controls></video>
-    <div class="btnrow clipbar"><button data-r="1">1×</button><button data-r="0.5">0,5×</button><button data-r="0.25">0,25×</button><button id="clipSave">Speichern</button></div>
-  </div>
-</div>
-
-<div class="sheet" id="logSheet" hidden>
-  <div class="sheet-in">
-    <div class="sheet-h"><h2>Training</h2><button class="x" data-close aria-label="Schließen">✕</button></div>
-    <div id="logBody"></div>
-    <button class="wide primaryBtn" id="repShare">Bericht teilen</button>
-    <button class="wide" id="repFile">Bericht als Datei</button>
-    <button class="wide" id="newSession">Neues Training starten</button>
-    <button class="wide" id="logClear">Gesamtes Log löschen</button>
-  </div>
-</div>
-
-<script type="module" src="js/main.js"></script>
 </body>
 </html>

@@ -2,7 +2,7 @@
 // Start: node --test tests/unit.mjs (oder npm test im Ordner tests).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { shoutDetector, STEP, SENS } from '../js/shoutDetect.js';
+import { shoutDetector, STEP, SENS } from '../aussenspieler/js/shoutDetect.js';
 
 // Pegelverlauf in Messschritten (je STEP ms): {v, hi} in dB. Hallen-Grundrauschen v −50, hi −55.
 let seed = 1;
