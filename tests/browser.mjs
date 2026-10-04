@@ -337,8 +337,8 @@ test('Aufgabe „Entscheidung in der Luft“: „Los“, Ziel erst beim Absprung
     const ss = await page.evaluate(() => __sayState);
     const targets = ss.filter(x => log.some(e => e.target === x.x));
     assert.ok(targets.length >= 4 && targets.every(x => x.s === 'runup'), 'Ziel beim Absprung (Zustand wechselt direkt danach auf Sprung): ' + JSON.stringify(targets));
-    assert.ok(ss.filter(x => x.x === 'Los').length >= 4, '„Los“ vor jedem Wurf');
-    const iLos = ss.findIndex(x => x.x === 'Los'), iT = ss.findIndex(x => x.x === log[0].target);
+    assert.ok(ss.filter(x => x.x === 'Los!').length >= 4, '„Los“ vor jedem Wurf');
+    const iLos = ss.findIndex(x => x.x === 'Los!'), iT = ss.findIndex(x => x.x === log[0].target);
     assert.ok(iLos >= 0 && iT > iLos, 'erst „Los“, dann das Ziel');
   });
 
@@ -745,7 +745,7 @@ test('Sprungkraft (Demo, Handy-Größe): Strecksprünge und Einbein links/rechts
     assert.equal(e.n, 10); assert.ok(e.right > e.left, `links ${e.left}, rechts ${e.right}`);
     const said = await page.evaluate(() => __said);
     assert.ok(said.includes('Wechsel. Fünf auf dem rechten Bein.'));
-    assert.ok(!said.includes('Nur ein Bein.') && !said.includes('Falsches Bein.'), said.join(' | '));
+    assert.ok(!said.some(x => /^Nur auf dem|^Anderes Bein/.test(x)), said.join(' | '));
     assert.match(said.at(-1), /Rechts \d+ Prozent stärker/);
     assert.doesNotMatch(said.at(-1), /letztes Mal/, 'erste Einbein-Übung: kein Vergleich mit den Strecksprüngen');
     await page.click('#card [data-c=close]');

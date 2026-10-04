@@ -70,7 +70,7 @@ function start(){
   if(!settings.line){ openSetup(); hint('Erst die 7-m-Linie antippen', 2500); return; }
   closeSetup(); $('#endCard').hidden = true; unlockBeep(); ensureSession();
   app.series = settings.series ? {run:Date.now(), n:0, hits:0, done:false} : null;
-  say(settings.series ? `Serie: ${SERIES.reps} Siebenmeter. Stell dich hinter die Linie. Nach dem Pfiff hast du drei Sekunden.` : 'Stell dich hinter die Linie. Nach dem Pfiff hast du drei Sekunden.');
+  say(settings.series ? `Serie mit ${SERIES.reps} Siebenmetern. Stell dich ruhig hinter die Linie. Nach dem Pfiff hast du drei Sekunden.` : 'Stell dich ruhig hinter die Linie. Nach dem Pfiff hast du drei Sekunden.');
   setState('ready'); app.stateT = now() + 3;   // Ansage ausreden lassen
   F = []; $('#btnStart').textContent = 'Stopp'; $('#btnStart').classList.add('running'); keepAwake(); renderSeries();
 }
@@ -222,7 +222,7 @@ async function share(){
 $('#btnStart').onclick = async () => {
   if(app.state !== 'off'){ stop(); return; }
   if(app.source==='none'){
-    say('Einrichtung'); unlockBeep();
+    say('Einrichtung.'); unlockBeep();
     try{ await startSource(); openSetup(); }catch(e){ console.error(e); hint('Start fehlgeschlagen: ' + (e.message || e), 7000); }
     return;
   }

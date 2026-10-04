@@ -529,3 +529,17 @@ test('Abwehr (DHB): Grundposition breit, Arme in Vorhalte, Oberkörper fast aufr
   assert.match(s.say, /Heraustreten 0 von 1 mit richtiger Stellung\..*Beine etwas mehr als schulterbreit\..*Oberkörper fast aufrecht/);
   assert.doesNotMatch(s.say, /Arme leicht angewinkelt/);
 });
+
+/* ---------- Sprachausgabe (shared/js/speech.js) ---------- */
+import { voiceScore, pickVoice, spokenText } from '../shared/js/speech.js';
+
+test('Sprache: natürliche deutsche Stimme bevorzugt, Einheiten ausgeschrieben', () => {
+  const vs = [{name:'English', lang:'en-US'}, {name:'eSpeak German', lang:'de'}, {name:'Deutsch', lang:'de-DE'}, {name:'Microsoft Katja Online (Natural)', lang:'de-DE'}, {name:'Google Deutsch', lang:'de-DE'}];
+  assert.equal(pickVoice(vs).name, 'Microsoft Katja Online (Natural)');
+  assert.equal(pickVoice(vs.slice(0, 3)).name, 'Deutsch', 'Systemstimme vor eSpeak');
+  assert.equal(pickVoice([{name:'English', lang:'en-US'}]), null);
+  assert.ok(voiceScore({name:'Google Deutsch', lang:'de-DE'}) > voiceScore({name:'Deutsch', lang:'de-DE'}));
+  assert.equal(spokenText('Erst die 6-m-Linie einrichten'), 'Erst die Sechs-Meter-Linie einrichten');
+  assert.equal(spokenText('ca. 62 km/h · 15 cm · 3,4 s · 80 %'), 'ca. 62 Stundenkilometer. 15 Zentimeter. 3,4 Sekunden. 80 Prozent');
+  assert.equal(spokenText('Geschafft. 2,0 Sekunden.'), 'Geschafft. 2,0 Sekunden.', 'schon ausgeschrieben bleibt');
+});

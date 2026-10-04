@@ -210,7 +210,7 @@ export function announce(t){
   lastTarget = c.name;
   if(taskCallInAir()){
     // Nur „Los“: das Ziel kommt erst beim Absprung (startAir).
-    app.pending = c.name; app.target = null; say('Los'); quiet(1.2); hudTarget('Los!'); setState('runup', t);
+    app.pending = c.name; app.target = null; say('Los!'); quiet(1.2); hudTarget('Los!'); setState('runup', t);
     if(app.source==='cam') recStart(t, 'Los');
     return;
   }

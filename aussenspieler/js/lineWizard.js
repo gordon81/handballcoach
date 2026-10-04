@@ -75,7 +75,7 @@ export function wizardFrame(f, t){
 
 function finishWalk(){
   const ar = canvas.width/canvas.height, pts = simplify(wizard.path, ar);
-  if(pts.length < 2){ stopWizard('Zu wenig Weg erkannt. Nochmal ablaufen oder Punkte antippen.'); say('Das hat nicht geklappt.'); return; }
+  if(pts.length < 2){ stopWizard('Zu wenig Weg erkannt. Nochmal ablaufen oder Punkte antippen.'); say('Das hat nicht geklappt. Lauf die Linie bitte noch einmal ab, oder tippe sie an.'); return; }
   // Gemalten Strich in der Nähe der Fußpunkte suchen (Bild ohne Person: Median der Lauf-Bilder).
   frames.push(grabFrame()); bgImg = medianFrame(frames); frames = [];
   const sn = snapLine(pts, 0.3*bodyLen/canvas.height, bgImg), sp = sn ? simplify(sn.pts, ar) : [];

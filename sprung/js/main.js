@@ -36,7 +36,7 @@ function step(t, f){
   } else if(app.state==='go' && f){
     const j = app.tracker.push(f);
     if(!j) return;
-    if(settings.ex === 'single' && j.leg !== app.leg){ big(j.leg === 'both' ? 'Beidbeinig' : 'Falsches Bein', 'bad', 900); say(j.leg === 'both' ? 'Nur ein Bein.' : 'Falsches Bein.'); return; }
+    if(settings.ex === 'single' && j.leg !== app.leg){ big(j.leg === 'both' ? 'Beidbeinig' : 'Falsches Bein', 'bad', 900); say(j.leg === 'both' ? `Nur auf dem ${LEG[app.leg]} Bein springen.` : `Anderes Bein. Spring auf dem ${LEG[app.leg]} Bein.`); return; }
     app.jumps.push(j);
     big(cm(j.height) + ' cm', 'ok', 900); render();
     const done = app.jumps.filter(x => settings.ex !== 'single' || x.leg === app.leg).length;
@@ -154,7 +154,7 @@ async function share(){
 $('#btnStart').onclick = async () => {
   if(app.state !== 'off'){ stop(); $('#countBox').hidden = true; return; }
   if(app.source==='none'){
-    say('Einrichtung'); unlockBeep();
+    say('Einrichtung.'); unlockBeep();
     try{ await startSource(); openSetup(); }catch(e){ console.error(e); hint('Start fehlgeschlagen: ' + (e.message || e), 7000); }
     return;
   }

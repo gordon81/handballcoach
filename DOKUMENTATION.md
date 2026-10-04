@@ -204,6 +204,8 @@ Unabhängig vom Modus sagt der Button **Ansage** jederzeit sofort ein Ziel an. D
 
 **Was die App spricht** (Sprachausgabe des Handys, Deutsch): Zielansagen, Lob und Tipp nach jedem Wurf, die Anweisungen beim Linie-Ablaufen, Hinweise beim Kamera-Check, „Los geht's“.
 
+**Stimme:** Die App nimmt die natürlichste deutsche Stimme, die das Handy hat (natürliche/„Online“-Stimmen vor den alten Systemstimmen), spricht etwas ruhiger als normal und schreibt Einheiten aus („Stundenkilometer“ statt „km/h“). Nach jedem Wurf sagt sie erst, was gut war, dann einen Tipp, z. B. *„Gut: Richtiges Sprungbein. Tipp: Arm früher hoch.“* Klingt die Stimme blechern: auf Android in den Einstellungen unter *Sprachausgabe* die Google-Sprachausgabe wählen und die deutsche Stimme in hoher Qualität herunterladen; auf dem iPhone unter *Bedienungshilfen → Gesprochene Inhalte → Stimmen → Deutsch* eine „Erweiterte“ Stimme laden.
+
 **Was die App hört:** nur, *dass* laut gerufen wurde (Lautstärke und Klang), im Modus „Nach Zuruf“. Es gibt **keine Spracherkennung**: die App versteht keine Wörter. Man kann also nicht per Stimme stoppen, ein bestimmtes Ziel verlangen, Treffer melden oder Einstellungen ändern. Das geht nur über die Buttons.
 
 Warum so: Worterkennung braucht auf Android eine Internetverbindung zu Google, ist in einer lauten Halle unzuverlässig und reagiert verzögert. Die Lautstärke-Erkennung läuft offline und sofort.
@@ -384,7 +386,7 @@ Der 7-m-Trainer prüft den Strafwurf nach den Regeln (IHF-Regeln, DHB-Fassung): 
 Ein Fehler ist es nur, wenn **beide** Füße vor dem Abwurf den Boden verlassen (z. B. ein Hüpfer). Abrollen, Ferse heben und Rutschen des Standfußes sind erlaubt; ein angehobener Fuß über der Linie zählt nicht als Berührung. Die Grenzen sind bisher nur im Demo geprüft (siehe Hallentest).
 
 ### Log und Bericht
-**Log** zeigt das aktuelle Training: wie viele Würfe regelgerecht waren, die Zeit im Schnitt, wie oft zu langsam / Linie / Standbein, die Serien und alle Würfe. **Bericht teilen** schickt den Text übers Teilen-Menü. Daten: localStorage `7m-settings` und `7m-log` (Demo: `7m-demo-…`), getrennt vom Außenwurf-Coach. Wurf-Videos gibt es im 7-m-Trainer noch nicht.
+**Log** zeigt das aktuelle Training: wie viele Würfe regelgerecht waren, die Zeit im Schnitt, wie oft zu langsam / Linie / kein Fuß am Boden, die Serien und alle Würfe. **Bericht teilen** schickt den Text übers Teilen-Menü. Daten: localStorage `7m-settings` und `7m-log` (Demo: `7m-demo-…`), getrennt vom Außenwurf-Coach. Wurf-Videos gibt es im 7-m-Trainer noch nicht.
 
 ### Hallentest 7 m
 Je 5 Würfe: sauber, bewusst zu langsam, Fuß auf die Linie, mit beiden Füßen kurz hochspringen, Standfuß nur rutschen lassen (darf kein Fehler sein). Notieren, was die App ansagt, und prüfen, ob man den Pfiff in der Halle gut hört. Danach im Log die Werte „Linie“ und „Fuß“ ansehen; daraus werden die Grenzen eingestellt.

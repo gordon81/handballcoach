@@ -25,8 +25,8 @@ let micHits = 0;                   // erkannte Rufe beim Mikro-Test
 function runCamCheck(){
   if(app.source!=='cam' || !settings.line) { cam = null; return null; }
   cam = checkCamera();
-  if(cam.status==='adjusted'){ showHint('Kamera hat sich bewegt. Linie neu ausgerichtet, bitte prüfen.', 4500); say('Die Kamera hat sich bewegt. Ich habe die Linie neu ausgerichtet. Bitte prüfen.'); }
-  else if(cam.status==='moved'){ showHint('Kamera hat sich bewegt. Bitte die Linie neu einrichten.', 4500); say('Die Kamera hat sich bewegt. Bitte die Linie neu einrichten.'); }
+  if(cam.status==='adjusted'){ showHint('Kamera hat sich bewegt. Linie neu ausgerichtet, bitte prüfen.', 4500); say('Die Kamera hat sich bewegt. Ich habe die Linie nachgeführt. Schau kurz, ob sie passt.'); }
+  else if(cam.status==='moved'){ showHint('Kamera hat sich bewegt. Bitte die Linie neu einrichten.', 4500); say('Die Kamera hat sich bewegt. Bitte richte die Linie neu ein.'); }
   return cam;
 }
 const frameReady = () => new Promise(r => setTimeout(r, 800));   // erstes Kamerabild abwarten
@@ -35,7 +35,7 @@ export function setRunning(on){ const b=$('#btnStart'); b.textContent = on ? 'St
 
 // Erster Schritt: Kamera und KI laden, Einrichtung zeigen. Training startet erst danach.
 export async function openSetup(){
-  if(app.source==='none') say('Einrichtung');   // Sprachausgabe im Klick freischalten
+  if(app.source==='none') say('Einrichtung.');   // Sprachausgabe im Klick freischalten
   try{
     await ensureModel();
     const fresh = app.source==='none';
@@ -43,7 +43,7 @@ export async function openSetup(){
     showSetup(false);
     if(fresh && settings.line){
       await frameReady();
-      if(runCamCheck()?.status==='ok'){ showHint('Linie von der letzten Einrichtung gefunden, Kamera steht gleich. Du kannst direkt starten.', 4500); say('Linie von der letzten Einrichtung gefunden.'); }
+      if(runCamCheck()?.status==='ok'){ showHint('Linie von der letzten Einrichtung gefunden, Kamera steht gleich. Du kannst direkt starten.', 4500); say('Die Linie vom letzten Mal passt noch.'); }
       render();
     }
   }catch(e){ console.error(e); showHint('Start fehlgeschlagen: ' + (e.message || e), 7000); }
@@ -57,11 +57,11 @@ export function startTraining(){
   }
   const tk = chosenTask();
   if(app.source==='cam' && tk?.needCam && settings.camPos !== tk.needCam){
-    showSetup(false); showHint(`Für „${tk.name}“ die Kameraposition ${CAM_POS[tk.needCam].name} wählen.`, 4500); say('Für diese Aufgabe bitte Kameraposition zwei wählen.'); return;
+    showSetup(false); showHint(`Für „${tk.name}“ die Kameraposition ${CAM_POS[tk.needCam].name} wählen.`, 4500); say('Für diese Aufgabe brauchst du Kameraposition zwei.'); return;
   }
   cancelMarking(); stopWizard(); hideSetup(); hideEnd();
   ensureSession(); setState('ready', curT());
-  say(beginTask(curT()) || 'Los geht’s'); unlockBeep(); setRunning(true); keepAwake(); syncMic();
+  say(beginTask(curT()) || 'Los geht’s.'); unlockBeep(); setRunning(true); keepAwake(); syncMic();
 }
 export function stopTraining(){ setState('off', curT()); app.target=null; hudTarget(null); endTaskRun(); setRunning(false); releaseWake(); syncMic(); render(); }
 

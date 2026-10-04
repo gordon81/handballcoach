@@ -107,6 +107,7 @@ export function evaluate(e, t, H){
   issues.sort((x,y) => PRIO.indexOf(x) - PRIO.indexOf(y));
   const T = tips(), main = issues[0] || null;
   const praise = good.length ? LABEL_GOOD[pick(good)] : null;
-  const speech = [praise ? praise + '.' : '', main ? T[main].short : pick(['Alles sauber!','Top Wurf!','Weiter so!'])].join(' ').trim();
+  // Ansage: erst was gut war, dann ein Tipp. Kurze ganze Sätze, damit die Stimme natürliche Pausen macht.
+  const speech = [praise ? `Gut: ${praise}.` : '', main ? `Tipp: ${T[main].short}` : pick(['Alles sauber. Weiter so.', 'Sauberer Wurf.', 'Sehr gut, genau so.'])].join(' ').trim();
   return {res, issues, good, praise, main, tip: main ? T[main].tip : null, rot, noLine: over===null, speech, m};
 }

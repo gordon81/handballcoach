@@ -22,7 +22,7 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 - `index.html` (Wurzel) – Startmenü: eine Karte (ein `<a>` in `#trainings`) pro Trainingsart, Stil inline. Neue Trainingsart = eigener Ordner mit eigener `index.html` + eine Zeile im Menü.
 - `shared/` – gemeinsamer Code aller Trainings (Pfade aus einem Training: `../shared/…` bzw. in JS `../../shared/js/…`):
   - `css/base.css` – Farben, Schriften, Grundstil.
-  - `js/utils.js` (Helfer), `js/speech.js` (Sprachausgabe `say(text, {queue})`, Piep `beep()`; Tests lesen `window.__said`), `js/wakelock.js` (Bildschirm wach), `js/pose.js` (`createPose(model)`: MediaPipe laden, GPU mit CPU-Fallback; URLs `TV`, `MODELS`).
+  - `js/utils.js` (Helfer), `js/speech.js` (Sprachausgabe `say(text, {queue})`: beste deutsche Stimme nach `voiceScore` (natürliche/Online/Google vor Systemstimmen, eSpeak/compact zuletzt), Tempo 0,95, `spokenText` schreibt Einheiten und „6-m-Linie“ aus und macht aus „·“ Satzpausen; Piep `beep()` mit weichem Ein-/Ausblenden; Tests lesen `window.__said`), `js/wakelock.js` (Bildschirm wach), `js/pose.js` (`createPose(model)`: MediaPipe laden, GPU mit CPU-Fallback; URLs `TV`, `MODELS`).
   - `js/mic.js` – Mikrofon-Pegel für alle Trainings (`micSampler()`: start/stop, alle 30 ms `onSample(v, hi, now, pk, lvl)`; Stimmbereich und hoher Bereich in dB aus der FFT, dazu aus dem Zeitsignal der letzten ~85 ms der Mittelpegel `lvl` und der lauteste 5-ms-Abschnitt `pk`). Der Zuruf im Außenwurf-Coach (`shout.js`) hängt sich daran.
   - `js/bounceDetect.js` – Ballaufprall erkennen (C2), ohne Browser: Knall = `pk` mindestens 9,5 dB über `lvl` (Crest) in mindestens 2 Messungen hintereinander (der kurze Knall liegt in mehreren 85-ms-Fenstern, der Einsatz eines Rufs nur in einem; Rauschen/Hallenlärm ~6 dB, Aufpralle ~12 dB), `pk` deutlich über dem Grundpegel (Empfindlichkeit `SENS` low 24 / mid 18 / high 12 dB), nicht hoch (Pfiff/Quietschen), 250 ms Sperre. Gezählt, wenn der Knall vorbei ist. Ein erster Versuch nur mit FFT-Pegeln verpasste Aufpralle, weil der Knall auf zwei Fenster fiel.
   - `js/hitDetect.js` – Treffererkennung ohne Browser: `detectHit(rings, tRelease)` (Bildänderung im Ring-Kreis gegen das Bild vor dem Wurf), `speedKmh`.
@@ -232,7 +232,7 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 
 Alle Grenzwerte stehen in `TH` (`aussenspieler/js/config.js`), Abweichungen je Kameraposition in `TH_POS`; der Code holt sie über `th()` (`store.js`).
 
-Feedback: Sprachansage = zufälliges Lob aus den guten Punkten + Kurz-Tipp des wichtigsten Fehlers. Texte in `tips()` (`aussenspieler/js/feedback.js`) (short / tip / drill), Labels in `LABEL_GOOD` / `LABEL_BAD`, Reihenfolge in `PRIO`.
+Feedback: Sprachansage = „Gut: <zufälliges Lob aus den guten Punkten>. Tipp: <Kurz-Tipp des wichtigsten Fehlers>“. Texte in `tips()` (`aussenspieler/js/feedback.js`) (short / tip / drill), Labels in `LABEL_GOOD` / `LABEL_BAD`, Reihenfolge in `PRIO`.
 
 ## Daten (localStorage)
 - `awc-settings`: `task` (`free` oder Aufgaben-id), `taskHist` (Verlauf je Aufgabe), `hand` (R/L), `pos` (LA/RA), `camPos` (base/court), `lines{base,court}` (Linie je Kameraposition), `mode` (auto/timer/call), `callMin`, `callMax`, `sens` (low/mid/high), `clips` (Wurf-Videos an/aus), `pause`, `camera`, `model`, `targets[{name,on}]`, `line{pts[],inside,at,snapped,ref{w,h,g}}` (normalisiert 0–1; altes Format `{a,b,inside}` wird beim Laden zu `pts:[a,b]`), `session{id,start,last}`.
@@ -294,6 +294,7 @@ Die Grenzwerte (`TH` in `aussenspieler/js/config.js`) sind bisher nur im Demo ge
 - 2026-10-03: Zweite Kameraposition „Feld mit Tor“ (hinter dem 7-m-Punkt, Tor und Absprungzone im Bild) in der Einrichtung, eigene Linie je Position, eigene Sprunghöhen-Grenzen, Demo und Test für Position 2.
 - 2026-10-03: Fix Zuruf: die ersten Rufe nach dem Mikro-Start gingen verloren (Messungen ohne Ton zogen den Grundpegel auf −200 dB). Fix: Ruf über Dauerlärm wurde manchmal verpasst, weil der Grundpegel bei kurzen Einbrüchen des Lärms nicht mehr nachzog.
 - 2026-10-04: Baustein „Aufgabe“ (Serie mit Ziel, Zähler, Ansage pro Wurf, Ende-Karte mit „Nochmal“, Verlauf/Bestwert, Abschnitt in Log und Bericht) und erste Aufgabe A1 „Absprung an der Linie“. `TESTSTRATEGIE.md`.
+- 2026-10-04: Sprachausgabe weicher und verständlicher (beste deutsche Stimme, ruhigeres Tempo, Einheiten ausgeschrieben, weicher Piep), Ansagen sprachlich geglättet („Gut: … Tipp: …“, ganze Sätze).
 - 2026-10-04: Außenwurf/Rückraum: Oberkörper wird in der Wurfauslage (höchster Punkt) bewertet statt im Abwurf; Pässe: Ellbogen auf Schulterhöhe geprüft (DHB-/KNSU-Kriterien).
 - 2026-10-04: 7-m-Trainer nach den Regeln korrigiert: Standfuß darf rutschen, Fehler nur, wenn kein Fuß am Boden bleibt (IHF 15:1); angehobener Fuß zählt nicht als Linienberührung.
 - 2026-10-04: Abwehr-Beinarbeit nach den DHB-Technikkriterien korrigiert (Grundposition parallel/breit/aufrecht/Arme vorn, Heraustreten mit Fuß und Führarm auf der Wurfarmseite, Gegner Rechts-/Linkshänder), `QUELLEN.md`.

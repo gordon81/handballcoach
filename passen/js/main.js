@@ -62,7 +62,7 @@ function setState(s, t = now()){ app.state = s; app.stateT = t; const el = $('#s
 function start(){
   closeSetup(); unlockBeep(); ensureSession(); F = []; app.hits = []; app.passes = []; app.lastCam = now();
   $('#card').hidden = true; $('#count').textContent = '0'; $('#count').className = ''; $('#countBox').hidden = false;
-  say(`${settings.dur} Sekunden Pässe gegen die Wand. Auf den Piep.`);
+  say(`${settings.dur} Sekunden Pässe gegen die Wand. Los geht’s nach dem Piep.`);
   setState('count'); app.stateT = now();
   $('#btnStart').textContent = 'Stopp'; $('#btnStart').classList.add('running'); keepAwake(); syncMic();
 }
@@ -176,7 +176,7 @@ async function share(){
 $('#btnStart').onclick = async () => {
   if(app.state !== 'off'){ stop(); $('#countBox').hidden = true; return; }
   if(app.source==='none'){
-    say('Einrichtung'); unlockBeep();
+    say('Einrichtung.'); unlockBeep();
     try{ await startSource(); openSetup(); }catch(e){ console.error(e); hint('Start fehlgeschlagen: ' + (e.message || e), 7000); }
     return;
   }

@@ -172,7 +172,7 @@ async function share(){
 $('#btnStart').onclick = async () => {
   if(app.state !== 'off'){ stop(); return; }
   if(app.source==='none'){
-    say('Einrichtung'); unlockBeep();
+    say('Einrichtung.'); unlockBeep();
     try{ await startSource(); openSetup(); }catch(e){ console.error(e); hint('Start fehlgeschlagen: ' + (e.message || e), 7000); }
     return;
   }
