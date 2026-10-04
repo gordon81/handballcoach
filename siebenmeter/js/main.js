@@ -164,7 +164,7 @@ function showCard(e){
   c.innerHTML = `<p class="res ${e.ok ? 'ok' : 'bad'}">${e.ok ? '✓' : '✗'} ${esc(e.why)}</p>
     <ul class="checks"><li>${ic(!has('slow') && !has('none'))}<span>Zeit nach dem Pfiff: ${e.m.time != null ? fmtS(e.m.time) + ' s' : 'kein Wurf erkannt'} (erlaubt ${fmtS(TH7.maxTime)} s)</span></li>
       <li>${ic(!has('line'))}<span>${has('line') ? 'Fuß auf oder über der Linie' : 'Linie nicht berührt'}</span></li>
-      <li>${ic(!has('foot'))}<span>${has('foot') ? (e.m.lift ? 'Standbein abgehoben' : 'Standbein bewegt') : 'Standbein blieb stehen'}</span></li></ul>
+      <li>${ic(!has('foot'))}<span>${has('foot') ? 'Beide Füße vom Boden (ein Fuß muss am Boden bleiben)' : 'Ein Fuß blieb am Boden'}</span></li></ul>
     ${e.target ? `<div class="hitrow"><span>Ziel ${esc(e.target)} getroffen?</span><button data-h="1">Treffer</button><button class="no" data-h="0">Daneben</button></div>` : ''}`;
   c.querySelectorAll('[data-h]').forEach(b => b.onclick = () => { e.hit = b.dataset.h === '1'; store(); renderLog(); c.querySelectorAll('[data-h]').forEach(x => x.classList.toggle('on', x===b)); clearTimeout(cardTimer); cardTimer = setTimeout(() => c.hidden = true, 1200); });
   c.hidden = false; clearTimeout(cardTimer); cardTimer = setTimeout(() => c.hidden = true, 9000);
@@ -197,7 +197,7 @@ function renderLog(){
   const s = summary(list);
   box.innerHTML = `<p class="muted">${fmtDate(new Date(settings.session.start))}</p>
     <p><b>${s.ok} von ${s.n}</b> regelgerecht${s.avg != null ? `, im Schnitt ${fmtS(s.avg)} s nach dem Pfiff` : ''}${s.rated ? `, Treffer ${s.hit}/${s.rated}` : ''}</p>
-    <p class="muted">Zu langsam: ${s.slow} · Linie: ${s.line} · Standbein: ${s.foot}</p>
+    <p class="muted">Zu langsam: ${s.slow} · Linie: ${s.line} · kein Fuß am Boden: ${s.foot}</p>
     ${runs().length ? `<h3>Serien</h3>${runs().map(r => `<div class="entry"><b>${r.hits} von ${r.n}</b> <small>Ziel ${r.goal}, ${r.hits >= r.goal ? 'geschafft' : 'nicht geschafft'}</small></div>`).join('')}` : ''}
     <h3>Würfe</h3>${[...list].reverse().map(e => `<div class="entry"><b>Wurf ${e.nr}</b> ${e.target ? esc(e.target) : ''} <small>${e.hit===true ? 'Treffer' : e.hit===false ? 'daneben' : ''}</small><br>
       <small class="${e.ok ? 'tok' : 'tbad'}">${e.ok ? '✓' : '✗'} ${esc(e.why)}</small> <small>· Linie ${e.m.line ?? '–'} KL · Fuß ${e.m.foot ?? '–'} KL</small></div>`).join('')}`;
@@ -205,7 +205,7 @@ function renderLog(){
 export function reportText(){
   const list = sessionEntries(); if(!list.length) return null;
   const s = summary(list), L = [`7-m-Training vom ${fmtDate(new Date(settings.session.start))}`, `${s.ok} von ${s.n} regelgerecht` + (s.avg != null ? `, im Schnitt ${fmtS(s.avg)} s nach dem Pfiff` : '')];
-  L.push(`Zu langsam: ${s.slow}, Linie übertreten: ${s.line}, Standbein bewegt: ${s.foot}`);
+  L.push(`Zu langsam: ${s.slow}, Linie übertreten: ${s.line}, kein Fuß am Boden: ${s.foot}`);
   if(s.rated) L.push(`Treffer: ${s.hit} von ${s.rated}`);
   if(runs().length){ L.push('', 'Serien:'); runs().forEach(r => L.push(`- ${r.hits} von ${r.n} (Ziel ${r.goal}) ${r.hits >= r.goal ? 'geschafft' : 'nicht geschafft'}`)); }
   L.push('', 'Würfe:'); list.forEach(e => L.push(`${e.nr}. ${e.target ? e.target + ': ' : ''}${e.why}${e.hit===true ? ', Treffer' : e.hit===false ? ', daneben' : ''}`));

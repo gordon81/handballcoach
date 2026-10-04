@@ -166,7 +166,7 @@ test('7 m: sauberer Wurf nach 1,5 s', () => {
   assert.equal(r.ok, true, JSON.stringify(r));
   assert.ok(Math.abs(r.m.time - 1.45) < 0.1, `Zeit ${r.m.time}`);
   assert.match(r.say, /^Sauber\. 1,[45] Sekunden\.$/);
-  assert.ok(r.m.foot < TH7.footMove);
+  assert.ok(r.m.foot < TH7.footLift);
 });
 
 test('7 m: zu langsam (über 3 s) und kein Wurf', () => {
@@ -185,15 +185,19 @@ test('7 m: Linie übertreten (Fußspitze jenseits der Linie)', () => {
   assert.equal(judge7(frames7({frontX:t => t > 1.7 ? 480 : 560}), 0, LINE7).ok, true);
 });
 
-test('7 m: Standbein – ein Fuß muss stehen bleiben; Rauschen zählt nicht', () => {
+test('7 m: ein Fuß bleibt am Boden (Regel 15:1), Rutschen ist erlaubt, Rauschen zählt nicht', () => {
   const r = judge7(frames7({frontX:t => t > 0.8 ? 590 : 560}), 0, LINE7);
-  assert.equal(r.ok, true, 'hinterer Fuß steht, vorderer darf sich bewegen');
-  // Beide bewegen sich: vorderer rutscht, hinterer wird über opts nicht bewegt → anders bauen.
+  assert.equal(r.ok, true, 'vorderer Fuß rutscht: erlaubt');
+  // Beide Füße rutschen am Boden (kein Abheben): erlaubt.
   const fr = frames7({}); fr.forEach(f => { if(f.t > 0.8){ f.rToe = {x:f.rToe.x - 40, y:f.rToe.y}; f.rHeel = {x:f.rHeel.x - 40, y:f.rHeel.y}; f.lToe = {x:f.lToe.x + 30, y:f.lToe.y}; f.lHeel = {x:f.lHeel.x + 30, y:f.lHeel.y}; } });
-  assert.deepEqual(judge7(fr, 0, LINE7).issues, ['foot']);
+  assert.deepEqual(judge7(fr, 0, LINE7).issues, [], 'Rutschen ist kein Fehler');
+  // Ein Fuß abgehoben, der andere bleibt: erlaubt (der andere Fuß darf abgehoben werden).
+  const one = frames7({}); one.forEach(f => { if(f.t > 0.8){ f.rToe = {x:f.rToe.x, y:f.rToe.y - 30}; f.rHeel = {x:f.rHeel.x, y:f.rHeel.y - 30}; } });
+  assert.deepEqual(judge7(one, 0, LINE7).issues, [], 'ein Fuß darf abheben');
   const lift = frames7({}); lift.forEach(f => { if(f.t > 0.8){ for(const k of ['lToe','lHeel','rToe','rHeel']) f[k] = {x:f[k].x, y:f[k].y - 20}; } });
   const rl = judge7(lift, 0, LINE7);
-  assert.deepEqual(rl.issues, ['foot']); assert.equal(rl.m.lift, true, 'hochgesprungen');
+  assert.deepEqual(rl.issues, ['foot']); assert.equal(rl.m.lift, true, 'beide Füße in der Luft (hochgesprungen)');
+  assert.equal(rl.say, 'Ein Fuß muss am Boden bleiben.');
   const small = judge7(frames7({frontX:t => 560 + 6*Math.sin(t*40)}), 0, LINE7);
   assert.equal(small.ok, true, 'kleine Schwankungen (3 % KL) sind kein Bewegen');
 });

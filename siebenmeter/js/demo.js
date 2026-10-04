@@ -1,13 +1,13 @@
 // Demo-Modus des 7-m-Trainers: gezeichnete Halle (shared/js/demo/scene.js), Kamera schräg hinter der 7-m-Linie,
 // eine Person steht hinter der Linie und wirft nach dem Pfiff. Würfe im Wechsel:
-// sauber (1,2 s), zu langsam (3,4 s), Linie übertreten, Standbein bewegt (beide Füße hüpfen nach vorn).
+// sauber (1,2 s), zu langsam (3,4 s), Linie übertreten, beide Füße in der Luft (Hüpfer nach vorn).
 import { app, settings } from './state.js';
 import { cv, setView, proj, drawFloor, joints, landmarks, drawPerson, ball, add, sub, hand } from '../../shared/js/demo/scene.js';
 
 const CAM = {pos:[4.2, 10.6, 1.7], look:[-0.3, 7.0, 0.5]};
 const HOME = {x:0.1, y:7.75};
 // t: Wurf so viele Sekunden nach dem Pfiff. step: vorderer Fuß rutscht nach vorn (m), hop: beide Füße (m).
-export const VARS = [{t:1.2}, {t:3.4}, {t:1.4, step:0.35}, {t:1.3, hop:0.2}];
+export const VARS = [{t:1.2}, {t:3.4}, {t:1.4, step:0.35}, {t:1.3, hop:0.05}];
 const P = {x:HOME.x, y:HOME.y, a:-Math.PI/2, phi:0, s:0, lift:0, lf:0, rf:0, lfx:0.3, rfx:-0.25, raise:0, swing:0, twist:0, lean:0.05, ball:true};
 let shot = null, shotNo = 0, ballFly = null, last = null, running = false, tPrev = 0;
 const R = () => settings.hand !== 'L';
@@ -21,7 +21,7 @@ function behave(dt){
   P.swing = Math.min(1, Math.max(0, (u - shot.t + 0.04)/0.08));   // Abwurf schnell wie in echt (Hand ~10 m/s)
   P.twist = (R() ? 1 : -1)*(0.4*P.raise - 0.8*P.swing);
   if(shot.step && u > shot.t - 0.4) P[front] = 0.3 + shot.step*Math.min(1, (u - shot.t + 0.4)/0.2);
-  if(shot.hop && u > shot.t - 0.5){ const k = Math.min(1, (u - shot.t + 0.5)/0.2); P.y = HOME.y - shot.hop*k; P.lift = 0.12*Math.sin(Math.PI*k); }
+  if(shot.hop && u > shot.t - 0.5){ const k = Math.min(1, (u - shot.t + 0.5)/0.2); P.y = HOME.y - shot.hop*k; P.lift = 0.2*Math.sin(Math.PI*k); P.lf = P.rf = P.lift; }   // beide Füße vom Boden
   if(P.swing > 0.8 && P.ball){ P.ball = false; ballFly = {p:hand(R()), t:0}; }
   if(u > shot.t + 1.5 && app.state!=='go'){ shot = null; reset(); }
 }

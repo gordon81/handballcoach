@@ -580,7 +580,7 @@ test('7-m-Trainer (Demo, Handy-Größe): Linie antippen, Pfiff, Bewertung, Serie
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'kein Querscrollen');
   });
 
-  await t.test('Serie mit 4 Würfen: sauber, zu langsam, Linie, Standbein', async () => {
+  await t.test('Serie mit 4 Würfen: sauber, zu langsam, Linie, beide Füße in der Luft', async () => {
     await page.click('#setup [data-a=start]');
     await until(page, () => M.st.log.length >= 4, null, 120000, '4 Würfe');
     const log = await page.evaluate(() => M.st.log.map(e => ({ok:e.ok, issues:e.issues, m:e.m, target:e.target})));
@@ -592,7 +592,7 @@ test('7-m-Trainer (Demo, Handy-Größe): Linie antippen, Pfiff, Bewertung, Serie
     assert.ok(sa.filter(x => log.some(e => e.target === x.x)).every(x => x.s === 'ready'), 'Ziel vor dem Pfiff');
     assert.ok(sa.some(x => /^Sauber\. 1,\d Sekunden\. Noch 3\.$/.test(x.x)), sa.map(x => x.x).join(' | '));
     assert.ok(sa.some(x => /^Zu langsam\. 3,\d Sekunden\./.test(x.x)));
-    assert.ok(sa.some(x => x.x === 'Standbein bewegt. 1 von 4. Ziel war 2.'), sa.map(x => x.x).join(' | '));
+    assert.ok(sa.some(x => x.x === 'Ein Fuß muss am Boden bleiben. 1 von 4. Ziel war 2.'), sa.map(x => x.x).join(' | '));
   });
 
   await t.test('Ende der Serie, Log und Bericht', async () => {
@@ -604,7 +604,7 @@ test('7-m-Trainer (Demo, Handy-Größe): Linie antippen, Pfiff, Bewertung, Serie
     assert.match(await page.textContent('#logBody'), /1 von 4[\s\S]*regelgerecht[\s\S]*Serien/);
     await page.click('#logSheet [data-close]');
     const rep = await page.evaluate(async () => (await import('/siebenmeter/js/main.js')).reportText());
-    assert.match(rep, /1 von 4 regelgerecht/); assert.match(rep, /Linie übertreten: 1, Standbein bewegt: 1/);
+    assert.match(rep, /1 von 4 regelgerecht/); assert.match(rep, /Linie übertreten: 1, kein Fuß am Boden: 1/);
   });
 
   assert.deepEqual(errors, [], 'Fehler in der Browser-Konsole');

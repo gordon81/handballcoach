@@ -1,13 +1,14 @@
 // Regeln des 7-m-Wurfs, reine Logik ohne Browser (Unit-Tests in tests/unit.mjs).
-// Nach dem Pfiff: Wurf innerhalb von 3 s, kein Fuß auf oder über der 7-m-Linie, ein Fuß bleibt stehen (Standbein).
+// Nach den Regeln (IHF-Regeln, DHB-Fassung): Wurf innerhalb von 3 s nach dem Pfiff (14:4), die 7-m-Linie weder berühren
+// noch überschreiten, bevor der Ball die Hand verlassen hat (14:5), und ein Teil eines Fußes berührt ununterbrochen den
+// Boden (15:1); der andere Fuß darf abgehoben werden. Rutschen des Standfußes ist erlaubt, Abheben nicht.
 // Alle Punkte in Bildpixeln; Längen werden in Körperlängen (KL = Schultermitte–Knöchelmitte) gerechnet.
 
 // Grenzen. Bis zum Hallentest Schätzungen (siehe brain.md, Hallentest).
 export const TH7 = {
   maxTime: 3.0,     // s vom Pfiff bis zum Abwurf (Regel)
   vThrow: 3.0,      // KL/s: so schnell muss das Handgelenk mindestens sein, damit es als Wurf zählt
-  footMove: 0.05,   // KL (~7 cm): so weit darf sich der Bodenpunkt eines Fußes bis zum Abwurf höchstens bewegen
-  footLift: 0.05,   // KL: Fuß gilt als abgehoben, wenn er so weit über seiner Höhe beim Pfiff ist
+  footLift: 0.05,   // KL (~7 cm): Fuß gilt als abgehoben, wenn er im Bild so weit über seiner Höhe beim Pfiff ist
   lineTouch: 0.0,   // KL: Fußspitze/Ferse jenseits der Linienmitte (+ = Richtung Tor) gilt als übertreten
   waitThrow: 4.5    // s nach dem Pfiff: kein Wurf erkannt
 };
@@ -60,35 +61,39 @@ export function judge7(frames, tw, line, th = TH7){
   const time = w ? Math.round((w.t - tw)*100)/100 : null;
   if(!w) issues.push('none'); else if(time > th.maxTime) issues.push('slow');
 
-  // Linie: Spitze und Ferse beider Füße vom Pfiff bis zum Abwurf.
+  // Linie: Spitze und Ferse beider Füße vom Pfiff bis zum Abwurf, nur solange der Fuß am Boden ist (ein angehobener Fuß
+  // liegt im Bild höher und sähe sonst aus wie über der Linie, berührt sie aber nicht).
+  const y0 = {}; for(const sd of ['l', 'r']) y0[sd] = before.length ? median(before.map(f => foot(f, sd).y)) : null;
   let lineMax = -Infinity;
-  if(line) for(const f of during) for(const k of ['lToe', 'lHeel', 'rToe', 'rHeel']) lineMax = Math.max(lineMax, lineDist(line, f[k])/bl);
+  if(line) for(const f of during) for(const sd of ['l', 'r']){
+    if(y0[sd] != null && (y0[sd] - foot(f, sd).y)/bl > th.footLift) continue;   // Fuß in der Luft
+    for(const k of ['Toe', 'Heel']) lineMax = Math.max(lineMax, lineDist(line, f[sd+k])/bl);
+  }
   if(line && lineMax > th.lineTouch) issues.push('line');
 
-  // Standbein: Bodenpunkt jedes Fußes gegen seine Lage beim Pfiff (Median, gegen Rauschen auch im Verlauf über 3 Frames).
-  // Ein Fuß muss stehen bleiben; es zählt der ruhigere.
-  let footMin = Infinity, lifted = true;
+  // Standfuß: ein Fuß muss vom Pfiff bis zum Abwurf ununterbrochen am Boden sein (Regel 15:1). Je Fuß die größte Höhe über
+  // seiner Lage beim Pfiff (über 3 Bilder geglättet); Fehler, wenn beide Füße irgendwann abgehoben waren. Rutschen zählt nicht.
+  let footMin = Infinity;
   for(const s of ['l', 'r']){
     const b0 = before.length ? {x:median(before.map(f => foot(f, s).x)), y:median(before.map(f => foot(f, s).y))} : null;
     if(!b0 || !during.length) continue;
-    const pts = during.map(f => foot(f, s));
-    const sm = pts.map((p, i) => { const q = pts.slice(Math.max(0, i-1), i+2); return {x:median(q.map(z => z.x)), y:median(q.map(z => z.y))}; });
-    const move = Math.max(...sm.map(p => d2(p, b0)))/bl, lift = Math.max(...sm.map(p => b0.y - p.y))/bl > th.footLift;
-    if(move < footMin){ footMin = move; lifted = lift; }
+    const pts = during.map(f => foot(f, s).y);
+    const sm = pts.map((y, i) => median(pts.slice(Math.max(0, i-1), i+2)));
+    footMin = Math.min(footMin, Math.max(0, ...sm.map(y => b0.y - y))/bl);
   }
   if(footMin === Infinity) footMin = null;
-  if(footMin != null && (footMin > th.footMove || lifted)) issues.push('foot');
+  if(footMin != null && footMin > th.footLift) issues.push('foot');
 
   const r2 = x => x == null || !isFinite(x) ? null : Math.round(x*100)/100;
-  const m = {time, line:r2(lineMax), foot:r2(footMin), lift:footMin != null && lifted};
+  const m = {time, line:r2(lineMax), foot:r2(footMin), lift:footMin != null && footMin > th.footLift};
   const ok = !issues.length;
   return {ok, issues, m, why:ok ? `Sauber, ${fmtS(time)} s` : WHY[issues[0]](m), say:ok ? `Sauber. ${speakS(time)}.` : SAY[issues[0]](m)};
 }
 
 export const fmtS = s => s == null ? '–' : s.toFixed(1).replace('.', ',');
 const speakS = s => `${fmtS(s)} Sekunden`;
-const WHY = {none:() => 'Kein Wurf erkannt', slow:m => `Zu langsam, ${fmtS(m.time)} s`, line:() => 'Linie übertreten', foot:() => 'Standbein bewegt'};
-const SAY = {none:() => 'Kein Wurf erkannt.', slow:m => `Zu langsam. ${speakS(m.time)}.`, line:() => 'Linie übertreten.', foot:() => 'Standbein bewegt.'};
+const WHY = {none:() => 'Kein Wurf erkannt', slow:m => `Zu langsam, ${fmtS(m.time)} s`, line:() => 'Linie übertreten', foot:() => 'Kein Fuß am Boden geblieben'};
+const SAY = {none:() => 'Kein Wurf erkannt.', slow:m => `Zu langsam. ${speakS(m.time)}.`, line:() => 'Linie übertreten.', foot:() => 'Ein Fuß muss am Boden bleiben.'};
 
 // Serie: reps Würfe, geschafft bei goal sauberen.
 export const SERIES = {reps:10, goal:8};

@@ -364,7 +364,7 @@ Die Grenzwerte der Prüfungen sind bisher nur im Demo geprüft. Beim ersten Hall
 
 **App:** https://gordon81.github.io/handballcoach/siebenmeter/ (im Startmenü die Karte „7-m-Wurf“) · **Demo:** `siebenmeter/?demo=1`
 
-Der 7-m-Trainer prüft den Strafwurf nach den Regeln: Wurf **innerhalb von 3 Sekunden nach dem Pfiff**, die **7-m-Linie nicht berühren** und das **Standbein nicht bewegen oder abheben**, bis der Ball weg ist.
+Der 7-m-Trainer prüft den Strafwurf nach den Regeln (IHF-Regeln, DHB-Fassung): Wurf **innerhalb von 3 Sekunden nach dem Pfiff** (14:4), die **7-m-Linie weder berühren noch überschreiten**, bevor der Ball die Hand verlassen hat (14:5), und **ein Fuß bleibt ununterbrochen am Boden** (15:1). Der andere Fuß darf abheben, Rutschen ist erlaubt.
 
 ### Aufbau und Einrichtung
 1. Handy aufs Stativ, **seitlich hinter der 7-m-Linie**, erhöht (1–1,5 m). Linie, Füße und Wurfarm müssen im Bild sein.
@@ -377,17 +377,17 @@ Der 7-m-Trainer prüft den Strafwurf nach den Regeln: Wurf **innerhalb von 3 Sek
 1. Hinter die Linie stellen und **ruhig stehen**. Nach einer Sekunde sagt die App das Ziel an („Oben links“ …).
 2. Kurz danach, nach einer zufälligen Pause, kommt der **Pfiff** (hoher Ton, „Pfiff!“ groß im Bild). Wer sich vorher bewegt, bekommt „Zu früh bewegt“ und es geht von vorn los.
 3. Werfen. Die App erkennt den Abwurf an der schnellen Armbewegung.
-4. Ansage: *„Sauber. 1,4 Sekunden.“* oder der wichtigste Fehler: *„Zu langsam. 3,4 Sekunden.“*, *„Linie übertreten.“*, *„Standbein bewegt.“*, *„Kein Wurf erkannt.“* In der Serie dazu, wie viele Würfe noch fehlen.
-5. Die Karte zeigt Zeit, Linie und Standbein, darunter **Treffer / Daneben** für das angesagte Ziel.
+4. Ansage: *„Sauber. 1,4 Sekunden.“* oder der wichtigste Fehler: *„Zu langsam. 3,4 Sekunden.“*, *„Linie übertreten.“*, *„Ein Fuß muss am Boden bleiben.“*, *„Kein Wurf erkannt.“* In der Serie dazu, wie viele Würfe noch fehlen.
+5. Die Karte zeigt Zeit, Linie und Standfuß, darunter **Treffer / Daneben** für das angesagte Ziel.
 6. Nach der Serie: *„Serie geschafft: 8 von 10.“* bzw. *„6 von 10. Ziel war 8.“* und eine große Karte mit **Nochmal** und **Fertig**.
 
-Das Standbein darf abrollen (Ferse heben ist erlaubt), aber nicht rutschen oder abheben. Gemessen wird der Fuß, der ruhiger bleibt; ab ca. 7 cm Bewegung gilt er als bewegt. Diese Grenze und die Linie sind bisher nur im Demo geprüft (siehe Hallentest).
+Ein Fehler ist es nur, wenn **beide** Füße vor dem Abwurf den Boden verlassen (z. B. ein Hüpfer). Abrollen, Ferse heben und Rutschen des Standfußes sind erlaubt; ein angehobener Fuß über der Linie zählt nicht als Berührung. Die Grenzen sind bisher nur im Demo geprüft (siehe Hallentest).
 
 ### Log und Bericht
 **Log** zeigt das aktuelle Training: wie viele Würfe regelgerecht waren, die Zeit im Schnitt, wie oft zu langsam / Linie / Standbein, die Serien und alle Würfe. **Bericht teilen** schickt den Text übers Teilen-Menü. Daten: localStorage `7m-settings` und `7m-log` (Demo: `7m-demo-…`), getrennt vom Außenwurf-Coach. Wurf-Videos gibt es im 7-m-Trainer noch nicht.
 
 ### Hallentest 7 m
-Je 5 Würfe: sauber, bewusst zu langsam, Fuß auf die Linie, Standbein anheben oder rutschen lassen. Notieren, was die App ansagt, und prüfen, ob man den Pfiff in der Halle gut hört. Danach im Log die Werte „Linie“ und „Fuß“ ansehen; daraus werden die Grenzen eingestellt.
+Je 5 Würfe: sauber, bewusst zu langsam, Fuß auf die Linie, mit beiden Füßen kurz hochspringen, Standfuß nur rutschen lassen (darf kein Fehler sein). Notieren, was die App ansagt, und prüfen, ob man den Pfiff in der Halle gut hört. Danach im Log die Werte „Linie“ und „Fuß“ ansehen; daraus werden die Grenzen eingestellt.
 
 ---
 
