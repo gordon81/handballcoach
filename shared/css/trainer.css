@@ -1,4 +1,4 @@
-/* 7-m-Trainer: Bild, Anzeigen, Karten, Leiste. Farben und Grundstil aus ../shared/css/base.css. */
+/* Gemeinsamer Stil der einfachen Trainings (7-m-Trainer, Abwehr): Bild, Anzeigen, Karten, Leiste. Grundstil aus base.css. */
 #stage{position:relative;flex:1;min-height:0;background:#000;overflow:hidden}
 #video,#overlay{position:absolute;left:0;top:0}
 #overlay{touch-action:none}
@@ -17,7 +17,7 @@
 /* Große Anzeige in der Mitte: Ziel, „Pfiff!“, Zeit. Aus einigen Metern lesbar. */
 #big{position:absolute;left:50%;top:60px;transform:translateX(-50%);font-family:var(--head);font-weight:800;font-size:clamp(2.6rem,12vw,6rem);
   line-height:1;white-space:nowrap;pointer-events:none;text-shadow:0 4px 20px rgba(0,0,0,.85)}
-#big.whistle{color:var(--blue)} #big.ok{color:var(--ok)} #big.target{color:var(--orange)}
+#big.whistle{color:var(--blue)} #big.ok{color:var(--ok)} #big.target{color:var(--orange)} #big.bad{color:var(--bad)}
 #hint{position:absolute;left:50%;top:42%;transform:translateX(-50%);background:rgba(10,15,20,.88);padding:12px 16px;border-radius:12px;
   font-weight:600;text-align:center;max-width:88%;z-index:20;pointer-events:none}
 #hint[hidden]{display:none}

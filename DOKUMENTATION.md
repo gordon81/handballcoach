@@ -375,3 +375,30 @@ Das Standbein darf abrollen (Ferse heben ist erlaubt), aber nicht rutschen oder 
 
 ### Hallentest 7 m
 Je 5 Würfe: sauber, bewusst zu langsam, Fuß auf die Linie, Standbein anheben oder rutschen lassen. Notieren, was die App ansagt, und prüfen, ob man den Pfiff in der Halle gut hört. Danach im Log die Werte „Linie“ und „Fuß“ ansehen; daraus werden die Grenzen eingestellt.
+
+---
+
+## 13. Abwehr-Beinarbeit
+
+**App:** https://gordon81.github.io/handballcoach/abwehr/ (Karte „Abwehr-Beinarbeit“ im Startmenü) · **Demo:** `abwehr/?demo=1`
+
+Schnelle Abwehrbewegung ohne Ball: seitlich verschieben, heraustreten und zurück, auf Zuruf der App.
+
+### Aufbau
+- Handy aufs Stativ, **frontal vor dir**, 4–5 m weg, etwa Hüfthöhe. Ganzer Körper im Bild und Platz für einen großen Schritt nach links, rechts, vorn und hinten. Zwei Hütchen ca. 3 m auseinander helfen.
+- **Start** drücken, in der Einrichtung die **Dauer** (30, 40 oder 60 s) und die **Kamera** wählen (Frontkamera, wenn du dich selbst sehen willst), dann **Runde starten**.
+
+### Ablauf
+1. *„Stell dich aufrecht hin, Gesicht zum Handy.“* Kurz still stehen: die App misst deine Stand-Höhe.
+2. *„Grundstellung.“* Tief gehen, Knie gebeugt.
+3. Die App ruft **links**, **rechts**, **raus** (Richtung Handy) oder **zurück**. Die Richtungen gelten **aus deiner Sicht**. Das Wort steht auch groß im Bild. So schnell wie möglich in die Richtung verschieben. Ein tiefer Piep heißt: falsche Richtung, zu langsam oder keine Bewegung.
+4. Stehst du zu weit außen, ruft die App dich zur Mitte zurück.
+5. Am Ende: *„Fertig. 12 von 14 richtig. Reaktion im Schnitt 0,45 Sekunden.“* und, wenn nötig, *„Füße einmal gekreuzt …“* oder *„Tiefer in die Grundstellung …“*. Die Karte zeigt dasselbe mit **Nochmal** und **Fertig**.
+
+Richtig ist eine Bewegung in die gerufene Richtung, die innerhalb von 1 Sekunde beginnt. Die Reaktionszeit zählt vom Ruf bis zur ersten deutlichen Bewegung der Hüfte; wenn das Handy meldet, wann die Sprachausgabe wirklich anfängt, wird diese Verzögerung abgezogen.
+
+### Log und Bericht
+**Log** zeigt jede Runde: richtig, Reaktion im Schnitt, wie oft die Füße gekreuzt waren, wie viel der Zeit du tief warst, und jeden Ruf einzeln. **Bericht teilen** schickt das als Text. Daten: localStorage `def-settings` und `def-log` (Demo: `def-demo-…`).
+
+### Hallentest Abwehr
+Eine Runde machen und prüfen: stimmen links und rechts (auch mit der Frontkamera)? Sind die Reaktionszeiten plausibel? Kommt „gekreuzt“ nur, wenn du wirklich kreuzt? Danach werden die Grenzen eingestellt.

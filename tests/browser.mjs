@@ -457,6 +457,51 @@ test('7-m-Trainer (Demo, Handy-Größe): Linie antippen, Pfiff, Bewertung, Serie
   await page.close();
 });
 
+test('Abwehr-Beinarbeit (Demo, Handy-Größe): Rufe, Reaktion, Richtung, gekreuzte Füße, Log', {timeout:150000}, async t => {
+  const page = await browser.newPage({viewport:{width:390, height:800}});
+  const errors = []; page.on('pageerror', e => errors.push(e.message));
+  page.on('console', m => { if(m.type()==='error') errors.push(m.text()); });
+  await page.addInitScript(() => { window.__said = []; if(!sessionStorage.getItem('init')){ sessionStorage.setItem('init', '1'); localStorage.clear(); localStorage.setItem('def-demo-settings', JSON.stringify({dur:20})); } });
+  await page.goto(srv.url + 'abwehr/?demo=1');
+  await page.evaluate(async () => { window.M = {st:await import('/abwehr/js/state.js'), demo:await import('/abwehr/js/demo.js')}; });
+
+  await t.test('Runde: jede Bewegung so bewertet, wie die Person sie gemacht hat', async () => {
+    await page.click('#btnStart');
+    await page.waitForSelector('#setup [data-a=start]');
+    assert.ok(await minHeight(page, '#setup button') >= 44);
+    await page.click('#setup [data-a=start]');
+    await until(page, () => M.st.log.length >= 1, null, 60000, 'Runde fertig');
+    const {e, done} = await page.evaluate(() => ({e:M.st.log[0], done:M.demo.demo.done}));
+    assert.ok(e.n >= 5 && e.moves.length === done.length, `${e.n} Rufe, ${done.length} Bewegungen`);
+    e.moves.forEach((m, i) => {
+      const d = done[i];
+      assert.equal(m.cmd, d.cmd); assert.equal(m.dir, d.did, `Ruf ${i+1}: Richtung`);
+      assert.ok(m.react >= d.d && m.react <= d.d + 0.3, `Ruf ${i+1}: Reaktion ${m.react} s, simuliert ${d.d} s`);
+      assert.equal(m.ok, d.did === d.cmd && d.d < 1, `Ruf ${i+1}: richtig/falsch`);
+      assert.equal(m.crossed, d.cross, `Ruf ${i+1}: Füße gekreuzt`);
+    });
+    assert.ok(e.low > 0.8, `Grundstellung tief ${e.low}`);
+    const said = await page.evaluate(() => __said);
+    assert.ok(said.includes('Grundstellung.'));
+    assert.match(said.at(-1), new RegExp(`^Fertig\\. ${e.ok} von ${e.n} richtig\\. Reaktion im Schnitt \\d,\\d\\d Sekunden\\.`));
+  });
+
+  await t.test('Ergebnis-Karte, Log, Bericht', async () => {
+    assert.match(await page.textContent('#card'), /von \d+ richtig[\s\S]*Reaktion im Schnitt/);
+    assert.ok(await minHeight(page, '#card button') >= 48);
+    await page.click('#card [data-c=close]');
+    await page.click('#btnLog');
+    assert.match(await page.textContent('#logBody'), /Runde 1: \d+ von \d+ richtig/);
+    await page.click('#logSheet [data-close]');
+    const rep = await page.evaluate(async () => (await import('/abwehr/js/main.js')).reportText());
+    assert.match(rep, /Runde 1 \(20 s\): \d+ von \d+ richtig/);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'kein Querscrollen');
+  });
+
+  assert.deepEqual(errors, [], 'Fehler in der Browser-Konsole');
+  await page.close();
+});
+
 test('Mikrofon: Rufe erkannt, Lärm nicht (Fake-Mikrofon)', {timeout:120000}, async t => {
   const page = await browser.newPage();
   await page.goto(srv.url + 'aussenspieler/');
@@ -483,7 +528,7 @@ test('Mikrofon: Rufe erkannt, Lärm nicht (Fake-Mikrofon)', {timeout:120000}, as
   await page.close();
 });
 
-test('Startmenü: Karten öffnen Außenwurf-Coach und 7-m-Trainer, „Alle Trainings“ führt zurück', {timeout:60000}, async () => {
+test('Startmenü: Karten öffnen alle Trainings, „Alle Trainings“ führt zurück', {timeout:60000}, async () => {
   const page = await browser.newPage({viewport:{width:390, height:800}});
   const errors = []; page.on('pageerror', e => errors.push(e.message));
   await page.goto(srv.url);
@@ -496,6 +541,11 @@ test('Startmenü: Karten öffnen Außenwurf-Coach und 7-m-Trainer, „Alle Train
   await page.click('#trainings a[href="siebenmeter/"]');
   await page.waitForSelector('#btnStart');
   assert.ok(page.url().endsWith('/siebenmeter/'), page.url());
+  await page.click('a[href="../"]');
+  await page.waitForSelector('#trainings');
+  await page.click('#trainings a[href="abwehr/"]');
+  await page.waitForSelector('#btnStart');
+  assert.ok(page.url().endsWith('/abwehr/'), page.url());
   await page.click('a[href="../"]');
   await page.waitForSelector('#trainings');
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'kein Querscrollen am Handy');

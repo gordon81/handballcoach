@@ -239,3 +239,46 @@ test('Serie unter Ermüdung: Sprunghöhe Ende gegen Anfang, Übertritte', () => 
   assert.equal(judge('tired', j(0.3, ['over'])).ok, false);
   assert.equal(best({tired:[{hits:20, n:20, score:0.93}, {hits:20, n:20, score:0}]}, 'tired').score, 0.93, 'Bestwert nach Quote');
 });
+
+/* ---------- Abwehr-Beinarbeit (abwehr/js/rules.js) ---------- */
+import { judgeMove, nextCmd, summary as defSummary, TH_D } from '../abwehr/js/rules.js';
+
+// Frontal, KL 200 px. Bewegung startet react s nach dem Ruf (t = 0), dauert 0,4 s: dx (px, + = im Bild rechts = links des Spielers), grow (Größe).
+function moveFrames({react = 0.4, dx = 0, grow = 0, cross = false}){
+  const out = [];
+  for(let t = -0.5; t <= 1.7; t += 1/30){
+    const u = Math.min(1, Math.max(0, (t - react)/0.4)), x = 500 + dx*u, bl = 200*(1 + grow*u), j = Math.sin(t*40)*1.5;
+    const lA = cross && u > 0.3 && u < 0.8 ? x - 30 : x + 20, rA = x - 20;
+    out.push({t, hip:{x:x + j, y:400}, bl, lAnk:{x:lA, y:600}, rAnk:{x:rA, y:600}});
+  }
+  return out;
+}
+
+test('Abwehr: Richtung und Reaktionszeit', () => {
+  const l = judgeMove(moveFrames({dx:120}), 0, 'links');
+  assert.equal(l.ok, true, JSON.stringify(l)); assert.equal(l.dir, 'links');
+  assert.ok(l.react > 0.4 && l.react < 0.6, `Reaktion ${l.react}`);
+  assert.equal(judgeMove(moveFrames({dx:-120}), 0, 'rechts').ok, true);
+  assert.equal(judgeMove(moveFrames({grow:0.2}), 0, 'raus').dir, 'raus');
+  assert.equal(judgeMove(moveFrames({grow:-0.15}), 0, 'zurück').dir, 'zurück');
+  const wrong = judgeMove(moveFrames({dx:-120}), 0, 'links');
+  assert.equal(wrong.ok, false); assert.match(wrong.why, /Falsche Richtung \(rechts\)/);
+  const slow = judgeMove(moveFrames({dx:120, react:1.1}), 0, 'links');
+  assert.equal(slow.ok, false); assert.match(slow.why, /Zu langsam/);
+  assert.equal(judgeMove(moveFrames({}), 0, 'links').why, 'Keine Bewegung', 'Stehen bleiben = keine Bewegung (Rauschen zählt nicht)');
+  const lagged = judgeMove(moveFrames({dx:120, react:0.6}), 0, 'links', TH_D, 0.3);
+  assert.ok(lagged.react < 0.5, 'Verzögerung der Sprachausgabe wird abgezogen');
+});
+
+test('Abwehr: gekreuzte Füße, nächster Ruf, Zusammenfassung', () => {
+  assert.equal(judgeMove(moveFrames({dx:120, cross:true}), 0, 'links').crossed, true);
+  assert.equal(judgeMove(moveFrames({dx:120}), 0, 'links').crossed, false);
+  assert.equal(nextCmd(0.6, 0), 'rechts', 'weit im Bild rechts → zurück zur Mitte');
+  assert.equal(nextCmd(-0.6, 0), 'links');
+  assert.equal(nextCmd(0, 0.15), 'zurück');
+  assert.notEqual(nextCmd(0, 0, ['raus', 'raus'], () => 0.5), 'raus', 'nicht dreimal dasselbe');
+  const s = defSummary([{ok:true, react:0.4}, {ok:true, react:0.6, crossed:true}, {ok:false, react:1.2}], 0.5);
+  assert.equal(s.avg, 0.5); assert.equal(s.ok, 2); assert.equal(s.crossed, 1);
+  assert.match(s.say, /^Fertig\. 2 von 3 richtig\. Reaktion im Schnitt 0,50 Sekunden\. Füße einmal gekreuzt\..*Tiefer in die Grundstellung/);
+  assert.doesNotMatch(defSummary([{ok:true, react:0.4}], 0.9).say, /Tiefer/);
+});

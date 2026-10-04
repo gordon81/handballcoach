@@ -114,7 +114,7 @@ Heute bewertet die App jeden Wurf, stellt aber keine **Aufgabe** mit Ziel. Für 
 - **Prüfbar:** ●●○ für das Zählen in ruhiger Halle (der Ballaufprall ist genau das, was der Zuruf heute **ausfiltert**: kurzer Knall mit Nachhall), ●○○ wenn nebenan gespielt wird. Ob das Wandziel getroffen wurde: ●○○.
 - **Baut auf:** `shoutDetect.js` (Aufprall-Muster umgekehrt nutzen), Arm-Prüfung. **Aufwand M.**
 
-### B5 · Abwehr-Beinarbeit auf Zuruf
+### B5 · Abwehr-Beinarbeit auf Zuruf ✅ gebaut (`abwehr/`)
 - **Ziel:** schnelle Abwehrbewegung: seitlich verschieben, heraustreten, zurück, ohne Ball.
 - **Aufbau:** zwei Hütchen ~3 m auseinander, Handy frontal.
 - **Ablauf:** App sagt zufällig „links“, „rechts“, „raus“, „zurück“, im Wechsel mit kurzen Pausen, 30–45 s.
@@ -150,7 +150,7 @@ Heute bewertet die App jeden Wurf, stellt aber keine **Aufgabe** mit Ziel. Für 
 | **C2 Ballaufprall per Mikro** (Muster aus `shoutDetect.js` umgekehrt: kurzer Knall + Nachhall zählt) | B4, B7, Prellen | ●●○ in ruhiger Halle | **M** |
 | **C3 Wurf ohne Sprung** ✅ (`findThrow` im 7-m-Trainer) (Abwurf an Handgelenk-Geschwindigkeit erkennen) | B1, B4, B7 | ●●○ | **M** |
 | **C4 Gerade Linien** (7 m, 9 m gestrichelt) für Einrichtung und Übertritt | B1, B2 | ●●● | **S** |
-| **C5 Reaktionszeit** (Ansage-Zeitpunkt → erste deutliche Hüftbewegung, Sprachausgabe-Verzögerung abziehen) | A2, B3, B5 | ●●○ | **S** |
+| **C5 Reaktionszeit** ✅ (`judgeMove` in `abwehr/`) (Ansage-Zeitpunkt → erste deutliche Hüftbewegung, Sprachausgabe-Verzögerung abziehen) | A2, B3, B5 | ●●○ | **S** |
 
 ---
 
@@ -162,7 +162,7 @@ Heute bewertet die App jeden Wurf, stellt aber keine **Aufgabe** mit Ziel. Für 
 4. [x] **A2 Entscheidung in der Luft** (Ansage beim Absprung) ✅; Verzögerung wird gemessen (`callDet`/`callLag`), **in der Halle ansehen** (offen). **S**
 5. [x] Gemeinsamen Code nach `shared/` ziehen (Kamera, Pose, Sprache, Zuruf, Clips, Demo), zweite Karte im Startmenü vorbereiten. **M**
 6. [x] **B1 7-m-Trainer** ✅ als zweites Training (mit C3 Wurf ohne Sprung, C4 gerade Linie). **M**
-7. [ ] **B5 Abwehr-Beinarbeit** (ohne Ball, mit C5 Reaktionszeit). **M**
+7. [x] **B5 Abwehr-Beinarbeit** ✅ (ohne Ball, mit C5 Reaktionszeit). **M**
 8. [ ] **B2 Rückraum-Sprungwurf** (großteils Außenwurf-Coach mit 9-m-Linie und Schrittzählung). **M**
 9. [ ] **C2 Ballaufprall per Mikro**, dann **B4 Pässe gegen die Wand**. **M**
 10. [ ] **A4 Winkel vergrößern**, **A6 Gegenstoß auf Zeit**, **B3 Kreisläufer**, **B6 Sprungkraft**. **S–M**

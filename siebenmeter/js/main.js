@@ -3,50 +3,19 @@ import { app, settings, log, store, ensureSession, sessionEntries, DEMO } from '
 import { judge7, throwDone, lineDist, seriesSpeech, SERIES, TH7, fmtS } from './rules.js';
 import { say, beep, unlockBeep } from '../../shared/js/speech.js';
 import { keepAwake, releaseWake } from '../../shared/js/wakelock.js';
-import { createPose } from '../../shared/js/pose.js';
 import { esc, pick, fmtDate } from '../../shared/js/utils.js';
+import { $, video, canvas, ctx, now, hint, big, startSource as startStage, bodyPoints, drawSkeleton, initSheets } from '../../shared/js/stage.js';
 
-const $ = s => document.querySelector(s);
-const video = $('#video'), canvas = $('#overlay'), ctx = canvas.getContext('2d');
-let pose = null, stream = null, hintTimer = null, cardTimer = null, setupOpen = false;
+let pose = null, cardTimer = null, setupOpen = false;
 let F = [];   // Frames der letzten Sekunden (Pixel)
 
-function hint(t, ms = 2500){ const h = $('#hint'); h.textContent = t; h.hidden = false; clearTimeout(hintTimer); if(ms) hintTimer = setTimeout(() => h.hidden = true, ms); }
-function big(text, cls = '', ms = 0){ const b = $('#big'); b.textContent = text || ''; b.className = cls; if(ms) setTimeout(() => { if(b.textContent === text) b.textContent = ''; }, ms); }
-const now = () => performance.now()/1000;
-
 /* ---------- Kamera und KI ---------- */
-async function startSource(){
-  if(DEMO){ const d = await import('./demo.js'); pose = d.detector; stream = d.startDemo(); }
-  else {
-    if(!navigator.mediaDevices?.getUserMedia) throw new Error('Keine Kamera verfügbar. Die Seite muss über https geöffnet werden.');
-    hint('KI-Modell wird geladen … (einmalig einige MB)', 0);
-    pose = await createPose(settings.model);
-    stream = await navigator.mediaDevices.getUserMedia({audio:false, video:{facingMode:{ideal:'environment'}, width:{ideal:1280}, height:{ideal:720}, frameRate:{ideal:60}}});
-    $('#hint').hidden = true;
-  }
-  video.srcObject = stream; await video.play();
-  app.source = 'cam'; $('#empty').hidden = true; layout();
-}
-function layout(){
-  const st = $('#stage').getBoundingClientRect(), vw = video.videoWidth || 16, vh = video.videoHeight || 9;
-  const s = Math.min(st.width/vw, st.height/vh), w = vw*s, h = vh*s;
-  for(const el of [video, canvas]) Object.assign(el.style, {left:(st.width-w)/2+'px', top:(st.height-h)/2+'px', width:w+'px', height:h+'px'});
-  if(canvas.width !== vw || canvas.height !== vh){ canvas.width = vw; canvas.height = vh; }
-}
-addEventListener('resize', layout); video.addEventListener('loadedmetadata', layout);
+async function startSource(){ pose = await startStage(DEMO ? await import('./demo.js') : null, {model:settings.model}); app.source = 'cam'; }
 
 /* ---------- Körperpunkte → Frame ---------- */
-const IX = {lSh:11, rSh:12, lWr:15, rWr:16, lHip:23, rHip:24, lAnk:27, rAnk:28, lHeel:29, rHeel:30, lToe:31, rToe:32};
 function makeFrame(lm, t){
-  const W = canvas.width, H = canvas.height, p = {};
-  for(const k in IX){ const q = lm[IX[k]]; p[k] = {x:q.x*W, y:q.y*H, v:q.visibility ?? 1}; }
-  const mid = (a, b) => ({x:(a.x+b.x)/2, y:(a.y+b.y)/2});
-  const sh = mid(p.lSh, p.rSh), ank = mid(p.lAnk, p.rAnk);
-  const f = {t, lm, lToe:p.lToe, lHeel:p.lHeel, rToe:p.rToe, rHeel:p.rHeel, wr:settings.hand==='L' ? p.lWr : p.rWr, hip:mid(p.lHip, p.rHip),
-    bl:Math.hypot(sh.x-ank.x, sh.y-ank.y)};
-  f.valid = Math.min(p.lHip.v, p.rHip.v, p.lAnk.v, p.rAnk.v, p.lSh.v, p.rSh.v) > 0.35 && f.bl > 20;
-  return f;
+  const p = bodyPoints(lm);
+  return {t, lm, lToe:p.lToe, lHeel:p.lHeel, rToe:p.rToe, rHeel:p.rHeel, wr:settings.hand==='L' ? p.lWr : p.rWr, hip:p.hip, bl:p.bl, valid:p.valid};
 }
 const linePx = () => { const l = settings.line, W = canvas.width, H = canvas.height, s = p => ({x:p.x*W, y:p.y*H}); return l ? {a:s(l.a), b:s(l.b), goal:s(l.goal)} : null; };
 // Steht der Spieler still (Hüfte in der letzten Sekunde < 0,1 KL bewegt) und ganz hinter der Linie?
@@ -127,7 +96,6 @@ function loop(){
 }
 requestAnimationFrame(loop);
 
-const BONES = [[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28],[27,29],[29,31],[27,31],[28,30],[30,32],[28,32]];
 function draw(){
   const W = canvas.width, H = canvas.height, lw = Math.max(2, W/350);
   ctx.clearRect(0, 0, W, H);
@@ -141,11 +109,7 @@ function draw(){
   }
   if(mk) for(const p of mk.pts){ ctx.fillStyle = '#ff5a5a'; ctx.beginPath(); ctx.arc(p.x*W, p.y*H, lw*4, 0, 7); ctx.fill(); }
   const f = app.latest;
-  if(f){
-    const c = app.state==='go' ? '#3d8bff' : f.valid ? '#33d17a' : '#f6c445';
-    ctx.strokeStyle = c; ctx.lineWidth = lw;
-    for(const [a, b] of BONES){ const p = f.lm[a], q = f.lm[b]; ctx.beginPath(); ctx.moveTo(p.x*W, p.y*H); ctx.lineTo(q.x*W, q.y*H); ctx.stroke(); }
-  }
+  if(f) drawSkeleton(f.lm, app.state==='go' ? '#3d8bff' : f.valid ? '#33d17a' : '#f6c445');
 }
 
 /* ---------- Linie antippen ---------- */
@@ -269,6 +233,6 @@ $('#btnLog').onclick = () => { renderLog(); $('#logSheet').hidden = false; };
 $('#repShare').onclick = share;
 $('#newSession').onclick = () => { if(confirm('Neues Training starten? Das aktuelle bleibt im Speicher.')){ ensureSession(true); renderLog(); } };
 $('#logClear').onclick = () => { if(confirm('Alle 7-m-Würfe löschen?')){ log.length = 0; store(); renderLog(); } };
-document.querySelectorAll('.sheet').forEach(s => s.addEventListener('click', e => { if(e.target===s || e.target.hasAttribute('data-close')) s.hidden = true; }));
+initSheets();
 if(DEMO){ const a = $('#demoLink'); a.textContent = 'Demo-Modus aktiv: „Start“ drücken. Hier zurück zur echten Kamera.'; a.href = './'; }
 document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible' && app.state!=='off') keepAwake(); });

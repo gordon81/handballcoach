@@ -57,7 +57,8 @@ export function drawFloor(){ g.drawImage(bg, 0, 0); }
 /* ---------- Person ---------- */
 // Person P: {x, y, a (Blickrichtung, rad), phi (Schrittphase), s (Gehen 0–1), lift (Sprung, m), lf/rf (Fuß links/rechts hoch, m),
 // raise (Wurfarm hoch 0–1), swing (Wurf 0–1), twist (Oberkörper gegen Hüfte, rad), lean (rad), ball (Ball in der Hand)}.
-// Optional lfx/rfx: Fuß links/rechts nach vorn versetzt (m), z. B. Ausfallschritt beim 7-m-Wurf; low: Abwurf aus der Hüfte (0–1).
+// Optional lfx/rfx: Fuß links/rechts nach vorn versetzt (m), z. B. Ausfallschritt beim 7-m-Wurf; lfy/rfy: Fuß nach rechts versetzt (m,
+// beim linken Fuß > 0,24 = Füße gekreuzt); low: Abwurf aus der Hüfte (0–1).
 
 // Boden pixelweise: Strahl durch jedes Pixel mit dem Boden schneiden, Holz + Linien (mit Kantenglättung).
 function renderHall(){
@@ -118,8 +119,8 @@ export function joints(P, R){
   j.lHip = add(pel, lf, 0.15); j.rHip = add(pel, lf, -0.15);
   const gait = 0.33*P.s*Math.sin(P.phi), lifts = [0.1*P.s*Math.max(0, Math.cos(P.phi)), 0.1*P.s*Math.max(0, -Math.cos(P.phi))];
   for(const [side, sg, k] of [['l', 1, 0], ['r', -1, 1]]){
-    const off = sg*gait + ((k ? P.rfx : P.lfx) || 0), z = 0.08 + lifts[k] + (k ? P.rf : P.lf);
-    const ank = [P.x + lf[0]*0.12*sg + fw[0]*off, P.y + lf[1]*0.12*sg + fw[1]*off, z];
+    const off = sg*gait + ((k ? P.rfx : P.lfx) || 0), ly = 0.12*sg - ((k ? P.rfy : P.lfy) || 0), z = 0.08 + lifts[k] + (k ? P.rf : P.lf);
+    const ank = [P.x + lf[0]*ly + fw[0]*off, P.y + lf[1]*ly + fw[1]*off, z];
     const hip = j[side+'Hip'], dd = Math.hypot(...sub(ank, hip)), m = add(hip, sub(ank, hip), 0.5);
     j[side+'Knee'] = add(m, fw, Math.sqrt(Math.max(0, 0.46*0.46 - dd*dd/4)));
     j[side+'Ank'] = ank; j[side+'Heel'] = add(add(ank, fw, -0.06), up, -0.05); j[side+'Toe'] = add(add(ank, fw, 0.19), up, -0.06);

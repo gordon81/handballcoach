@@ -1,10 +1,12 @@
-# Handballcoach – Außenwurf-Coach und 7-m-Trainer
+# Handballcoach – Außenwurf-Coach, 7-m-Trainer, Abwehr-Beinarbeit
 
 Web-App fürs Handy: Zielansage per Sprache, KI-Technik-Check (Übertritt, Sprungbein, Wurfarm, Körperdrehung, Sprunghöhe, Oberkörper), nach jedem Wurf ein Lob und ein Verbesserungstipp, Abschlussbericht zum Teilen oder Herunterladen. Läuft komplett im Browser mit Google MediaPipe Pose, ohne Server und ohne Kosten.
 
 **Startmenü (alle Trainings):** https://gordon81.github.io/handballcoach/
 
 **Außenwurf-Coach öffnen:** https://gordon81.github.io/handballcoach/aussenspieler/
+
+**Abwehr-Beinarbeit öffnen:** https://gordon81.github.io/handballcoach/abwehr/ (Demo: `abwehr/?demo=1`)
 
 **7-m-Trainer öffnen:** https://gordon81.github.io/handballcoach/siebenmeter/ (Demo: `siebenmeter/?demo=1`)
 
