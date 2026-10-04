@@ -91,3 +91,8 @@
 .btnrow.tasks{margin-top:4px}
 #card .taskline{margin:0 0 8px;font-family:var(--head);font-size:1.4rem;font-weight:800}
 #card .taskline.ok{color:var(--ok)} #card .taskline.bad{color:var(--bad)}
+/* Bedienbarkeit am Handy (mit Ball in der Hand, aus der Bewegung): Tipp-Flächen mindestens 44–48 px */
+.hitrow button{min-height:48px;padding:10px 18px;font-weight:600}
+.demoLink{min-height:44px}
+.chip{font-size:1.1rem}
+#setup .wide.primaryBtn{min-height:52px;font-size:1.1rem}

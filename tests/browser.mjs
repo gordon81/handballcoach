@@ -273,6 +273,11 @@ test('Aufgabe „Absprung an der Linie“ (Handy-Größe): Zähler, Ansagen, End
     await page.click('#setup [data-a=start]');
     assert.match(await page.evaluate(() => __said.at(-1)), /^Aufgabe Absprung an der Linie/, 'Anleitung statt „Los geht’s“');
     assert.equal(await page.textContent('#taskBox b'), '1/4');
+    await until(page, () => M.store.log.length >= 1, null, 40000, 'erster Wurf');
+    assert.ok(await minHeight(page, '#card button:not([hidden])') >= 44, 'Treffer/Daneben/Video auf der Karte groß genug');
+    await page.click('#btnSet');
+    assert.ok(await minHeight(page, '#setSheet select, #setSheet .wide, #setSheet .x') >= 44, 'Einstellungen: Auswahlfelder und Buttons groß genug');
+    await page.click('#setSheet [data-close]');
     await until(page, () => M.store.log.length >= 4, null, 90000, '4 Würfe');
     const log = await page.evaluate(() => M.store.log.map(e => ({ok:e.task?.ok, why:e.task?.why, line:e.m.line})));
     assert.deepEqual(log.map(e => e.ok), [true, false, false, true], JSON.stringify(log));

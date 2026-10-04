@@ -8,3 +8,4 @@
 #bar button{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 4px;font-size:.92rem;font-weight:600;min-height:48px}
 #bar button.primary{background:var(--orange);color:#1a1000;border-color:transparent;font-family:var(--head);font-size:1.25rem;font-weight:800}
 #bar button.primary.running{background:var(--bad);color:#fff}
+#bar button{min-width:44px}

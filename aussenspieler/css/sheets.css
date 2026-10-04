@@ -28,3 +28,11 @@
 .vbtn{float:right;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:5px 10px;font-weight:600}
 #clipSheet{z-index:11}
 .entry small.tok{color:var(--ok)} .entry small.tbad{color:var(--bad)}
+/* Bedienbarkeit: Tipp-Flächen mindestens 44 px (Schließen, Auswahlfelder, Ziel-Liste, Buttons) */
+.x{min-width:48px;min-height:48px}
+.row select,.row input{min-height:44px}
+.trow input[type=checkbox]{width:28px;height:28px}
+.trow input[type=text]{min-height:44px}
+.trow .x{min-width:44px;min-height:44px}
+.wide{min-height:48px;font-weight:600}
+.vbtn{min-height:44px;padding:8px 12px}

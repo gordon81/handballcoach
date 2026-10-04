@@ -222,6 +222,7 @@ Die Grenzwerte (`TH` in `aussenspieler/js/config.js`) sind bisher nur im Demo ge
 - 2026-10-03: Zweite Kameraposition „Feld mit Tor“ (hinter dem 7-m-Punkt, Tor und Absprungzone im Bild) in der Einrichtung, eigene Linie je Position, eigene Sprunghöhen-Grenzen, Demo und Test für Position 2.
 - 2026-10-03: Fix Zuruf: die ersten Rufe nach dem Mikro-Start gingen verloren (Messungen ohne Ton zogen den Grundpegel auf −200 dB). Fix: Ruf über Dauerlärm wurde manchmal verpasst, weil der Grundpegel bei kurzen Einbrüchen des Lärms nicht mehr nachzog.
 - 2026-10-04: Baustein „Aufgabe“ (Serie mit Ziel, Zähler, Ansage pro Wurf, Ende-Karte mit „Nochmal“, Verlauf/Bestwert, Abschnitt in Log und Bericht) und erste Aufgabe A1 „Absprung an der Linie“. `TESTSTRATEGIE.md`.
+- 2026-10-04: UX: Tipp-Flächen im Außenwurf-Coach auf mindestens 44–48 px (Treffer/Daneben, Schließen, Einstellungen, Ziel-Liste, Log), Zustand oben etwas größer; Browser-Test prüft die Größen.
 - 2026-10-04: 7-m-Trainer als zweites Training (`siebenmeter/`, Karte im Startmenü): Linie antippen, Ziel + Pfiff, 3-s-Regel, Linie, Standbein, Serie 10/8, Log, Bericht, Demo und Tests.
 - 2026-10-04: Gemeinsamer Code nach `shared/` (Grundstil, Helfer, Sprache, Bildschirm wach, KI laden, Demo-Halle und -Person), Vorbereitung für den 7-m-Trainer.
 - 2026-10-04: Aufgabe A2 „Entscheidung in der Luft“ (Ziel erst beim Absprung, Verzögerung von Erkennung und Sprachausgabe als Messwert).
