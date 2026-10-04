@@ -84,7 +84,7 @@ Heute bewertet die App jeden Wurf, stellt aber keine **Aufgabe** mit Ziel. Für 
 
 ## 3. Andere Positionen und Fähigkeiten
 
-### B1 · 7-m-Wurf
+### B1 · 7-m-Wurf ✅ gebaut (`siebenmeter/`; noch ohne Videos)
 - **Ziel:** Strafwurf unter Regel-Bedingungen: Standbein bleibt am Boden, Linie nicht berühren, Wurf innerhalb von 3 s nach dem Pfiff.
 - **Aufbau:** Handy seitlich hinter der 7-m-Linie, Linie (gerade, 1 m) antippen.
 - **Ablauf:** App pfeift (Ton), Ziel wird angesagt oder nach Zufall erst kurz vor dem Pfiff. Spieler wirft.
@@ -148,7 +148,7 @@ Heute bewertet die App jeden Wurf, stellt aber keine **Aufgabe** mit Ziel. Für 
 |---|---|---|---|
 | **C1 Treffererkennung** (Ball im Ring per Farbe oder Bildänderung im Zielbereich, Kameraposition 2 hat das Tor im Bild) | A2, A3, B1, B4, alle Trefferquoten | ●○○ heute, Ziel ●●○ | **L** |
 | **C2 Ballaufprall per Mikro** (Muster aus `shoutDetect.js` umgekehrt: kurzer Knall + Nachhall zählt) | B4, B7, Prellen | ●●○ in ruhiger Halle | **M** |
-| **C3 Wurf ohne Sprung** (Abwurf an Handgelenk-Geschwindigkeit erkennen) | B1, B4, B7 | ●●○ | **M** |
+| **C3 Wurf ohne Sprung** ✅ (`findThrow` im 7-m-Trainer) (Abwurf an Handgelenk-Geschwindigkeit erkennen) | B1, B4, B7 | ●●○ | **M** |
 | **C4 Gerade Linien** (7 m, 9 m gestrichelt) für Einrichtung und Übertritt | B1, B2 | ●●● | **S** |
 | **C5 Reaktionszeit** (Ansage-Zeitpunkt → erste deutliche Hüftbewegung, Sprachausgabe-Verzögerung abziehen) | A2, B3, B5 | ●●○ | **S** |
 
@@ -161,7 +161,7 @@ Heute bewertet die App jeden Wurf, stellt aber keine **Aufgabe** mit Ziel. Für 
 3. [ ] Erste Aufgaben ohne neue Erkennung: **A1 Absprung an der Linie** ✅, **A5 Serie unter Ermüdung**, **A3 Wurfhöhe auf Ansage**. **S** je Aufgabe
 4. [x] **A2 Entscheidung in der Luft** (Ansage beim Absprung) ✅; Verzögerung wird gemessen (`callDet`/`callLag`), **in der Halle ansehen** (offen). **S**
 5. [x] Gemeinsamen Code nach `shared/` ziehen (Kamera, Pose, Sprache, Zuruf, Clips, Demo), zweite Karte im Startmenü vorbereiten. **M**
-6. [ ] **B1 7-m-Trainer** als zweites Training (mit C3 Wurf ohne Sprung, C4 gerade Linie). **M**
+6. [x] **B1 7-m-Trainer** ✅ als zweites Training (mit C3 Wurf ohne Sprung, C4 gerade Linie). **M**
 7. [ ] **B5 Abwehr-Beinarbeit** (ohne Ball, mit C5 Reaktionszeit). **M**
 8. [ ] **B2 Rückraum-Sprungwurf** (großteils Außenwurf-Coach mit 9-m-Linie und Schrittzählung). **M**
 9. [ ] **C2 Ballaufprall per Mikro**, dann **B4 Pässe gegen die Wand**. **M**

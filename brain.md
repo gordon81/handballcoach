@@ -48,6 +48,12 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
   - `feedback.js` – Labels, `PRIO`, `tips()`.
   - `draw.js` – Overlay (Linie, Skelett). `summary.js` + `report.js` – Auswertung und Bericht.
   - `ui/` – `setupView.js` (Einrichtung vor dem Training, Start/Stopp), `controls.js` (Buttons, Video-Leiste, Training-Fenster), `settingsView.js`, `card.js` (Ergebnis-Karte), `logView.js`, `sheets.js`.
+- `siebenmeter/` – 7-m-Trainer (zweite Karte im Startmenü), siehe Abschnitt „7-m-Trainer“:
+  - `index.html`, `css/seven.css` – Gerüst und Stil (Grundstil aus `shared/`).
+  - `js/rules.js` – Regeln ohne Browser (unit-getestet): `judge7()` (3-s-Regel, Linie, Standbein), `findThrow()`/`throwDone()` (Wurf ohne Sprung = schnellstes Handgelenk relativ zur Hüfte), `lineDist()`, Grenzen `TH7`, Serie `SERIES`.
+  - `js/state.js` – Zustand `app`, `settings`/`log` im localStorage (`7m-settings`, `7m-log`; Demo `7m-demo-*`).
+  - `js/main.js` – Kamera/KI, Hauptschleife, Ablauf mit Pfiff, Linie antippen, Einrichtung, Karte, Serie, Log, Bericht (`reportText`).
+  - `js/demo.js` – Demo: Kamera schräg hinter der 7-m-Linie, Person wirft nach dem Pfiff (`VARS`: sauber 1,2 s, zu langsam 3,4 s, Linie, Standbein), `truthLine()` für Tests.
 - `tests/` (Wurzel) – automatische Tests (siehe „Tests“), nicht Teil der App.
 - `README.md` – Kurzbeschreibung für GitHub.
 - `DOKUMENTATION.md` – Anleitung für Nutzer: Bedienung, Einrichtung, Modi, Demo, Hallentest, wo Log, Videos und Einstellungen liegen und wie man sie löscht. Bei Änderungen an Bedienung oder Speicher mitpflegen.
@@ -88,13 +94,14 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 
 ## Tests (`tests/`)
 - Einmalig: `cd tests && npm install` (Playwright), Browser bei Bedarf `npx playwright install chromium`. Dann `npm test` (~2 min) oder nur `npm run unit` (Sekunden, ohne Browser).
-- `unit.mjs` (Node): Aufgaben-Regeln (`tasks.js`: Grenzen, cm-Ansage, Serie, Verlauf/Bestwert) und Ruf-Erkennung mit künstlichen Pegelverläufen: Ruf, Ballaufpralle, Quietschen, Pfiff, Dauerlärm + Ruf darüber (auch mit kurzen Einbrüchen), Mikro-Start ohne Ton, Sperre, eigene Ansage, Empfindlichkeit.
+- `unit.mjs` (Node): 7-m-Regeln (`rules.js`: Zeit, Linie, Standbein, Hüpfer ist kein Wurf, Serie), Aufgaben-Regeln (`tasks.js`: Grenzen, cm-Ansage, Serie, Verlauf/Bestwert) und Ruf-Erkennung mit künstlichen Pegelverläufen: Ruf, Ballaufpralle, Quietschen, Pfiff, Dauerlärm + Ruf darüber (auch mit kurzen Einbrüchen), Mikro-Start ohne Ton, Sperre, eigene Ansage, Empfindlichkeit.
 - `browser.mjs` (Playwright, headless Chromium, eigener kleiner Webserver `server.mjs`):
   - Demo von vorn bis hinten (Pause 1 s): Linie ablaufen (eingerastet, Median < 4 px, max < 12 px), 8 Würfe genau wie simuliert bewertet (gut, gut, Übertritt, flach + Arm unten), Videos gespeichert und abspielbar (MP4), „Videos aus“ → keine Clips, Zuruf-Modus (Ziel 2 s nach dem Ruf), Zuruf ohne Spieler im Bild ignoriert, Wurf ohne Ansage (Aufnahme beginnt nicht mitten im Anlauf neu, Clip gespeichert), „Kamera bewegen“ → Linie neu ausgerichtet, Mikro-Test in der Einrichtung (an, Ruf gezählt, Empfindlichkeit, aus); keine Fehler in der Konsole.
   - Demo mit Kameraposition 2: Linie ablaufen (eingerastet, genau), 4 Würfe wie simuliert bewertet, Wechsel 1 ↔ 2 behält die Linie jeder Position.
   - Aufgabe „Absprung an der Linie“ in Handy-Größe (390 px): Auswahl in der Einrichtung, 4 Würfe (nah, zu weit, Übertritt, nah) richtig bewertet, Ansagen (über `window.__said`), Ende-Karte, Verlauf, Log und Bericht, „Nochmal“, Tipp-Flächen ≥ 44 px.
   - Aufgabe „Entscheidung in der Luft“: vor jedem Wurf „Los“, das Ziel wird erst im Absprung angesagt (Zustand beim Sprechen), `callDet` < 250 ms, Bewertung (sauber / Übertritt / Arm), nachträglich getipptes „Daneben“ zählt, Messwert im Log.
-  - Startmenü: Karte öffnet `aussenspieler/`, „← Alle Trainings“ führt zurück, kein Querscrollen bei 390 px.
+  - 7-m-Trainer in Handy-Größe: Linie antippen (Treffer der echten Linie), Serie mit 4 Würfen (sauber, zu langsam, Linie, Standbein) richtig bewertet, Ziel vor dem Pfiff, Zeit ±0,2 s zur Simulation, Ansagen, Ende-Karte, Log und Bericht, Tipp-Flächen ≥ 44 px.
+  - Startmenü: Karten öffnen `aussenspieler/` und `siebenmeter/`, „← Alle Trainings“ führt zurück, kein Querscrollen bei 390 px.
   - Mikrofon über das Fake-Mikrofon von Chromium mit der künstlichen Hallen-Tonspur aus `wav.mjs`: genau die 3 Rufe; Stopp während des Starts → Mikro bleibt aus.
 - Nach jeder Änderung an Erkennung, Ablauf oder Zuruf `npm test` laufen lassen.
 
@@ -119,6 +126,14 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 - **A2 Entscheidung in der Luft** (`air`, `callInAir`): 10 Würfe, Ziel 7. Statt des Ziels sagt `announce()` nur „Los“ (`app.pending` = schon gewähltes Ziel, HUD „Los!“, Clip-Label „Los“). In `startAir()` wird das Ziel sofort angesagt (`callLate`), `app.target` gesetzt und gemessen: `m.callDet` = ms vom Absprung-Frame bis die App das Ziel abschickt (Erkennung, 2 Frames), `m.callLag` = ms bis die Sprachausgabe wirklich beginnt (`onstart` der Äußerung, kann nach der Landung nachgetragen werden; im headless Test ohne Stimme leer). Die Ansage nach der Landung wird angehängt (`say(…, {queue:true})`), damit das Ziel nicht abgeschnitten wird. Geschafft: kein Übertritt, richtiges Sprungbein, Wurfarm oben, nicht „Daneben“ getippt (Sprunghöhe/Drehung zählen hier nicht). Würfe ohne „Los“ zählen nicht. „Daneben“ nachträglich auf der Karte → `taskRecount(entry)` zieht `entry.task` und den Zähler nach.
 - Demo: `TASK_VAR` in `demo/sim.js` gibt je Aufgabe eine feste Wurf-Folge vor (A1: nah, zu weit, Übertritt, nah).
 - Neue Aufgabe = Eintrag in `TASKS` + Fall in `judge()` + Unit-Test + Wurf-Folge in `TASK_VAR` + Browser-Test.
+
+## 7-m-Trainer (`siebenmeter/`)
+- Aufbau: Handy seitlich hinter der 7-m-Linie, erhöht (1–1,5 m). Einrichtung: „Linie antippen“ = beide Enden der 7-m-Linie, dann ein Punkt Richtung Tor (`settings.line = {a, b, goal}`, normiert). Die Linie gilt als Gerade (auch über die Enden hinaus). Kein Einrasten auf den Strich (1 m, gut zu tippen).
+- Einstellungen in der Einrichtung: Wurfhand, „Ziel vor dem Pfiff ansagen“ (Ja: „Oben links“ … aus `settings.targets`), Übung „Serie 10 Würfe, Ziel 8“ oder „Frei“.
+- Ablauf (`app.state`): `ready` – wartet, bis der Spieler 1 s still steht (Hüfte < 0,1 KL bewegt) und alle Fußpunkte hinter der Linie sind → Ziel ansagen, `set` – Pfiff nach 1,6 s + zufällig 0–1,4 s (ohne Ziel 1 s + …). Bewegt er sich vorher oder steht über der Linie: „Zu früh bewegt“, zurück zu `ready`. Pfiff = Ton 2,8 kHz, 450 ms (`beep`) und „Pfiff!“ groß im Bild → `go` – bis der Wurf vorbei ist (`throwDone`: Spitze der Handgelenk-Geschwindigkeit + 0,25 s) oder 4,5 s → bewerten → `cool` (Pause, Standard 4 s) → `ready`.
+- Bewertung (`judge7`): Wurf = Frame mit der höchsten Geschwindigkeit des Wurf-Handgelenks relativ zur Hüfte nach dem Pfiff, mindestens `vThrow` 3 KL/s (C3 „Wurf ohne Sprung“). Zeit > 3,0 s → „zu langsam“; kein Wurf in 4,5 s → „kein Wurf erkannt“. Linie: Spitze oder Ferse eines Fußes vom Pfiff bis zum Abwurf jenseits der Linienmitte (`lineTouch` 0) → „Linie übertreten“. Standbein: Bodenpunkt (Mitte Spitze/Ferse, über 3 Frames geglättet) jedes Fußes gegen seine Lage beim Pfiff; der ruhigere Fuß zählt; mehr als `footMove` 0,05 KL (~7 cm) bewegt oder `footLift` 0,05 KL angehoben → „Standbein bewegt“. Messwerte im Log: `m = {time, line, foot, lift}` (KL).
+- Ansage nach dem Wurf: „Sauber. 1,4 Sekunden.“ / „Zu langsam. 3,4 Sekunden.“ / „Linie übertreten.“ / „Standbein bewegt.“, in der Serie + „Noch N.“ bzw. „Serie geschafft: 8 von 10.“. Karte mit Zeit, Linie, Standbein und Treffer/Daneben. Serien-Verlauf: `settings.seriesHist` (letzte 30).
+- Noch nicht: Wurf-Videos, Video-Datei-Analyse, Bestwert in der Einrichtung, Treffererkennung. Die Grenzen in `TH7` sind nur im Demo geprüft.
 
 ## Zuruf (Mikrofon, `shout.js`, `shoutDetect.js`)
 - Kein Spracherkenner, nur Pegel und Klang. Alle 30 ms eine FFT (2048 Punkte): Pegel im Stimmbereich 200–1200 Hz (`v`) und im hohen Bereich 2,5–6 kHz (`hi`). Grundpegel = Mittel der ersten 0,5 s mit Ton (Messungen ganz ohne Ton beim Mikro-Start, unter −150 dB, werden übersprungen), danach unterhalb der Schwelle langsam nachgeführt (nach unten schneller). Schwelle = Grundpegel + Empfindlichkeit (`sens`: low 20 / mid 14 / high 9 dB, mindestens −75 dB).
@@ -178,6 +193,7 @@ Die Grenzwerte (`TH` in `aussenspieler/js/config.js`) sind bisher nur im Demo ge
 6. Grenzen in `TH` (Position 1) bzw. `TH_POS.court` (Position 2) zwischen die Werte der guten und der bewusst schlechten Würfe legen. Übertritt: liegen echte Übertritte nur knapp im Plus oder saubere Absprünge im Plus, zuerst die Linie prüfen (Ablaufen wiederholen, Kamera fester).
 - Aufgabe „Entscheidung in der Luft“: 10 Würfe, Spalte „Ansage“ im Bericht ansehen (zweiter Wert = Sprachausgabe am Handy). Kommt das Ziel erst nach ~400 ms, hört der Spieler es zu spät (Flugzeit ~0,6 s). Dann: kürzere Ziel-Namen, kurze Töne statt Wörter oder die leichtere Variante (Ansage beim letzten Schritt) bauen.
 - Aufgabe „Absprung an der Linie“: 10 Würfe bewusst in verschiedenen Abständen (Maßband/Klebeband 10, 20, 30, 40 cm vor der Linie), angesagte cm mit den echten vergleichen. Fenster `TH.taskLineFar` (heute −0,2 KL ≈ 30 cm) so legen, dass 30 cm gerade noch zählt.
+- 7-m-Trainer: je 5 Würfe sauber, bewusst langsam (> 3 s), Fuß auf die Linie, Standbein anheben/rutschen. Im Log stehen Zeit, Linie und Fuß (KL). `TH7` in `siebenmeter/js/rules.js` anpassen; besonders `footMove`, weil echte Körperpunkte stärker zittern als im Demo. Prüfen, ob man den Pfiff in der Halle hört (sonst lauter/länger, `beep` in `main.js`).
 - Beide Kamerapositionen getrennt kalibrieren (Spalte „Kamera“ im Bericht). Auch Oberkörper und Drehung können sich je Position unterscheiden; dann weitere Werte in `TH_POS` eintragen.
 - cm-Angaben in Log und Bericht sind Schätzungen (`KL_CM` = 140 cm Schulter–Knöchel). Für die Grenzen zählen die Verhältnisse, nicht die genauen cm.
 
@@ -206,6 +222,7 @@ Die Grenzwerte (`TH` in `aussenspieler/js/config.js`) sind bisher nur im Demo ge
 - 2026-10-03: Zweite Kameraposition „Feld mit Tor“ (hinter dem 7-m-Punkt, Tor und Absprungzone im Bild) in der Einrichtung, eigene Linie je Position, eigene Sprunghöhen-Grenzen, Demo und Test für Position 2.
 - 2026-10-03: Fix Zuruf: die ersten Rufe nach dem Mikro-Start gingen verloren (Messungen ohne Ton zogen den Grundpegel auf −200 dB). Fix: Ruf über Dauerlärm wurde manchmal verpasst, weil der Grundpegel bei kurzen Einbrüchen des Lärms nicht mehr nachzog.
 - 2026-10-04: Baustein „Aufgabe“ (Serie mit Ziel, Zähler, Ansage pro Wurf, Ende-Karte mit „Nochmal“, Verlauf/Bestwert, Abschnitt in Log und Bericht) und erste Aufgabe A1 „Absprung an der Linie“. `TESTSTRATEGIE.md`.
+- 2026-10-04: 7-m-Trainer als zweites Training (`siebenmeter/`, Karte im Startmenü): Linie antippen, Ziel + Pfiff, 3-s-Regel, Linie, Standbein, Serie 10/8, Log, Bericht, Demo und Tests.
 - 2026-10-04: Gemeinsamer Code nach `shared/` (Grundstil, Helfer, Sprache, Bildschirm wach, KI laden, Demo-Halle und -Person), Vorbereitung für den 7-m-Trainer.
 - 2026-10-04: Aufgabe A2 „Entscheidung in der Luft“ (Ziel erst beim Absprung, Verzögerung von Erkennung und Sprachausgabe als Messwert).
 - 2026-10-03: Außenwurf-Coach in den Ordner `aussenspieler/` verschoben, im Wurzelverzeichnis ein Startmenü für mehrere Trainingsarten. Neue Adresse: https://gordon81.github.io/handballcoach/aussenspieler/ (Daten bleiben erhalten).

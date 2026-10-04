@@ -1,0 +1,274 @@
+// 7-m-Trainer: Kamera und KI, 7-m-Linie antippen, Ablauf mit Pfiff, Bewertung (rules.js), Serie, Log und Bericht.
+import { app, settings, log, store, ensureSession, sessionEntries, DEMO } from './state.js';
+import { judge7, throwDone, lineDist, seriesSpeech, SERIES, TH7, fmtS } from './rules.js';
+import { say, beep, unlockBeep } from '../../shared/js/speech.js';
+import { keepAwake, releaseWake } from '../../shared/js/wakelock.js';
+import { createPose } from '../../shared/js/pose.js';
+import { esc, pick, fmtDate } from '../../shared/js/utils.js';
+
+const $ = s => document.querySelector(s);
+const video = $('#video'), canvas = $('#overlay'), ctx = canvas.getContext('2d');
+let pose = null, stream = null, hintTimer = null, cardTimer = null, setupOpen = false;
+let F = [];   // Frames der letzten Sekunden (Pixel)
+
+function hint(t, ms = 2500){ const h = $('#hint'); h.textContent = t; h.hidden = false; clearTimeout(hintTimer); if(ms) hintTimer = setTimeout(() => h.hidden = true, ms); }
+function big(text, cls = '', ms = 0){ const b = $('#big'); b.textContent = text || ''; b.className = cls; if(ms) setTimeout(() => { if(b.textContent === text) b.textContent = ''; }, ms); }
+const now = () => performance.now()/1000;
+
+/* ---------- Kamera und KI ---------- */
+async function startSource(){
+  if(DEMO){ const d = await import('./demo.js'); pose = d.detector; stream = d.startDemo(); }
+  else {
+    if(!navigator.mediaDevices?.getUserMedia) throw new Error('Keine Kamera verfügbar. Die Seite muss über https geöffnet werden.');
+    hint('KI-Modell wird geladen … (einmalig einige MB)', 0);
+    pose = await createPose(settings.model);
+    stream = await navigator.mediaDevices.getUserMedia({audio:false, video:{facingMode:{ideal:'environment'}, width:{ideal:1280}, height:{ideal:720}, frameRate:{ideal:60}}});
+    $('#hint').hidden = true;
+  }
+  video.srcObject = stream; await video.play();
+  app.source = 'cam'; $('#empty').hidden = true; layout();
+}
+function layout(){
+  const st = $('#stage').getBoundingClientRect(), vw = video.videoWidth || 16, vh = video.videoHeight || 9;
+  const s = Math.min(st.width/vw, st.height/vh), w = vw*s, h = vh*s;
+  for(const el of [video, canvas]) Object.assign(el.style, {left:(st.width-w)/2+'px', top:(st.height-h)/2+'px', width:w+'px', height:h+'px'});
+  if(canvas.width !== vw || canvas.height !== vh){ canvas.width = vw; canvas.height = vh; }
+}
+addEventListener('resize', layout); video.addEventListener('loadedmetadata', layout);
+
+/* ---------- Körperpunkte → Frame ---------- */
+const IX = {lSh:11, rSh:12, lWr:15, rWr:16, lHip:23, rHip:24, lAnk:27, rAnk:28, lHeel:29, rHeel:30, lToe:31, rToe:32};
+function makeFrame(lm, t){
+  const W = canvas.width, H = canvas.height, p = {};
+  for(const k in IX){ const q = lm[IX[k]]; p[k] = {x:q.x*W, y:q.y*H, v:q.visibility ?? 1}; }
+  const mid = (a, b) => ({x:(a.x+b.x)/2, y:(a.y+b.y)/2});
+  const sh = mid(p.lSh, p.rSh), ank = mid(p.lAnk, p.rAnk);
+  const f = {t, lm, lToe:p.lToe, lHeel:p.lHeel, rToe:p.rToe, rHeel:p.rHeel, wr:settings.hand==='L' ? p.lWr : p.rWr, hip:mid(p.lHip, p.rHip),
+    bl:Math.hypot(sh.x-ank.x, sh.y-ank.y)};
+  f.valid = Math.min(p.lHip.v, p.rHip.v, p.lAnk.v, p.rAnk.v, p.lSh.v, p.rSh.v) > 0.35 && f.bl > 20;
+  return f;
+}
+const linePx = () => { const l = settings.line, W = canvas.width, H = canvas.height, s = p => ({x:p.x*W, y:p.y*H}); return l ? {a:s(l.a), b:s(l.b), goal:s(l.goal)} : null; };
+// Steht der Spieler still (Hüfte in der letzten Sekunde < 0,1 KL bewegt) und ganz hinter der Linie?
+function readyPose(t){
+  const w = F.filter(f => f.t >= t - 1); if(w.length < 5 || w[0].t > t - 0.8) return false;
+  const bl = w.at(-1).bl, xs = w.map(f => f.hip.x), ys = w.map(f => f.hip.y);
+  if(Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) > 0.1*bl) return false;
+  const L = linePx(), f = w.at(-1);
+  return !L || ['lToe','lHeel','rToe','rHeel'].every(k => lineDist(L, f[k]) < 0);
+}
+
+/* ---------- Ablauf ---------- */
+const LABEL = {off:'Gestoppt', ready:'Stell dich hinter die Linie', set:'Achtung …', go:'Pfiff!', cool:'Pause'};
+function setState(s, t = now()){ app.state = s; app.stateT = t; const el = $('#state'); el.textContent = LABEL[s]; el.dataset.s = s; }
+
+function step(t){
+  const s = app.state, last = F.at(-1), seen = last && t - last.t < 0.5;
+  if(s==='ready'){
+    if(seen && readyPose(t)){
+      app.target = settings.call ? pick(settings.targets) : null;
+      if(app.target){ say(app.target); big(app.target, 'target'); }
+      app.tw = t + (app.target ? 1.6 : 1.0) + Math.random()*1.4;   // Pfiff nach einer kurzen, zufälligen Pause
+      setState('set', t);
+    }
+  } else if(s==='set'){
+    if(!seen || !readyPose(t)){ hint('Zu früh bewegt. Ruhig hinter der Linie stehen, dann kommt der Pfiff.', 2500); big(''); setState('ready', t); return; }
+    if(t >= app.tw){ beep(2800, 450); app.whistleAt = t; big('Pfiff!', 'whistle', 700); setState('go', t); }
+  } else if(s==='go'){
+    if(throwDone(F, app.whistleAt) || t - app.whistleAt > TH7.waitThrow) finish(t);
+  } else if(s==='cool' && t - app.stateT >= settings.pause && !app.series?.done) setState('ready', t);
+}
+
+function finish(t){
+  const r = judge7(F.filter(f => f.t >= app.whistleAt - 0.6), app.whistleAt, linePx());
+  ensureSession(); settings.session.last = Date.now();
+  const e = {nr:(log.at(-1)?.nr || 0) + 1, sid:settings.session.id, time:Date.now(), target:app.target, ok:r.ok, issues:r.issues, why:r.why, m:r.m, hit:null};
+  log.push(e); if(log.length > 1000) log.shift();
+  let speech = r.say;
+  const S = app.series;
+  if(S){
+    S.n++; if(r.ok) S.hits++; e.series = S.run;
+    speech = seriesSpeech(r, S.n, S.hits, SERIES);
+    if(S.n >= SERIES.reps){ S.done = true; settings.seriesHist = [...(settings.seriesHist || []), {at:Date.now(), run:S.run, sid:e.sid, hits:S.hits, n:S.n, goal:SERIES.goal}].slice(-30); }
+  }
+  store(); say(speech); app.whistleAt = null; app.target = null; big(r.ok ? fmtS(r.m.time) + ' s' : '', r.ok ? 'ok' : '', 2500);
+  showCard(e); renderSeries(); renderLog();
+  setState('cool', t);
+  if(S?.done){ stop(); setTimeout(() => showEnd(S), 400); }
+}
+
+function start(){
+  if(!settings.line){ openSetup(); hint('Erst die 7-m-Linie antippen', 2500); return; }
+  closeSetup(); $('#endCard').hidden = true; unlockBeep(); ensureSession();
+  app.series = settings.series ? {run:Date.now(), n:0, hits:0, done:false} : null;
+  say(settings.series ? `Serie: ${SERIES.reps} Siebenmeter. Stell dich hinter die Linie. Nach dem Pfiff hast du drei Sekunden.` : 'Stell dich hinter die Linie. Nach dem Pfiff hast du drei Sekunden.');
+  setState('ready'); app.stateT = now() + 3;   // Ansage ausreden lassen
+  F = []; $('#btnStart').textContent = 'Stopp'; $('#btnStart').classList.add('running'); keepAwake(); renderSeries();
+}
+function stop(){
+  setState('off'); big(''); app.whistleAt = null;
+  if(app.series && !app.series.done) app.series = null;
+  $('#btnStart').textContent = 'Start'; $('#btnStart').classList.remove('running'); releaseWake(); renderSeries();
+}
+
+/* ---------- Hauptschleife ---------- */
+let fpsN = 0, fpsT0 = performance.now();
+function loop(){
+  requestAnimationFrame(loop);
+  if(app.source==='none' || !pose || video.readyState < 2){ draw(); return; }
+  const pn = performance.now(), t = pn/1000;
+  let res = null; try{ res = pose.detectForVideo(video, pn); }catch(e){ console.warn(e); }
+  const lm = res?.landmarks?.[0], f = lm ? makeFrame(lm, t) : null;
+  app.latest = f;
+  if(f?.valid){ F.push(f); while(F.length && t - F[0].t > 8) F.shift(); }
+  if(app.state!=='off' && (app.state!=='ready' || t >= app.stateT)) step(t);
+  draw();
+  fpsN++; if(pn - fpsT0 > 1000){ $('#fps').textContent = Math.round(fpsN*1000/(pn-fpsT0)) + ' fps'; fpsN = 0; fpsT0 = pn; }
+}
+requestAnimationFrame(loop);
+
+const BONES = [[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28],[27,29],[29,31],[27,31],[28,30],[30,32],[28,32]];
+function draw(){
+  const W = canvas.width, H = canvas.height, lw = Math.max(2, W/350);
+  ctx.clearRect(0, 0, W, H);
+  const L = linePx(), mk = app.marking;
+  if(L){
+    const dx = L.b.x - L.a.x, dy = L.b.y - L.a.y;
+    ctx.strokeStyle = '#ff5a5a'; ctx.lineWidth = lw*1.5; ctx.setLineDash([lw*5, lw*3]);
+    ctx.beginPath(); ctx.moveTo(L.a.x - dx*2, L.a.y - dy*2); ctx.lineTo(L.b.x + dx*2, L.b.y + dy*2); ctx.stroke(); ctx.setLineDash([]);
+    ctx.lineWidth = lw*3; ctx.beginPath(); ctx.moveTo(L.a.x, L.a.y); ctx.lineTo(L.b.x, L.b.y); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,90,90,.9)'; ctx.font = `600 ${lw*7}px Barlow, sans-serif`; ctx.fillText('Tor', L.goal.x, L.goal.y);
+  }
+  if(mk) for(const p of mk.pts){ ctx.fillStyle = '#ff5a5a'; ctx.beginPath(); ctx.arc(p.x*W, p.y*H, lw*4, 0, 7); ctx.fill(); }
+  const f = app.latest;
+  if(f){
+    const c = app.state==='go' ? '#3d8bff' : f.valid ? '#33d17a' : '#f6c445';
+    ctx.strokeStyle = c; ctx.lineWidth = lw;
+    for(const [a, b] of BONES){ const p = f.lm[a], q = f.lm[b]; ctx.beginPath(); ctx.moveTo(p.x*W, p.y*H); ctx.lineTo(q.x*W, q.y*H); ctx.stroke(); }
+  }
+}
+
+/* ---------- Linie antippen ---------- */
+canvas.addEventListener('pointerdown', e => {
+  const mk = app.marking; if(!mk) return;
+  const r = canvas.getBoundingClientRect(), p = {x:(e.clientX-r.left)/r.width, y:(e.clientY-r.top)/r.height};
+  mk.pts.push(p);
+  if(mk.pts.length === 3){ settings.line = {a:mk.pts[0], b:mk.pts[1], goal:mk.pts[2], at:Date.now()}; store(); app.marking = null; say('Linie gespeichert.'); }
+  renderSetup();
+});
+
+/* ---------- Einrichtung ---------- */
+const btn = (a, label, cls = '', v = '', on = true) => `<button data-a="${a}" ${v !== '' ? `data-v="${v}"` : ''} class="${cls}" ${on ? '' : 'disabled'}>${label}</button>`;
+const choice = (a, opts, cur) => `<div class="btnrow">${opts.map(([v, l]) => btn(a, l, String(cur)===String(v) ? 'on' : '', v)).join('')}</div>`;
+function openSetup(){ setupOpen = true; renderSetup(); }
+function closeSetup(){ setupOpen = false; app.marking = null; renderSetup(); }
+function renderSetup(){
+  const box = $('#setup'); box.hidden = !setupOpen && !app.marking;
+  $('#stage').classList.toggle('marking', !!app.marking);
+  if(box.hidden) return;
+  const mk = app.marking;
+  if(mk){
+    const n = mk.pts.length;
+    box.innerHTML = `<p class="step"><b>${n < 2 ? `Tippe auf ${n ? 'das andere' : 'ein'} Ende der 7-m-Linie.` : 'Tippe jetzt auf einen Punkt Richtung Tor.'}</b> (${n}/3)</p>
+      <div class="btnrow">${btn('undo', '↶ Zurück', '', '', n > 0)}${btn('cancel', 'Abbrechen')}</div>`;
+    return;
+  }
+  const l = settings.line;
+  box.innerHTML = `<div class="sheet-h"><h3>Einrichtung</h3><button class="x" data-a="close" aria-label="Schließen">✕</button></div>
+    <p class="muted">Handy auf dem Stativ seitlich hinter der 7-m-Linie, erhöht (1–1,5 m). Linie, Füße und Wurfarm müssen im Bild sein.</p>
+    <ul class="checks"><li><span class="ic ${l ? 'ok' : 'mid'}">${l ? '✓' : '•'}</span><span>${l ? `7-m-Linie gesetzt (${fmtDate(new Date(l.at))})` : '7-m-Linie fehlt'}</span></li></ul>
+    <div class="btnrow">${btn('tap', l ? 'Linie neu antippen' : 'Linie antippen', l ? '' : 'primaryBtn')}</div>
+    <p class="muted">Wurfhand:</p>${choice('hand', [['R', 'Rechts'], ['L', 'Links']], settings.hand)}
+    <p class="muted">Ziel vor dem Pfiff ansagen:</p>${choice('call', [[1, 'Ja'], [0, 'Nein']], settings.call ? 1 : 0)}
+    <p class="muted">Übung:</p>${choice('series', [[1, `Serie ${SERIES.reps} Würfe, Ziel ${SERIES.goal}`], [0, 'Frei']], settings.series ? 1 : 0)}
+    ${app.state==='off' ? `<button class="wide primaryBtn" data-a="start" ${l ? '' : 'disabled'}>Training starten</button>` : ''}`;
+}
+const ACT = {
+  close: closeSetup, start,
+  tap(){ if(app.state!=='off') stop(); app.marking = {pts:[]}; $('#card').hidden = true; renderSetup(); },
+  undo(){ app.marking.pts.pop(); renderSetup(); },
+  cancel(){ app.marking = null; renderSetup(); },
+  hand(el){ settings.hand = el.dataset.v; store(); renderSetup(); },
+  call(el){ settings.call = el.dataset.v === '1'; store(); renderSetup(); },
+  series(el){ settings.series = el.dataset.v === '1'; store(); renderSetup(); }
+};
+$('#setup').addEventListener('click', e => { const el = e.target.closest('[data-a]'); if(el && ACT[el.dataset.a]) ACT[el.dataset.a](el); });
+
+/* ---------- Karte nach dem Wurf, Serie, Ende ---------- */
+function showCard(e){
+  const c = $('#card'), ic = ok => `<span class="ic ${ok ? 'ok' : 'bad'}">${ok ? '✓' : '✗'}</span>`, has = k => e.issues.includes(k);
+  c.innerHTML = `<p class="res ${e.ok ? 'ok' : 'bad'}">${e.ok ? '✓' : '✗'} ${esc(e.why)}</p>
+    <ul class="checks"><li>${ic(!has('slow') && !has('none'))}<span>Zeit nach dem Pfiff: ${e.m.time != null ? fmtS(e.m.time) + ' s' : 'kein Wurf erkannt'} (erlaubt ${fmtS(TH7.maxTime)} s)</span></li>
+      <li>${ic(!has('line'))}<span>${has('line') ? 'Fuß auf oder über der Linie' : 'Linie nicht berührt'}</span></li>
+      <li>${ic(!has('foot'))}<span>${has('foot') ? (e.m.lift ? 'Standbein abgehoben' : 'Standbein bewegt') : 'Standbein blieb stehen'}</span></li></ul>
+    ${e.target ? `<div class="hitrow"><span>Ziel ${esc(e.target)} getroffen?</span><button data-h="1">Treffer</button><button class="no" data-h="0">Daneben</button></div>` : ''}`;
+  c.querySelectorAll('[data-h]').forEach(b => b.onclick = () => { e.hit = b.dataset.h === '1'; store(); renderLog(); c.querySelectorAll('[data-h]').forEach(x => x.classList.toggle('on', x===b)); clearTimeout(cardTimer); cardTimer = setTimeout(() => c.hidden = true, 1200); });
+  c.hidden = false; clearTimeout(cardTimer); cardTimer = setTimeout(() => c.hidden = true, 9000);
+}
+function renderSeries(){
+  const b = $('#seriesBox'), S = app.series;
+  if(!S){ b.hidden = true; return; }
+  b.hidden = false; b.innerHTML = `<b>${Math.min(S.n + (S.done ? 0 : 1), SERIES.reps)}<small>/${SERIES.reps}</small></b><span>✓ ${S.hits} · Ziel ${SERIES.goal}</span>`;
+}
+function showEnd(S){
+  const c = $('#endCard'), ok = S.hits >= SERIES.goal;
+  c.innerHTML = `<h3>Serie 7 m</h3><p class="big ${ok ? 'ok' : 'bad'}">${S.hits} von ${S.n}</p><p>${ok ? 'Serie geschafft!' : `Ziel war ${SERIES.goal}. Gleich nochmal?`}</p>
+    <div class="btnrow"><button class="primaryBtn" data-e="again">Nochmal</button><button data-e="end">Fertig</button></div>`;
+  c.hidden = false; $('#card').hidden = true;
+  c.querySelector('[data-e=again]').onclick = () => { c.hidden = true; start(); };
+  c.querySelector('[data-e=end]').onclick = () => { c.hidden = true; app.series = null; renderSeries(); };
+}
+
+/* ---------- Log und Bericht ---------- */
+function summary(list){
+  const n = list.length, ok = list.filter(e => e.ok).length, times = list.map(e => e.m.time).filter(x => x != null);
+  const cnt = k => list.filter(e => e.issues.includes(k)).length, rated = list.filter(e => e.hit !== null);
+  return {n, ok, avg:times.length ? times.reduce((a, b) => a + b, 0)/times.length : null, slow:cnt('slow') + cnt('none'), line:cnt('line'), foot:cnt('foot'),
+    hit:rated.filter(e => e.hit).length, rated:rated.length};
+}
+const runs = () => (settings.seriesHist || []).filter(r => r.sid === settings.session?.id);
+function renderLog(){
+  const list = sessionEntries(), box = $('#logBody');
+  if(!list.length){ box.innerHTML = '<p class="muted">In diesem Training noch keine Würfe. Start drücken, hinter die Linie stellen, auf den Pfiff warten.</p>'; return; }
+  const s = summary(list);
+  box.innerHTML = `<p class="muted">${fmtDate(new Date(settings.session.start))}</p>
+    <p><b>${s.ok} von ${s.n}</b> regelgerecht${s.avg != null ? `, im Schnitt ${fmtS(s.avg)} s nach dem Pfiff` : ''}${s.rated ? `, Treffer ${s.hit}/${s.rated}` : ''}</p>
+    <p class="muted">Zu langsam: ${s.slow} · Linie: ${s.line} · Standbein: ${s.foot}</p>
+    ${runs().length ? `<h3>Serien</h3>${runs().map(r => `<div class="entry"><b>${r.hits} von ${r.n}</b> <small>Ziel ${r.goal}, ${r.hits >= r.goal ? 'geschafft' : 'nicht geschafft'}</small></div>`).join('')}` : ''}
+    <h3>Würfe</h3>${[...list].reverse().map(e => `<div class="entry"><b>Wurf ${e.nr}</b> ${e.target ? esc(e.target) : ''} <small>${e.hit===true ? 'Treffer' : e.hit===false ? 'daneben' : ''}</small><br>
+      <small class="${e.ok ? 'tok' : 'tbad'}">${e.ok ? '✓' : '✗'} ${esc(e.why)}</small> <small>· Linie ${e.m.line ?? '–'} KL · Fuß ${e.m.foot ?? '–'} KL</small></div>`).join('')}`;
+}
+export function reportText(){
+  const list = sessionEntries(); if(!list.length) return null;
+  const s = summary(list), L = [`7-m-Training vom ${fmtDate(new Date(settings.session.start))}`, `${s.ok} von ${s.n} regelgerecht` + (s.avg != null ? `, im Schnitt ${fmtS(s.avg)} s nach dem Pfiff` : '')];
+  L.push(`Zu langsam: ${s.slow}, Linie übertreten: ${s.line}, Standbein bewegt: ${s.foot}`);
+  if(s.rated) L.push(`Treffer: ${s.hit} von ${s.rated}`);
+  if(runs().length){ L.push('', 'Serien:'); runs().forEach(r => L.push(`- ${r.hits} von ${r.n} (Ziel ${r.goal}) ${r.hits >= r.goal ? 'geschafft' : 'nicht geschafft'}`)); }
+  L.push('', 'Würfe:'); list.forEach(e => L.push(`${e.nr}. ${e.target ? e.target + ': ' : ''}${e.why}${e.hit===true ? ', Treffer' : e.hit===false ? ', daneben' : ''}`));
+  L.push('', 'Erstellt mit dem 7-m-Trainer (Handballcoach)');
+  return L.join('\n');
+}
+async function share(){
+  const text = reportText(); if(!text){ hint('Noch keine Würfe in diesem Training'); return; }
+  if(navigator.share){ try{ await navigator.share({title:'7-m-Bericht', text}); return; }catch(e){ if(e.name==='AbortError') return; } }
+  try{ await navigator.clipboard.writeText(text); hint('Bericht in die Zwischenablage kopiert'); }catch(e){ hint('Teilen nicht möglich'); }
+}
+
+/* ---------- Bedienung ---------- */
+$('#btnStart').onclick = async () => {
+  if(app.state !== 'off'){ stop(); return; }
+  if(app.source==='none'){
+    say('Einrichtung'); unlockBeep();
+    try{ await startSource(); openSetup(); }catch(e){ console.error(e); hint('Start fehlgeschlagen: ' + (e.message || e), 7000); }
+    return;
+  }
+  start();
+};
+$('#btnSetup').onclick = async () => { if(app.source==='none'){ $('#btnStart').click(); return; } setupOpen ? closeSetup() : openSetup(); };
+$('#btnLog').onclick = () => { renderLog(); $('#logSheet').hidden = false; };
+$('#repShare').onclick = share;
+$('#newSession').onclick = () => { if(confirm('Neues Training starten? Das aktuelle bleibt im Speicher.')){ ensureSession(true); renderLog(); } };
+$('#logClear').onclick = () => { if(confirm('Alle 7-m-Würfe löschen?')){ log.length = 0; store(); renderLog(); } };
+document.querySelectorAll('.sheet').forEach(s => s.addEventListener('click', e => { if(e.target===s || e.target.hasAttribute('data-close')) s.hidden = true; }));
+if(DEMO){ const a = $('#demoLink'); a.textContent = 'Demo-Modus aktiv: „Start“ drücken. Hier zurück zur echten Kamera.'; a.href = './'; }
+document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible' && app.state!=='off') keepAwake(); });

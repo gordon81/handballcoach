@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#121a22">
+<title>7-m-Trainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared/css/base.css">
+<link rel="stylesheet" href="css/seven.css">
+</head>
+<body>
+<main id="stage">
+  <video id="video" playsinline muted></video>
+  <canvas id="overlay"></canvas>
+  <div id="empty">
+    <h1>7-m-Trainer<span>Pfiff, 3 Sekunden, Linie und Standbein im Blick</span></h1>
+    <ol>
+      <li><b>Handy aufs Stativ</b>, seitlich hinter der 7-m-Linie, erhöht. Linie, Füße und Wurfarm im Bild.</li>
+      <li><b>Start</b> drücken, dann in der Einrichtung die <b>7-m-Linie antippen</b>: beide Enden und einen Punkt Richtung Tor.</li>
+      <li><b>Training starten:</b> hinter die Linie stellen und still stehen. Die App sagt das Ziel an und pfeift.</li>
+      <li>Nach dem Pfiff <b>innerhalb von 3 Sekunden</b> werfen, ohne die Linie zu berühren und ohne das Standbein zu bewegen.</li>
+    </ol>
+    <a class="demoLink" id="demoLink" href="?demo=1">Demo ohne Kamera: gezeichnete Halle mit simulierter Person</a>
+    <a class="demoLink" href="../">← Alle Trainings</a>
+  </div>
+  <div id="hud"><span class="chip" id="state" data-s="off">Gestoppt</span><span class="chip" id="fps">– fps</span></div>
+  <div id="seriesBox" hidden></div>
+  <div id="big"></div>
+  <div id="hint" hidden></div>
+  <section id="card" hidden aria-live="polite"></section>
+  <section id="setup" hidden></section>
+  <section id="endCard" hidden aria-live="polite"></section>
+</main>
+
+<nav id="bar">
+  <button id="btnStart" class="primary">Start</button>
+  <button id="btnSetup">Setup</button>
+  <button id="btnLog">Log</button>
+</nav>
+
+<div class="sheet" id="logSheet" hidden>
+  <div class="sheet-in">
+    <div class="sheet-h"><h2>Training</h2><button class="x" data-close aria-label="Schließen">✕</button></div>
+    <div id="logBody"></div>
+    <button class="wide primaryBtn" id="repShare">Bericht teilen</button>
+    <button class="wide" id="newSession">Neues Training starten</button>
+    <button class="wide" id="logClear">Alle 7-m-Würfe löschen</button>
+  </div>
+</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

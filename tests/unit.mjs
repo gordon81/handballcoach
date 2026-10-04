@@ -138,3 +138,76 @@ test('Verlauf: höchstens 30 Serien je Aufgabe, Bestwert nach Quote', () => {
   assert.equal(best({}, 'line'), null);
   assert.equal(best({line:[{hits:4, n:4}, {hits:9, n:10}]}, 'line').n, 4, '4/4 schlägt 9/10');
 });
+
+/* ---------- 7-m-Trainer (siebenmeter/js/rules.js) ---------- */
+import { judge7, findThrow, throwDone, lineDist, seriesSpeech, TH7, SERIES } from '../siebenmeter/js/rules.js';
+
+// Seitenansicht in Pixeln: Tor links (kleines x), 7-m-Linie senkrecht bei x = 500, Spieler rechts davon. KL = 200 px.
+const LINE7 = {a:{x:500, y:300}, b:{x:500, y:700}, goal:{x:200, y:500}};
+// Frames alle 1/30 s von −0,5 s bis end; Wurf bei tThrow (Handgelenk schnell), Fuß-Änderungen über opts.
+function frames7({tThrow = 1.5, end = tThrow + 0.5, frontX = (t) => 560, frontY = () => 600, wrist = 6}){
+  const out = [];
+  for(let t = -0.5; t <= end + 1e-9; t += 1/30){
+    const fx = frontX(t), fy = frontY(t), j = (Math.sin(t*50))*0.6;   // etwas Rauschen
+    const dx = t > tThrow - 0.1 && t <= tThrow ? -(t - (tThrow - 0.1))*wrist*200 : t > tThrow ? -0.1*wrist*200 : 0;
+    out.push({t, bl:200, wr:{x:640 + dx, y:380}, lToe:{x:fx - 15 + j, y:fy}, lHeel:{x:fx + 15, y:fy}, rToe:{x:700, y:600}, rHeel:{x:730, y:600 + j}});
+  }
+  return out;
+}
+
+test('7 m: Linie, Seite zum Tor ist positiv', () => {
+  assert.ok(lineDist(LINE7, {x:450, y:500}) > 0);
+  assert.ok(lineDist(LINE7, {x:560, y:500}) < 0);
+  assert.equal(Math.round(lineDist({...LINE7, a:LINE7.b, b:LINE7.a}, {x:450, y:500})), 50, 'Richtung der Linie egal');
+});
+
+test('7 m: sauberer Wurf nach 1,5 s', () => {
+  const r = judge7(frames7({}), 0, LINE7);
+  assert.equal(r.ok, true, JSON.stringify(r));
+  assert.ok(Math.abs(r.m.time - 1.45) < 0.1, `Zeit ${r.m.time}`);
+  assert.match(r.say, /^Sauber\. 1,[45] Sekunden\.$/);
+  assert.ok(r.m.foot < TH7.footMove);
+});
+
+test('7 m: zu langsam (über 3 s) und kein Wurf', () => {
+  const slow = judge7(frames7({tThrow:3.3}), 0, LINE7);
+  assert.deepEqual(slow.issues, ['slow']); assert.match(slow.say, /Zu langsam\. 3,3 Sekunden/);
+  const edge = judge7(frames7({tThrow:2.95}), 0, LINE7);
+  assert.equal(edge.ok, true, 'knapp unter 3 s ist ok');
+  const none = judge7(frames7({tThrow:99, end:4.6}), 0, LINE7);
+  assert.deepEqual(none.issues, ['none']); assert.equal(none.m.time, null);
+});
+
+test('7 m: Linie übertreten (Fußspitze jenseits der Linie)', () => {
+  const r = judge7(frames7({frontX:t => t > 1.3 ? 495 : 560}), 0, LINE7);
+  assert.ok(r.issues.includes('line'), JSON.stringify(r)); assert.ok(r.m.line > 0);
+  // Nach dem Abwurf darf der Fuß über die Linie (Ball ist weg).
+  assert.equal(judge7(frames7({frontX:t => t > 1.7 ? 480 : 560}), 0, LINE7).ok, true);
+});
+
+test('7 m: Standbein – ein Fuß muss stehen bleiben; Rauschen zählt nicht', () => {
+  const r = judge7(frames7({frontX:t => t > 0.8 ? 590 : 560}), 0, LINE7);
+  assert.equal(r.ok, true, 'hinterer Fuß steht, vorderer darf sich bewegen');
+  // Beide bewegen sich: vorderer rutscht, hinterer wird über opts nicht bewegt → anders bauen.
+  const fr = frames7({}); fr.forEach(f => { if(f.t > 0.8){ f.rToe = {x:f.rToe.x - 40, y:f.rToe.y}; f.rHeel = {x:f.rHeel.x - 40, y:f.rHeel.y}; f.lToe = {x:f.lToe.x + 30, y:f.lToe.y}; f.lHeel = {x:f.lHeel.x + 30, y:f.lHeel.y}; } });
+  assert.deepEqual(judge7(fr, 0, LINE7).issues, ['foot']);
+  const lift = frames7({}); lift.forEach(f => { if(f.t > 0.8){ for(const k of ['lToe','lHeel','rToe','rHeel']) f[k] = {x:f[k].x, y:f[k].y - 20}; } });
+  const rl = judge7(lift, 0, LINE7);
+  assert.deepEqual(rl.issues, ['foot']); assert.equal(rl.m.lift, true, 'hochgesprungen');
+  const small = judge7(frames7({frontX:t => 560 + 6*Math.sin(t*40)}), 0, LINE7);
+  assert.equal(small.ok, true, 'kleine Schwankungen (3 % KL) sind kein Bewegen');
+});
+
+test('7 m: Wurf-Erkennung und Serie', () => {
+  const fr = frames7({});
+  assert.equal(findThrow(fr, 0).t > 1.4, true);
+  assert.equal(throwDone(fr.filter(f => f.t <= 1.55), 0), false, 'gleich nach der Spitze noch nicht fertig');
+  assert.equal(throwDone(fr, 0), true);
+  assert.equal(findThrow(frames7({wrist:1}), 0), null, 'langsame Armbewegung ist kein Wurf');
+  const hop = frames7({wrist:1}); hop.forEach(f => { const k = f.t > 0.8 && f.t < 0.9 ? (f.t - 0.8)*600 : f.t >= 0.9 ? 60 : 0; f.hip = {x:600 - k, y:450}; f.wr = {x:f.wr.x - k, y:f.wr.y}; });
+  assert.equal(findThrow(hop, 0), null, 'Hüpfer mit dem ganzen Körper ist kein Wurf');
+  const ok = {say:'Sauber. 1,5 Sekunden.'};
+  assert.equal(seriesSpeech(ok, 3, 3), 'Sauber. 1,5 Sekunden. Noch 7.');
+  assert.match(seriesSpeech(ok, SERIES.reps, SERIES.goal), /Serie geschafft: 8 von 10/);
+  assert.match(seriesSpeech(ok, 10, 6), /6 von 10\. Ziel war 8/);
+});

@@ -1,0 +1,79 @@
+/* 7-m-Trainer: Bild, Anzeigen, Karten, Leiste. Farben und Grundstil aus ../shared/css/base.css. */
+#stage{position:relative;flex:1;min-height:0;background:#000;overflow:hidden}
+#video,#overlay{position:absolute;left:0;top:0}
+#overlay{touch-action:none}
+#empty{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:28px;max-width:560px;margin:0 auto;gap:10px;overflow:auto}
+#empty[hidden]{display:none}
+#empty h1{font-family:var(--head);font-weight:800;font-size:2.6rem;line-height:1;margin:0}
+#empty h1 span{display:block;color:var(--muted);font-weight:600;font-size:1.2rem;margin-top:6px}
+#empty ol{margin:8px 0 0;padding-left:1.2em;color:var(--muted);line-height:1.5}
+#empty ol b{color:var(--text);font-weight:600}
+.demoLink{align-self:flex-start;margin-top:6px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-weight:600;color:var(--text);text-decoration:none}
+
+#hud{position:absolute;left:0;right:0;top:0;display:flex;justify-content:space-between;padding:10px;pointer-events:none}
+.chip{background:rgba(10,15,20,.7);border:1px solid rgba(255,255,255,.14);padding:5px 11px;border-radius:999px;font-family:var(--head);font-weight:600;font-size:1.1rem}
+#state[data-s="set"]{background:var(--orange);color:#1a1000;border-color:transparent}
+#state[data-s="go"]{background:var(--blue);border-color:transparent}
+/* Große Anzeige in der Mitte: Ziel, „Pfiff!“, Zeit. Aus einigen Metern lesbar. */
+#big{position:absolute;left:50%;top:60px;transform:translateX(-50%);font-family:var(--head);font-weight:800;font-size:clamp(2.6rem,12vw,6rem);
+  line-height:1;white-space:nowrap;pointer-events:none;text-shadow:0 4px 20px rgba(0,0,0,.85)}
+#big.whistle{color:var(--blue)} #big.ok{color:var(--ok)} #big.target{color:var(--orange)}
+#hint{position:absolute;left:50%;top:42%;transform:translateX(-50%);background:rgba(10,15,20,.88);padding:12px 16px;border-radius:12px;
+  font-weight:600;text-align:center;max-width:88%;z-index:20;pointer-events:none}
+#hint[hidden]{display:none}
+#seriesBox{position:absolute;right:10px;top:52px;text-align:right;pointer-events:none;background:rgba(10,15,20,.75);border:1px solid rgba(255,255,255,.14);
+  border-radius:14px;padding:6px 14px 8px;font-family:var(--head);line-height:1}
+#seriesBox[hidden]{display:none}
+#seriesBox b{display:block;font-size:3.4rem;font-weight:800}
+#seriesBox b small{font-size:1.6rem;color:var(--muted);font-weight:600}
+#seriesBox span{display:block;font-size:1.15rem;font-weight:600;margin-top:2px}
+
+#card,#setup{position:absolute;left:10px;right:10px;bottom:10px;max-width:520px;margin:0 auto;max-height:62%;overflow:auto;
+  background:rgba(20,29,38,.95);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+#card[hidden],#setup[hidden],#endCard[hidden]{display:none}
+#setup{z-index:15}
+#stage.marking #setup{top:10px;bottom:auto}
+#setup h3{margin:0;font-family:var(--head);font-size:1.3rem;font-weight:600}
+#setup p{margin:6px 0 0;line-height:1.4}
+#setup .step{font-size:1.15rem}
+#card .res{margin:0 0 8px;font-family:var(--head);font-size:1.6rem;font-weight:800}
+#card .res.ok{color:var(--ok)} #card .res.bad{color:var(--bad)}
+.checks{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:4px}
+.checks li{display:flex;gap:8px;align-items:baseline}
+.checks .ic{width:1.2em;flex:none;font-weight:800;text-align:center}
+.ic.ok{color:var(--ok)} .ic.bad{color:var(--bad)} .ic.mid{color:var(--warn)}
+.hitrow{display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap}
+.hitrow span{color:var(--muted);margin-right:auto}
+.hitrow button{border:1px solid var(--line);background:var(--panel2);border-radius:10px;padding:10px 16px;min-height:48px;font-weight:600}
+.hitrow button.on{background:var(--ok);color:#06210f;border-color:transparent}
+.hitrow button.no.on{background:var(--bad);color:#2a0606}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.btnrow button{flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 10px;font-weight:600;min-height:48px}
+.btnrow button.on{background:var(--blue);border-color:transparent}
+.btnrow button.primaryBtn,.primaryBtn{background:var(--orange);color:#1a1000;border-color:transparent}
+button:disabled{opacity:.45}
+.x{background:none;border:none;font-size:1.4rem;padding:8px 12px;min-width:48px;min-height:48px}
+.sheet-h{display:flex;justify-content:space-between;align-items:center}
+.muted{color:var(--muted);line-height:1.5}
+.wide{width:100%;margin-top:10px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;min-height:48px;font-weight:600}
+
+#endCard{position:absolute;left:10px;right:10px;top:50%;transform:translateY(-50%);max-width:520px;margin:0 auto;z-index:16;
+  background:rgba(20,29,38,.97);border:2px solid var(--line);border-radius:16px;padding:16px;text-align:center}
+#endCard h3{margin:0;font-family:var(--head);font-size:1.5rem;font-weight:600}
+#endCard .big{font-family:var(--head);font-weight:800;font-size:4rem;line-height:1;margin:8px 0}
+#endCard .big.ok{color:var(--ok)} #endCard .big.bad{color:var(--warn)}
+#endCard .btnrow button{min-height:56px;font-size:1.2rem}
+
+#bar{display:grid;grid-template-columns:2fr 1fr 1fr;gap:6px;padding:8px;background:var(--panel);border-top:1px solid var(--line)}
+#bar button{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 4px;font-size:1rem;font-weight:600;min-height:56px}
+#bar button.primary{background:var(--orange);color:#1a1000;border-color:transparent;font-family:var(--head);font-size:1.4rem;font-weight:800}
+#bar button.primary.running{background:var(--bad);color:#fff}
+
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;z-index:30}
+.sheet[hidden]{display:none}
+.sheet-in{background:var(--panel);width:100%;max-width:560px;max-height:85%;overflow:auto;border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))}
+.sheet h2{font-family:var(--head);font-size:1.6rem;margin:0}
+.sheet h3{font-family:var(--head);font-size:1.2rem;margin:18px 0 6px;color:var(--muted);font-weight:600}
+.entry{border-top:1px solid var(--line);padding:8px 0}
+.entry b{font-family:var(--head);font-size:1.1rem}
+.entry small{color:var(--muted)} .entry small.tok{color:var(--ok)} .entry small.tbad{color:var(--bad)}

@@ -45,6 +45,6 @@ Die simulierte Person (`demo/sim.js`) ist das Bindeglied: sie macht **absichtlic
 | Wurf-Videos | – | ✓ | offen |
 | Startmenü | – | ✓ | – |
 | Aufgaben (Baustein + A1 …) | ✓ | ✓ | offen |
-| 7-m-Trainer | ✓ | ✓ | offen |
+| 7-m-Trainer (Zeit, Linie, Standbein, Serie) | ✓ | ✓ | offen |
 
 Die Tabelle wird mit jeder neuen Übung ergänzt.

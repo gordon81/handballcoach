@@ -351,6 +351,65 @@ test('Aufgabe „Entscheidung in der Luft“: „Los“, Ziel erst beim Absprung
   await page.close();
 });
 
+test('7-m-Trainer (Demo, Handy-Größe): Linie antippen, Pfiff, Bewertung, Serie, Log, Bericht', {timeout:200000}, async t => {
+  const page = await browser.newPage({viewport:{width:390, height:800}});
+  const errors = []; page.on('pageerror', e => errors.push(e.message));
+  page.on('console', m => { if(m.type()==='error') errors.push(m.text()); });
+  await page.addInitScript(() => { window.__said = []; if(!sessionStorage.getItem('init')){ sessionStorage.setItem('init', '1'); localStorage.clear(); localStorage.setItem('7m-demo-settings', JSON.stringify({pause:1})); } });
+  await page.goto(srv.url + 'siebenmeter/?demo=1');
+  await page.evaluate(async () => {
+    window.M = {st:await import('/siebenmeter/js/state.js'), rules:await import('/siebenmeter/js/rules.js'), demo:await import('/siebenmeter/js/demo.js')};
+    M.rules.SERIES.reps = 4; M.rules.SERIES.goal = 2;
+    // Zustand und Zeit jeder Ansage mitschreiben (Pfiff vs. Ansage).
+    const push = __said.push.bind(__said); window.__sayAt = [];
+    __said.push = x => { __sayAt.push({x, s:M.st.app.state}); return push(x); };
+  });
+
+  await t.test('Einrichtung: 7-m-Linie antippen (2 Enden, 1 Punkt Richtung Tor)', async () => {
+    await page.click('#btnStart');
+    await page.waitForSelector('#setup [data-a=tap]');
+    assert.ok(await page.isDisabled('#setup [data-a=start]'), 'ohne Linie kein Start');
+    await page.click('#setup [data-a=tap]');
+    await sleep(800);
+    const tl = await page.evaluate(() => M.demo.truthLine()), box = await page.locator('#overlay').boundingBox();
+    for(const p of [tl.a, tl.b, tl.goal]) await page.mouse.click(box.x + p.x*box.width, box.y + p.y*box.height);
+    const l = await page.evaluate(() => M.st.settings.line);
+    assert.ok(l && Math.hypot(l.a.x - tl.a.x, l.a.y - tl.a.y) < 0.01, JSON.stringify(l));
+    assert.ok(await minHeight(page, '#setup button') >= 44, 'Buttons der Einrichtung groß genug');
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'kein Querscrollen');
+  });
+
+  await t.test('Serie mit 4 Würfen: sauber, zu langsam, Linie, Standbein', async () => {
+    await page.click('#setup [data-a=start]');
+    await until(page, () => M.st.log.length >= 4, null, 120000, '4 Würfe');
+    const log = await page.evaluate(() => M.st.log.map(e => ({ok:e.ok, issues:e.issues, m:e.m, target:e.target})));
+    assert.deepEqual(log.map(e => e.issues), [[], ['slow'], ['line'], ['foot']], JSON.stringify(log));
+    assert.ok(log[0].m.time > 1.0 && log[0].m.time < 1.4, `Zeit ${log[0].m.time} (simuliert 1,2 s)`);
+    assert.ok(log[1].m.time > 3.2 && log[1].m.time < 3.6, `Zeit ${log[1].m.time} (simuliert 3,4 s)`);
+    log.forEach((e, i) => assert.ok(e.target, `Wurf ${i+1}: Ziel angesagt`));
+    const sa = await page.evaluate(() => __sayAt);
+    assert.ok(sa.filter(x => log.some(e => e.target === x.x)).every(x => x.s === 'ready'), 'Ziel vor dem Pfiff');
+    assert.ok(sa.some(x => /^Sauber\. 1,\d Sekunden\. Noch 3\.$/.test(x.x)), sa.map(x => x.x).join(' | '));
+    assert.ok(sa.some(x => /^Zu langsam\. 3,\d Sekunden\./.test(x.x)));
+    assert.ok(sa.some(x => x.x === 'Standbein bewegt. 1 von 4. Ziel war 2.'), sa.map(x => x.x).join(' | '));
+  });
+
+  await t.test('Ende der Serie, Log und Bericht', async () => {
+    await until(page, () => !document.querySelector('#endCard').hidden && M.st.app.state==='off', null, 5000, 'Ende-Karte');
+    assert.match(await page.textContent('#endCard'), /1 von 4/);
+    assert.ok(await minHeight(page, '#endCard button') >= 48);
+    await page.click('#endCard [data-e=end]');
+    await page.click('#btnLog');
+    assert.match(await page.textContent('#logBody'), /1 von 4[\s\S]*regelgerecht[\s\S]*Serien/);
+    await page.click('#logSheet [data-close]');
+    const rep = await page.evaluate(async () => (await import('/siebenmeter/js/main.js')).reportText());
+    assert.match(rep, /1 von 4 regelgerecht/); assert.match(rep, /Linie übertreten: 1, Standbein bewegt: 1/);
+  });
+
+  assert.deepEqual(errors, [], 'Fehler in der Browser-Konsole');
+  await page.close();
+});
+
 test('Mikrofon: Rufe erkannt, Lärm nicht (Fake-Mikrofon)', {timeout:120000}, async t => {
   const page = await browser.newPage();
   await page.goto(srv.url + 'aussenspieler/');
@@ -377,7 +436,7 @@ test('Mikrofon: Rufe erkannt, Lärm nicht (Fake-Mikrofon)', {timeout:120000}, as
   await page.close();
 });
 
-test('Startmenü: Karte öffnet den Außenwurf-Coach, „Alle Trainings“ führt zurück', {timeout:60000}, async () => {
+test('Startmenü: Karten öffnen Außenwurf-Coach und 7-m-Trainer, „Alle Trainings“ führt zurück', {timeout:60000}, async () => {
   const page = await browser.newPage({viewport:{width:390, height:800}});
   const errors = []; page.on('pageerror', e => errors.push(e.message));
   await page.goto(srv.url);
@@ -387,6 +446,11 @@ test('Startmenü: Karte öffnet den Außenwurf-Coach, „Alle Trainings“ führ
   await page.click('a[href="../"]');
   await page.waitForSelector('#trainings');
   assert.equal(new URL(page.url()).pathname, '/');
+  await page.click('#trainings a[href="siebenmeter/"]');
+  await page.waitForSelector('#btnStart');
+  assert.ok(page.url().endsWith('/siebenmeter/'), page.url());
+  await page.click('a[href="../"]');
+  await page.waitForSelector('#trainings');
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'kein Querscrollen am Handy');
   assert.deepEqual(errors, []);
   await page.close();
