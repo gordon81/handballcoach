@@ -40,6 +40,7 @@ Die simulierte Person (`demo/sim.js`) ist das Bindeglied: sie macht **absichtlic
 | Bereich | Unit | Browser (Demo) | Halle |
 |---|---|---|---|
 | Ruf-Erkennung | ✓ | ✓ (Fake-Mikrofon) | offen |
+| Ballaufprall per Mikro | ✓ | ✓ (Fake-Mikrofon) | offen |
 | Linie ablaufen / einrasten, Kamera bewegt | – | ✓ | offen |
 | Sechs Prüfungen des Außenwurfs | – | ✓ (4 Wurfarten, 2 Kamerapositionen) | offen |
 | Wurf-Videos | – | ✓ | offen |

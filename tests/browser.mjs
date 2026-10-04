@@ -10,7 +10,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { serve } from './server.mjs';
-import { hallWav, SHOUTS, DURATION } from './wav.mjs';
+import { hallWav, SHOUTS, BOUNCES, DURATION } from './wav.mjs';
 
 let srv, browser;
 before(async () => {
@@ -424,7 +424,7 @@ test('Rückraum-Modus (?rr=1): 9-m-Linie, Dreischritt, Abwurf im höchsten Punkt
     const log = await page.evaluate(() => M.store.log.map(e => ({issues:e.issues, m:e.m})));
     assert.deepEqual(log.map(e => e.issues.filter(k => k !== 'jump')), [[], ['steps'], ['over'], ['peak']], JSON.stringify(log));
     assert.deepEqual(log.map(e => e.m.steps), [3, 4, 3, 3]);
-    assert.ok(log[3].m.peakDt > 0.1, `Abwurf ${log[3].m.peakDt} s nach dem höchsten Punkt`);
+    assert.ok(log[3].m.peakDt > 0.15, `Abwurf ${log[3].m.peakDt} s nach dem höchsten Punkt`);
     assert.ok(!log.some(e => e.issues.includes('rot')), 'Drehung zählt im Rückraum nicht');
     await page.click('#btnLog');
     assert.match(await page.textContent('#logBody'), /Schritte 3 · Abwurf/);
@@ -568,6 +568,18 @@ test('Mikrofon: Rufe erkannt, Lärm nicht (Fake-Mikrofon)', {timeout:120000}, as
     const lv = r.lv.map(x => x.map(v => Math.round(v)).join('/'));
     assert.equal(r.hits.length, SHOUTS.length, `erkannt bei ${r.hits.map(h => h.toFixed(1))} s; Pegel/Grund/Schwelle: ${lv.join(' ')}`);
     r.hits.forEach((h, i) => assert.ok(h > SHOUTS[i] && h < SHOUTS[i] + 1.8, `Ruf ${i+1} bei ${h.toFixed(2)} s, erwartet kurz nach ${SHOUTS[i]} s`));
+  });
+
+  await t.test(`Ballaufprall (shared/js/bounceDetect.js): genau die ${BOUNCES.length} Aufpralle, keine Rufe, kein Pfiff`, async () => {
+    const r = await page.evaluate(async ms => {
+      const {micSampler} = await import('/shared/js/mic.js'), {bounceDetector, SENS} = await import('/shared/js/bounceDetect.js');
+      const m = micSampler(), d = bounceDetector(), hits = [];
+      let t0 = null; m.onSample((v, hi, now) => { t0 ??= now; if(d.push(v, hi, now, SENS.mid)) hits.push((now - t0)/1000); });
+      await m.start(); await new Promise(r => setTimeout(r, ms)); m.stop();
+      return hits;
+    }, (DURATION - 0.5)*1000);
+    assert.equal(r.length, BOUNCES.length, `erkannt bei ${r.map(h => h.toFixed(2))} s`);
+    r.forEach((h, i) => assert.ok(h > BOUNCES[i] - 0.1 && h < BOUNCES[i] + 0.5, `Aufprall ${i+1} bei ${h.toFixed(2)} s, erwartet ${BOUNCES[i]} s`));
   });
   await page.close();
 });

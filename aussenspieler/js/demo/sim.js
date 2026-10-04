@@ -85,7 +85,7 @@ function behave(dt){
 const VAR = [{dr:0.3, h:0.5, arm:1}, {dr:0.25, h:0.45, arm:1}, {dr:-0.15, h:0.45, arm:1}, {dr:0.3, h:0.28, arm:0.45}];
 // Rückraum: gut, vier statt drei Schritte (kürzere Schritte), innerhalb der 9 m, Abwurf zu spät (schon im Fallen).
 // steps: Schritte im Anlauf (der letzte setzt das Sprungbein auf).
-export const VAR_RR = [{dr:0.4, h:0.5, arm:1, steps:3}, {dr:0.4, h:0.5, arm:1, steps:4}, {dr:-0.35, h:0.5, arm:1, steps:3}, {dr:0.4, h:0.5, arm:1, steps:3, swingAt:0.7}];
+export const VAR_RR = [{dr:0.4, h:0.5, arm:1, steps:3}, {dr:0.4, h:0.5, arm:1, steps:4}, {dr:-0.35, h:0.5, arm:1, steps:3}, {dr:0.4, h:0.5, arm:1, steps:3, swingAt:0.72}];
 // Eigene Wurf-Folgen je Aufgabe (settings.task), damit Tests wissen, was herauskommen muss.
 // line: nah an der Linie (geschafft), zu weit weg, Übertritt, nah.
 // height: folgt der Ansage „Hoch“/„Hüfte“ (follow) oder macht absichtlich das Gegenteil. tired: Sprung wird ab Wurf 3 flacher.

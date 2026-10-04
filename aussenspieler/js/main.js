@@ -36,7 +36,7 @@ if(RR){
   $('#demoLink').href = '?rr=1&demo=1';
   $('#sPos').closest('label').hidden = true;
   $('#sClearLine').textContent = '9-m-Linie löschen';
-  $('#howTo').textContent = 'Absprung: Fußspitze oder Ferse des Sprungbeins beim letzten Bodenkontakt vor (außerhalb) der markierten 9-m-Linie. Sprungbein: Rechtshänder links, Linkshänder rechts. Schritte: Bodenkontakte vom Anlauf bis zum Absprung, Ziel drei. Wurfarm beim Absprung über dem Kopf. Abwurf höchstens 0,1 s vom höchsten Punkt der Hüfte. Sprunghöhe und Oberkörper sind Schätzungen aus einer Kamera.';
+  $('#howTo').textContent = 'Absprung: Fußspitze oder Ferse des Sprungbeins beim letzten Bodenkontakt vor (außerhalb) der markierten 9-m-Linie. Sprungbein: Rechtshänder links, Linkshänder rechts. Schritte: Bodenkontakte vom Anlauf bis zum Absprung, Ziel drei. Wurfarm beim Absprung über dem Kopf. Abwurf höchstens 0,15 s vom höchsten Punkt der Hüfte. Sprunghöhe und Oberkörper sind Schätzungen aus einer Kamera.';
 }
 if(DEMO){ const a = $('#demoLink'); a.textContent = 'Demo-Modus aktiv: „Start“ drücken. Hier zurück zur echten Kamera.'; a.href = RR ? './?rr=1' : './'; }
 document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible' && app.state!=='off') keepAwake(); });

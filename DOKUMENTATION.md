@@ -421,7 +421,7 @@ Handy erhöht (1,5–2 m) **schräg von vorn** auf den Rückraum, z. B. am Torra
 | **Sprungbein** | Rechtshänder links, Linkshänder rechts |
 | **Schritte** | drei Bodenkontakte vom Anlauf bis zum Absprung (Dreischritt); mehr oder weniger gibt den Tipp „Drei Schritte, dann hoch.“ |
 | **Wurfarm** | beim Absprung über dem Kopf |
-| **Abwurf** | im höchsten Punkt (höchstens 0,1 s davor oder danach); sonst „zu früh“ oder „zu spät“ |
+| **Abwurf** | im höchsten Punkt (höchstens 0,15 s davor oder danach); sonst „zu früh“ oder „zu spät“ |
 | **Sprunghöhe, Oberkörper** | wie beim Außenwurf |
 
 Die Körperdrehung wird nur angezeigt, sie zählt im Rückraum nicht. Die Schritte zählt die App ab der Zielansage; wer vorher noch geht, sollte nach der Ansage stehen und dann anlaufen.

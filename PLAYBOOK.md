@@ -147,7 +147,7 @@ Heute bewertet die App jeden Wurf, stellt aber keine **Aufgabe** mit Ziel. Für 
 | Baustein | Für | Prüfbar | Aufwand |
 |---|---|---|---|
 | **C1 Treffererkennung** (Ball im Ring per Farbe oder Bildänderung im Zielbereich, Kameraposition 2 hat das Tor im Bild) | A2, A3, B1, B4, alle Trefferquoten | ●○○ heute, Ziel ●●○ | **L** |
-| **C2 Ballaufprall per Mikro** (Muster aus `shoutDetect.js` umgekehrt: kurzer Knall + Nachhall zählt) | B4, B7, Prellen | ●●○ in ruhiger Halle | **M** |
+| **C2 Ballaufprall per Mikro** ✅ (`shared/js/bounceDetect.js`) (Muster aus `shoutDetect.js` umgekehrt: kurzer Knall + Nachhall zählt) | B4, B7, Prellen | ●●○ in ruhiger Halle | **M** |
 | **C3 Wurf ohne Sprung** ✅ (`findThrow` im 7-m-Trainer) (Abwurf an Handgelenk-Geschwindigkeit erkennen) | B1, B4, B7 | ●●○ | **M** |
 | **C4 Gerade Linien** (7 m, 9 m gestrichelt) für Einrichtung und Übertritt ✅ (7 m: antippen; 9 m: ablaufen/einrasten wie 6 m) | B1, B2 | ●●● | **S** |
 | **C5 Reaktionszeit** ✅ (`judgeMove` in `abwehr/`) (Ansage-Zeitpunkt → erste deutliche Hüftbewegung, Sprachausgabe-Verzögerung abziehen) | A2, B3, B5 | ●●○ | **S** |

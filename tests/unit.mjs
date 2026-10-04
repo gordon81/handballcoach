@@ -311,3 +311,32 @@ test('Rückraum: Bodenkontakte im Anlauf zählen', () => {
   assert.equal(countSteps(runFrames(3, {noise:3}), {t0:3*ST + 0.15, runT:-0.3, bl:150}), 3, 'Rauschen beim Stehen zählt nicht');
   assert.equal(countSteps(runFrames(3).slice(0, 4), {t0:3*ST + 0.15, runT:-0.3, bl:150}), null, 'zu wenig Bilder');
 });
+
+/* ---------- Ballaufprall per Mikro (shared/js/bounceDetect.js) ---------- */
+import { bounceDetector, SENS as BSENS } from '../shared/js/bounceDetect.js';
+
+function runBounce(seq, sens = 'mid'){
+  const d = bounceDetector(), hits = [];
+  seq.forEach((m, i) => { const t = i*STEP; if(d.push(m.v, m.hi, t, BSENS[sens])) hits.push(t/1000); });
+  return hits;
+}
+
+test('Ballaufprall: Knall mit Nachhall zählt, Ruf, Quietschen, Pfiff nicht', () => {
+  assert.equal(runBounce([...noise(2), ...bounce(), ...noise(1)]).length, 1, 'ein Aufprall');
+  assert.equal(runBounce([...noise(2), ...shout(), ...noise(1)]).length, 0, 'Ruf');
+  assert.equal(runBounce([...noise(2), ...squeak(), ...noise(1)]).length, 0, 'Quietschen');
+  assert.equal(runBounce([...noise(2), ...whistle(), ...noise(1)]).length, 0, 'Pfiff');
+});
+
+test('Ballaufprall: schnelle Pässe (alle 0,6 s) einzeln gezählt', () => {
+  const seq = [...noise(2)];
+  for(let k = 0; k < 10; k++) seq.push(...bounce(), ...noise(0.6 - (bounce().length*STEP)/1000));
+  seq.push(...noise(1));
+  assert.equal(runBounce(seq).length, 10);
+});
+
+test('Ballaufprall: leiser Aufprall nur mit hoher Empfindlichkeit', () => {
+  const soft = () => [{v:-36, hi:-44}, ...tail(-44)];
+  assert.equal(runBounce([...noise(2), ...soft(), ...noise(1)], 'low').length, 0);
+  assert.equal(runBounce([...noise(2), ...soft(), ...noise(1)], 'high').length, 1);
+});

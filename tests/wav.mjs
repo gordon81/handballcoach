@@ -4,6 +4,8 @@
 const SR = 48000;
 export const DURATION = 26;
 export const SHOUTS = [5.5, 12.5, 21.0];
+// Ballaufpralle (s): nur diese soll die Aufprall-Erkennung zählen.
+export const BOUNCES = [3.0, 4.2, 11.0];
 
 let seed = 7;
 const rnd = () => ((seed = (seed*16807) % 2147483647) / 2147483647)*2 - 1;
@@ -64,7 +66,7 @@ export function hallWav(){
     const t = i/SR, env = Math.min(1, t/0.3, (8 - t)/0.3)*(1 + 0.25*Math.sin(2*Math.PI*0.7*t));
     buf[15*SR + i] += lp*2.2*env;
   }
-  addBounce(buf, 3.0, db(-4)); addBounce(buf, 4.2, db(-6)); addBounce(buf, 11.0, db(-3));
+  addBounce(buf, BOUNCES[0], db(-4)); addBounce(buf, BOUNCES[1], db(-6)); addBounce(buf, BOUNCES[2], db(-3));
   addTone(buf, 8.0, 0.25, db(-18), 2600, 150, 30);            // Schuhquietschen
   addTone(buf, 9.5, 0.5, db(-14), 3300, 40, 6, 0.6);          // Pfiff (trillernd)
   addShout(buf, SHOUTS[0], 0.4, db(-16));
