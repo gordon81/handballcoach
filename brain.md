@@ -70,6 +70,7 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 - `DOKUMENTATION.md` – Anleitung für Nutzer: Bedienung, Einrichtung, Modi, Demo, Hallentest, wo Log, Videos und Einstellungen liegen und wie man sie löscht. Bei Änderungen an Bedienung oder Speicher mitpflegen.
 - `PLAYBOOK.md` – Vorschläge für weitere Übungen und Trainings (Übungskarten, Prüfbarkeit, Aufwand, TODO-Liste, Reihenfolge). Erledigtes ist dort abgehakt.
 - `QUELLEN.md` – fachliche Quellen der Übungen (DHB-Technikkriterien u. a.), was wofür verwendet wurde, was nicht erreichbar war, Widersprüche.
+- `.claude/skills/demo-figuren/SKILL.md` – Skill für Claude: wie Demos und die simulierten Figuren gebaut und gesteuert werden (Koordinaten, Kamera, Parameter der Person, Verhalten, Varianten, Fallstricke, Vorgehen).
 - `TESTSTRATEGIE.md` – was Unit-Tests, Browser-Tests im Demo und der Hallentest jeweils prüfen; Regeln für neue Übungen.
 - `brain.md` – diese Datei.
 
