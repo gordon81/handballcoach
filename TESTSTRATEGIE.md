@@ -45,6 +45,7 @@ Die simulierte Person (`demo/sim.js`) ist das Bindeglied: sie macht **absichtlic
 | Sechs Prüfungen des Außenwurfs | – | ✓ (4 Wurfarten, 2 Kamerapositionen) | offen |
 | Wurf-Videos | – | ✓ | offen |
 | Startmenü | – | ✓ | – |
+| Treffererkennung und Tempo (Kamera 2) | ✓ | ✓ | offen |
 | Aufgaben (Baustein, A1–A6, Kreisläufer) | ✓ | ✓ | offen |
 | 7-m-Trainer (Zeit, Linie, Standbein, Serie) | ✓ | ✓ | offen |
 | Rückraum-Modus (9-m-Linie, Schritte, Abwurf im höchsten Punkt) | ✓ (Schritte) | ✓ | offen |

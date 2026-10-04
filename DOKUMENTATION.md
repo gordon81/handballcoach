@@ -32,7 +32,7 @@ Alles läuft im Browser auf dem Handy. Es gibt keinen Server, kein Konto und kei
 | **Oberkörper** | Neigung beim Wurf | aufrecht oder leichte Rücklage; nach vorn Richtung Torraum kippen ist ein Fehler |
 
 Angesagt wird immer nur **ein** Tipp, und zwar der wichtigste Fehler in dieser Reihenfolge: Übertritt, Sprungbein, Wurfarm, Drehung, Sprung, Oberkörper.
-Drehung, Sprunghöhe und Oberkörper sind Schätzungen aus einer einzigen Kamera. Treffer erkennt die App nicht selbst, die tippt man auf der Ergebnis-Karte an.
+Drehung, Sprunghöhe und Oberkörper sind Schätzungen aus einer einzigen Kamera. Treffer erkennt die App nur mit Kameraposition 2 und angetippten Ringen selbst (Abschnitt 4.6); sonst tippt man sie auf der Ergebnis-Karte an.
 
 ---
 
@@ -154,7 +154,15 @@ So läuft eine Aufgabe:
 
 Die cm-Angaben sind Schätzungen aus dem Kamerabild (siehe Messwerte). Aufgaben gibt es nur mit Kamera, nicht bei Videodateien.
 
-### 4.6 Training starten
+### 4.6 Treffer automatisch erkennen (nur Kameraposition 2)
+
+Mit **Kameraposition 2 · Feld mit Tor** sind die Ringe im Bild. In der Einrichtung **Ringe antippen**: für jedes Ziel nacheinander die Mitte des Rings antippen („Nicht im Bild“, wenn einer fehlt). Danach erkennt die App nach jedem Wurf, ob der Ball in einem Ring war, sagt *„Treffer.“* oder *„Daneben.“* und trägt es ein. Auf der Karte steht *„Erkannt: Ball im Ring Orange kurz · ca. 62 km/h“*; mit **Treffer/Daneben** kann man es jederzeit korrigieren.
+
+Das **Tempo** ist eine grobe Schätzung: Wurfentfernung (Einstellungen, Standard 7 m) geteilt durch die Zeit vom Abwurf bis der Ball im Ring ist. Gut für „schneller als letzte Woche“, nicht für Rekorde. In den Einstellungen gibt es außerdem die **Ring-Größe im Bild** (klein/mittel/groß), falls die gezeichneten Kreise nicht zu den Ringen passen.
+
+Beides ist bisher nur im Demo geprüft; siehe Hallentest.
+
+### 4.7 Training starten
 
 „Training starten“ bzw. „Mit dieser Linie starten“. Die App sagt *„Los geht's“*. Ab jetzt läuft der Wurfzyklus (Abschnitt 5). **Stopp** beendet das Training, Mikrofon und Bildschirm-wach gehen aus.
 
@@ -327,9 +335,10 @@ Die Grenzwerte der Prüfungen sind bisher nur im Demo geprüft. Beim ersten Hall
 6. **Grenzen anpassen:** zwischen die Werte der guten und der bewusst schlechten Würfe legen (im Code `TH` bzw. `TH_POS.court` in `aussenspieler/js/config.js`, siehe `brain.md`). Beim Übertritt zuerst die Linie prüfen, wenn echte Übertritte nur knapp im Plus oder saubere Absprünge im Plus liegen.
 7. Beide Kamerapositionen getrennt testen (Spalte „Kamera“ im Bericht).
 8. **Aufgabe „Entscheidung in der Luft“:** 10 Würfe, dann im Bericht die Spalte „Ansage“ ansehen und notieren, ob man das Ziel in der Luft noch rechtzeitig gehört hat.
-9. **Aufgabe „Winkel vergrößern“ (Position 2):** je 5 Würfe bewusst gerade und bewusst Richtung Tormitte; sagt die App das richtig an?
-10. **Aufgaben „Wurfhöhe“ und „Ermüdung“:** je 5 Würfe bewusst hoch und aus der Hüfte; prüfen, ob die Ansage stimmt. Bei der Ermüdung prüfen, ob 2 s Pause reichen, um zurück zum Anlauf zu kommen.
-11. **Aufgabe „Absprung an der Linie“:** Klebeband 10, 20, 30 und 40 cm vor die Linie kleben, an jedem ein paar Mal abspringen und notieren, was die App ansagt. Passen die cm nicht, wird die Grenze (heute ca. 30 cm) im Code angepasst.
+9. **Treffererkennung (Position 2):** Ringe antippen, je 10 Würfe in die Ringe und bewusst daneben. Stimmt *„Treffer.“/„Daneben.“*? Tempo mit einer Radar-App vergleichen und die Wurfentfernung einstellen.
+10. **Aufgabe „Winkel vergrößern“ (Position 2):** je 5 Würfe bewusst gerade und bewusst Richtung Tormitte; sagt die App das richtig an?
+11. **Aufgaben „Wurfhöhe“ und „Ermüdung“:** je 5 Würfe bewusst hoch und aus der Hüfte; prüfen, ob die Ansage stimmt. Bei der Ermüdung prüfen, ob 2 s Pause reichen, um zurück zum Anlauf zu kommen.
+12. **Aufgabe „Absprung an der Linie“:** Klebeband 10, 20, 30 und 40 cm vor die Linie kleben, an jedem ein paar Mal abspringen und notieren, was die App ansagt. Passen die cm nicht, wird die Grenze (heute ca. 30 cm) im Code angepasst.
 
 ---
 

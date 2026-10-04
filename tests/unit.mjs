@@ -460,3 +460,29 @@ test('Sprungkraft: Zusammenfassung, links gegen rechts, Vergleich mit dem letzte
   assert.match(lr.say, /Links 21, rechts 28 Zentimeter\. Rechts 25 Prozent stärker/);
   assert.match(jumpSummary([{height:0.2, leg:'l'}, {height:0.21, leg:'r'}], 'single').say, /Beide Beine ähnlich stark/);
 });
+
+/* ---------- Treffererkennung und Tempo (shared/js/hitDetect.js) ---------- */
+import { detectHit, circleMask, speedKmh } from '../shared/js/hitDetect.js';
+
+// Ring-Ausschnitte 15×15: Hintergrund 120 ± Rauschen; „Ball“ = heller Fleck (220) in der Mitte zur Zeit tBall.
+function ringSamples(tBall, {size = 15, off = 0} = {}){
+  const out = []; let seed2 = 3; const r = () => ((seed2 = (seed2*16807) % 2147483647)/2147483647 - 0.5)*8;
+  for(let t = -1; t <= 1.5; t += 1/30){
+    const px = new Uint8Array(size*size).map(() => 120 + r());
+    if(tBall != null && Math.abs(t - tBall) < 0.05) for(let y = 3; y < 12; y++) for(let x = 3 + off; x < 12 + off; x++) if(x >= 0 && x < size) px[y*size + x] = 220;
+    out.push({t, px});
+  }
+  return out;
+}
+test('Treffererkennung: Ball im getroffenen Ring, nicht daneben', () => {
+  const rings = [{name:'Orange kurz', size:15, samples:ringSamples(0.45)}, {name:'Blau lang', size:15, samples:ringSamples(null)}];
+  const r = detectHit(rings, 0);
+  assert.equal(r.ring, 'Orange kurz'); assert.ok(Math.abs(r.t - 0.45) < 0.05);
+  assert.equal(detectHit([{name:'A', size:15, samples:ringSamples(null)}, {name:'B', size:15, samples:ringSamples(null)}], 0).ring, null, 'nur Rauschen: kein Treffer');
+  assert.equal(detectHit([{name:'A', size:15, samples:ringSamples(0.4, {off:12})}], 0).ring, null, 'Ball neben dem Ring (außerhalb des Kreises)');
+  assert.equal(detectHit([{name:'A', size:15, samples:ringSamples(1.4)}], 0).ring, null, 'zu spät (nach dem Suchfenster)');
+  const two = detectHit([{name:'A', size:15, samples:ringSamples(0.4)}, {name:'B', size:15, samples:ringSamples(0.4)}], 0);
+  assert.equal(two.ring, null, 'zwei Ringe gleich stark: unklar, kein Treffer');
+  assert.equal(circleMask(5).reduce((a, b) => a + b, 0), 9);
+  assert.equal(speedKmh(7, 0.35), 72); assert.equal(speedKmh(7, 0.05), null);
+});

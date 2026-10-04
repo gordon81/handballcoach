@@ -41,7 +41,9 @@ export const norm = a => { const l = Math.hypot(...a); return [a[0]/l, a[1]/l, a
 export const add = (a, b, s = 1) => [a[0]+b[0]*s, a[1]+b[1]*s, a[2]+b[2]*s];
 
 
-let cam = null, bg = null;
+let cam = null, bg = null, ringList = [];
+// Gummiringe im Tor (für die Treffererkennung): [{p:[x,y,z], r (m), color}]. Werden mit dem Hallenboden gezeichnet.
+export function setRings(list){ ringList = list; if(cam) bg = renderHall(); }
 // Kamera setzen: Position, Blickpunkt (Meter) und optional Verschiebung [dx, dy, Schwenk °]. Zeichnet den Hallenboden neu.
 export function setView(pos0, look, [mx, my, yaw] = [0, 0, 0]){
   const pos = [pos0[0]+mx, pos0[1]+my, pos0[2]];
@@ -106,6 +108,11 @@ function drawGoal(c){   // Tor: rot-weiße Pfosten und Latte
     }
   };
   bar([-1.5, 0, 0], [-1.5, 0, 2]); bar([-1.5, 0, 2], [1.5, 0, 2]); bar([1.5, 0, 0], [1.5, 0, 2]);
+  for(const rg of ringList){   // Ring als Kreis in der Torebene (Punkte im Kreis projizieren)
+    c.strokeStyle = rg.color; c.lineWidth = Math.max(2, F*0.03/proj(rg.p).z); c.beginPath();
+    for(let k = 0; k <= 24; k++){ const a = k/24*2*Math.PI, q = proj([rg.p[0] + rg.r*Math.cos(a), rg.p[1], rg.p[2] + rg.r*Math.sin(a)]); k ? c.lineTo(q.x, q.y) : c.moveTo(q.x, q.y); }
+    c.stroke();
+  }
 }
 
 // 3D-Gelenke der Person (Meter).

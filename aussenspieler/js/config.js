@@ -24,7 +24,7 @@ export const L = {nose:0,lSh:11,rSh:12,lEl:13,rEl:14,lWr:15,rWr:16,lHip:23,rHip:
 // Verbindungen für das gezeichnete Skelett.
 export const BONES = [[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28],[27,29],[29,31],[27,31],[28,30],[30,32],[28,32]];
 
-export const DEF = {hand:'R', pos:'LA', camPos:'base', lines:{}, mode:'auto', pause:4, callMin:1, callMax:5, sens:'mid', clips:true, camera:'environment', model:'lite', line:null, session:null, task:'free', taskHist:{},
+export const DEF = {hand:'R', pos:'LA', camPos:'base', lines:{}, mode:'auto', pause:4, callMin:1, callMax:5, sens:'mid', clips:true, camera:'environment', model:'lite', line:null, session:null, task:'free', taskHist:{}, rings:{}, ringSize:0.02, throwDist:7,
   targets:[{name:'Orange kurz',on:true},{name:'Orange lang',on:true},{name:'Blau kurz',on:true},{name:'Blau lang',on:true}]};
 
 // Kamerapositionen (Einrichtung). Jede Position hat ihre eigene Linie (settings.lines).

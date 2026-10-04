@@ -1,6 +1,7 @@
 // Zustandsautomat pro Wurf: off → ready → runup → air → cool → ready …
 // Erkennt Absprung und Landung aus den Pose-Frames und übergibt den Sprung an analysis.js.
 import { L, TURN_SIGN } from './config.js';
+import { ringsOn, evalHit, HIT_WAIT } from './rings.js';
 import { app } from './state.js';
 import { settings, log, store, ensureSession } from './store.js';
 import { $, canvas, showHint } from './dom.js';
@@ -9,9 +10,9 @@ import { say, beep } from '../../shared/js/speech.js';
 import { quiet } from './shout.js';
 import { recStart, recDrop, recFinish, recAge } from './clips.js';
 import { evaluate } from './analysis.js';
-import { showCard, clipReady } from './ui/card.js';
+import { showCard, clipReady, cardHit } from './ui/card.js';
 import { renderLog } from './ui/logView.js';
-import { taskThrow, taskDone, taskCallInAir, taskCall, taskPause, taskShout, onSeriesDone } from './taskRun.js';
+import { taskThrow, taskDone, taskCallInAir, taskCall, taskPause, taskShout, onSeriesDone, taskRecount } from './taskRun.js';
 
 const LABELS = {off:'Gestoppt', ready:'Bereit', runup:'Anlauf', air:'Sprung', cool:'Pause'};
 let H=[], visSince=null, lastSeen=-1, lastTarget=null;
@@ -172,6 +173,7 @@ function finish(t){
   say(taskThrow(entry) ?? r.speech, {queue:!!e.late});   // spätes Ziel nicht abschneiden
   log.push(entry); if(log.length > 1000) log.shift(); store();
   showCard(entry); renderLog();
+  if(ringsOn() && app.source==='cam') autoHit(entry, e.throwF ? e.throwF.t : e.t0 + 0.25);
   if(recAge(t)!==null) recFinish(entry.time).then(ok => { if(ok){ entry.clip = true; store(); clipReady(entry); renderLog(); } });
   app.target = null; hudTarget(null);
   setState('cool', t);
@@ -186,6 +188,18 @@ export function turnSince(t0, t1){
   let sum = 0, react = null;
   for(let i = 1; i < w.length; i++){ sum += angDiff(w[i].hipYaw, w[i-1].hipYaw); if(react === null && Math.abs(sum) > 20) react = Math.round((w[i].t - t0)*100)/100; }
   return {turn:Math.round(sum*TURN_SIGN), react};
+}
+
+// Treffererkennung (C1) und Wurfgeschwindigkeit (B7): warten, bis der Ball am Tor sein muss, dann die Ringe auswerten.
+// Ein schon getipptes Treffer/Daneben bleibt; sonst wird es aus der Erkennung gesetzt.
+function autoHit(entry, tRel){
+  const wait = Math.max(0, (tRel + HIT_WAIT + 0.05 - performance.now()/1000)*1000);
+  setTimeout(() => {
+    const r = evalHit(tRel); if(!r) return;
+    entry.hitAuto = r.ring; entry.m.flight = r.flight; entry.m.speed = r.speed;
+    if(entry.target && entry.hit === null){ entry.hit = r.ring === entry.target; say(entry.hit ? 'Treffer.' : 'Daneben.', {queue:true}); taskRecount(entry); }
+    store(); cardHit(entry); renderLog();
+  }, wait);
 }
 
 // Zufälliges Ziel ansagen (nie zweimal dasselbe hintereinander).

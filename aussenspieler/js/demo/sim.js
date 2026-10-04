@@ -8,7 +8,7 @@ import { wizard } from '../lineWizard.js';
 import { showHint } from '../dom.js';
 import { shoutNow } from '../shout.js';
 import { RR } from '../config.js';
-import { W, H, cv, D2R, linePt, add, sub, setView, proj, drawFloor, joints as rig, landmarks, drawPerson, ball, hand as handOf } from '../../../shared/js/demo/scene.js';
+import { W, H, cv, D2R, linePt, add, sub, setView, setRings, proj, drawFloor, joints as rig, landmarks, drawPerson, ball, hand as handOf } from '../../../shared/js/demo/scene.js';
 
 /* ---------- Kamera: Position der Einstellung „camPos“ (siehe CAM_POS in config.js) ---------- */
 // base: erhöht auf der Grundlinie zwischen 6-m-Linie und Tor, schräg auf die Absprungzone am linken Flügel.
@@ -22,6 +22,12 @@ const G = RR ? {R:9, th:125, start:13.3, walk:[150, 110], inside:7.6} : {R:6, th
 const onLine = (th, dr = 0) => linePt(th, G.R + dr);
 const MOVES = [[0, 0, 0], [0.3, 0.15, 4], [-0.25, 0.1, -3.5]];   // dx, dy (m), Schwenk (°) für „Kamera bewegen“
 let moveIdx = 0, camKey = null;
+// Gummiringe im Tor (vom linken Flügel aus: „kurz“ = naher Pfosten links). Orange 16 cm, Blau 10 cm (Radius 8 / 5 cm).
+export const RINGS = {'Orange kurz':[-1.15, 0, 1.65], 'Orange lang':[1.15, 0, 1.65], 'Blau kurz':[-1.2, 0, 0.35], 'Blau lang':[1.2, 0, 0.35]};
+setRings(Object.entries(RINGS).map(([n, p]) => ({p, r:/Orange/.test(n) ? 0.08 : 0.05, color:/Orange/.test(n) ? '#ff8a1f' : '#2a6fff'})));
+// Treffer im Wechsel: getroffen, getroffen, daneben (0,6 m daneben), getroffen. Was geworfen wurde, steht in demo.throws.
+export const HITS = [true, true, false, true];
+
 function setCamera(){
   camKey = CAMS[settings.camPos] ? settings.camPos : 'base';
   setView(CAMS[camKey].pos, CAMS[camKey].look, MOVES[moveIdx]);
@@ -50,7 +56,7 @@ function stand(dt, face){ P.s = Math.max(0, P.s - dt*4); if(face!==undefined) tu
 const toward = T => Math.atan2(T[1]-P.y, T[0]-P.x);
 
 let called = false, readyFor = 0, autoCall = true;   // autoCall: Person ruft von selbst (Tests schalten das ab)
-export const demo = {calls:[], shots:[]};   // Zeitpunkte der Zurufe (für Tests)
+export const demo = {calls:[], shots:[], throws:[]};   // Zeitpunkte der Zurufe (für Tests)
 
 // Verhalten: reagiert auf die Ansagen der App wie ein Mensch, der zuhört.
 function behave(dt){
@@ -143,7 +149,11 @@ function shotStep(dt){
     const sa = s.swingAt ?? 0.45;   // ab hier wird geworfen (Anteil der Flugzeit)
     P.swing = u < sa ? 0 : Math.min(1, (u-sa)/0.22);
     P.twist = (u < sa ? 0.55*Math.min(1, u/0.2) : 0.55 - 0.9*Math.min(1, (u-sa)/0.25)) * (R ? 1 : -1);
-    if(P.swing > 0.8 && P.ball){ P.ball = false; ballFly = {p:hand(), t:0}; }
+    if(P.swing > 0.8 && P.ball){
+      const tg = RINGS[app.target] || [0, 0, 1.2], hit = !!RINGS[app.target] && HITS[(demo.throws.length) % HITS.length];
+      const to = hit ? tg : [tg[0] + (tg[0] < 0 ? 0.6 : -0.6), tg[1], tg[2] + 0.3];
+      P.ball = false; ballFly = {p:hand(), t:0, to}; demo.throws.push({target:app.target, hit, t:performance.now()/1000});
+    }
     if(u >= 1){ s.stage = 'land'; s.t = 0; P.lift = P.lf = P.rf = 0; }
     return;
   }
@@ -165,7 +175,8 @@ function tick(now){
   drawFloor();
   if(ballFly){   // Ball fliegt Richtung Tor
     ballFly.t += dt; const k = ballFly.t/0.45;
-    if(k >= 1) ballFly = null; else ball(add(ballFly.p, sub([-0.9, -0.1, 1.2], ballFly.p), k));
+    // Ball fliegt in 0,45 s zum Ziel und bleibt dort kurz (wie im Ring/Netz), dann verschwindet er.
+    if(k >= 1.4) ballFly = null; else ball(add(ballFly.p, sub(ballFly.to, ballFly.p), Math.min(1, k)));
   }
   drawPerson(j, P, rightHand());
   last = landmarks(j);
@@ -219,4 +230,6 @@ export function truthError(pts){
   return pts.map(p => Math.min(...ref.map(q => Math.hypot((p.x-q.x)*W/H, p.y-q.y))));
 }
 // Für automatische Tests. shoot(): Wurf ohne Ansage starten.
+// Für Tests: wahre Lage der Ringe im aktuellen Kamerabild (normiert).
+export function ringTruth(){ return Object.entries(RINGS).map(([name, p]) => { const q = proj(p); return {name, x:q.x/W, y:q.y/H}; }); }
 export const _test = {proj:(...a) => proj(...a), linePt, shoot(){ if(!shot) startShot(); }, autoCall(on){ autoCall = on; }};

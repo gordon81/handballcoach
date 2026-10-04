@@ -17,6 +17,7 @@ export function showCard(en){
     <ul class="checks">${en.res.map(r => `<li>${icon(r.ok)}<span>${esc(r.txt)}</span></li>`).join('')}</ul>
     ${en.praise ? `<p class="tipline"><span class="ic ok">+</span><span><b>Gut:</b> ${esc(en.praise)}</span></p>` : ''}
     <p class="tipline"><span class="ic mid">➜</span><span><b>Besser:</b> ${en.tip ? esc(en.tip) : 'Nichts Auffälliges, genau so weitermachen.'}</span></p>
+    <p class="autohit" hidden></p>
     <div class="btnrow"><button data-v ${en.clip ? '' : 'hidden'}>▶︎ Video ansehen</button></div>
     ${en.target ? `<div class="hitrow"><span>Ziel getroffen?</span><button data-h="1">Treffer</button><button class="no" data-h="0">Daneben</button></div>` : ''}`;
   c.querySelectorAll('[data-h]').forEach(b => b.onclick = () => {
@@ -27,6 +28,15 @@ export function showCard(en){
   c.querySelector('[data-v]').onclick = () => { c.style.display = 'none'; openClip(en); };
   c.dataset.nr = en.nr; c.style.display = 'block'; c.scrollTop = 0;
   clearTimeout(cardTimer); cardTimer = setTimeout(() => c.style.display='none', 10000);
+}
+
+// Treffererkennung fertig: Ergebnis auf der Karte zeigen (falls sie noch diesen Wurf zeigt) und Treffer/Daneben markieren.
+export function cardHit(en){
+  const c = $('#card'); if(+c.dataset.nr !== en.nr) return;
+  const p = c.querySelector('.autohit');
+  p.hidden = false;
+  p.textContent = (en.hitAuto ? `Erkannt: Ball im Ring ${en.hitAuto}` : 'Erkannt: kein Ring getroffen') + (en.m.speed ? ` · ca. ${en.m.speed} km/h` : '');
+  if(en.hit !== null) c.querySelectorAll('[data-h]').forEach(x => x.classList.toggle('on', (x.dataset.h === '1') === en.hit));
 }
 
 // Clip wurde nach der Landung gespeichert: Button auf der Karte einblenden, falls sie noch diesen Wurf zeigt.

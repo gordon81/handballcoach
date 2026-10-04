@@ -6,6 +6,7 @@ import { keepAwake } from '../../shared/js/wakelock.js';
 import { processFrame, heardCall } from './tracking.js';
 import { onShout } from './shout.js';
 import { recFrame } from './clips.js';
+import { ringFrame } from './rings.js';
 import { initClipView } from './ui/clipView.js';
 import { initMicMeter } from './ui/micMeter.js';
 import { wizardFrame } from './lineWizard.js';
@@ -55,6 +56,7 @@ function loop(){
   wizardFrame(app.latest, t);
   draw();
   recFrame();
+  if(app.source==='cam') ringFrame(t);
   fpsN++; if(pn - fpsT0 > 1000){ $('#fps').textContent = Math.round(fpsN*1000/(pn-fpsT0)) + ' fps'; fpsN = 0; fpsT0 = pn; }
   if(app.source==='file' && video.duration) $('#fSeek').value = Math.round(vt/video.duration*1000);
 }

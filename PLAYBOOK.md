@@ -129,7 +129,7 @@ Heute bewertet die App jeden Wurf, stellt aber keine **Aufgabe** mit Ziel. Für 
 - **Prüfbar:** ●●○ – Sprung- und Landungserkennung gibt es schon; Höhe ist eine Schätzung aus einer Kamera, als Verlauf (heute vs. letzte Woche) aber aussagekräftig.
 - **Baut auf:** Sprungerkennung, Sprunghöhe. **Aufwand S–M.**
 
-### B7 · Wurfgeschwindigkeit (Schätzung)
+### B7 · Wurfgeschwindigkeit (Schätzung) ✅ gebaut (aus Abwurf und Ankunft im Ring, Kameraposition 2; unkalibriert)
 - **Ziel:** härter werfen, Fortschritt sehen.
 - **Idee:** Abwurf-Zeitpunkt aus der Pose (max. Handgelenk-Geschwindigkeit), Aufprall an Wand oder Tor per Mikro. Bekannter Abstand (z. B. 7 m) / Flugzeit = Geschwindigkeit.
 - **Prüfbar:** ●○○ bis ●●○ – bei 30 fps ist der Abwurf auf ~30 ms genau, bei ~300 ms Flugzeit sind das ±10 %. Für „schneller als letzte Woche“ reicht das, für km/h-Rekorde nicht. Bildrate und Mikro-Verzögerung im Hallentest prüfen.
@@ -146,7 +146,7 @@ Heute bewertet die App jeden Wurf, stellt aber keine **Aufgabe** mit Ziel. Für 
 
 | Baustein | Für | Prüfbar | Aufwand |
 |---|---|---|---|
-| **C1 Treffererkennung** (Ball im Ring per Farbe oder Bildänderung im Zielbereich, Kameraposition 2 hat das Tor im Bild) | A2, A3, B1, B4, alle Trefferquoten | ●○○ heute, Ziel ●●○ | **L** |
+| **C1 Treffererkennung** ✅ im Demo (Ringe antippen, Bildvergleich; `shared/js/hitDetect.js`, unkalibriert) (Ball im Ring per Farbe oder Bildänderung im Zielbereich, Kameraposition 2 hat das Tor im Bild) | A2, A3, B1, B4, alle Trefferquoten | ●○○ heute, Ziel ●●○ | **L** |
 | **C2 Ballaufprall per Mikro** ✅ (`shared/js/bounceDetect.js`) (Muster aus `shoutDetect.js` umgekehrt: kurzer Knall + Nachhall zählt) | B4, B7, Prellen | ●●○ in ruhiger Halle | **M** |
 | **C3 Wurf ohne Sprung** ✅ (`findThrow` im 7-m-Trainer) (Abwurf an Handgelenk-Geschwindigkeit erkennen) | B1, B4, B7 | ●●○ | **M** |
 | **C4 Gerade Linien** (7 m, 9 m gestrichelt) für Einrichtung und Übertritt ✅ (7 m: antippen; 9 m: ablaufen/einrasten wie 6 m) | B1, B2 | ●●● | **S** |
@@ -166,7 +166,7 @@ Heute bewertet die App jeden Wurf, stellt aber keine **Aufgabe** mit Ziel. Für 
 8. [x] **B2 Rückraum-Sprungwurf** ✅ (großteils Außenwurf-Coach mit 9-m-Linie und Schrittzählung). **M**
 9. [x] **C2 Ballaufprall per Mikro** ✅, dann **B4 Pässe gegen die Wand** ✅. **M**
 10. [x] **A4 Winkel vergrößern** ✅, **A6 Gegenstoß auf Zeit** ✅, **B3 Kreisläufer** ✅, **B6 Sprungkraft** ✅. **S–M**
-11. [ ] **C1 Treffererkennung** und **B7 Wurfgeschwindigkeit**. **L / M**, erst wenn der Rest in der Halle läuft.
+11. [x] **C1 Treffererkennung** ✅ und **B7 Wurfgeschwindigkeit** ✅ (im Demo; Grenzen erst nach dem Hallentest einstellen). **L / M**
 
 Jede neue Übung bekommt einen Demo-Ablauf in `demo/sim.js` und einen Test in `tests/browser.mjs`, wie der Außenwurf-Coach heute.
 

@@ -15,12 +15,13 @@ export function measures(m){
 export function measureText(m){
   const s = measures(m); if(!s) return '';
   return `Kamera ${s.cam} · Linie ${s.line} · Arm ${s.arm} · Drehung ${s.rot} · Sprung ${s.jump} · Oberkörper ${s.lean} · ${s.fps} fps` + (m.callDet!=null ? ` · Ansage ${s.call}` : '')
-    + (RR ? ` · Schritte ${s.steps} · Abwurf ${s.peak}` : '');
+    + (RR ? ` · Schritte ${s.steps} · Abwurf ${s.peak}` : '') + (m.speed ? ` · Tempo ca. ${m.speed} km/h` : '');
 }
 export const MEASURE_HELP = (RR ? 'Linie: Fuß beim Absprung zur 9-m-Linie (+ = innerhalb der 9 m). Schritte: Bodenkontakte ab der Zielansage bis zum Absprung. Abwurf: Zeit vom höchsten Punkt der Hüfte bis zum Abwurf (− = früher). '
   : 'Linie: Fuß beim Absprung zur 6-m-Linie (+ = im Torraum, also Übertritt). ') + 'Arm: Handgelenk beim Absprung über (+) oder unter (−) der Nase. '
   + 'Sprung: Hüfte über der Anlauf-Höhe. Oberkörper beim Wurf (+ = Richtung Torraum). fps: Bilder pro Sekunde der Pose-Erkennung. Kamera: Position 1 (Grundlinie) oder 2 (Feld mit Tor). '
   + 'Ansage (nur „Entscheidung in der Luft“): wie lange nach dem Absprung die App das Ziel abschickt / die Sprachausgabe wirklich zu sprechen beginnt. '
+  + 'Tempo (nur mit angetippten Ringen, Kamera 2): Wurfentfernung / Zeit vom Abwurf bis zum Ball im Ring, grobe Schätzung. '
   + `cm geschätzt (Schulter–Knöchel = ${KL_CM} cm angenommen).`;
 export const LIMITS_TEXT = (TH = th()) => `Grenzen${settings.camPos==='court' ? ' (Kamera 2)' : ''}: Sprung hoch ab ${cm(TH.jumpHigh)} cm, mittel ab ${cm(TH.jumpMid)} cm; Drehung ab ${TH.rot}° (falsche Seite ${TH.rotWrongSide}°); `
   + `Oberkörper aufrecht unter ${TH.leanUpright}°, kippt nach vorn ab ${TH.leanForward}°; Arm über der Nase = oben.`;

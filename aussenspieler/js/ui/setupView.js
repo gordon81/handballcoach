@@ -15,6 +15,7 @@ import { onLineChange, startTapMarking, finishLinePoints, undoPoint, cancelMarki
 import { CAM_POS, TXT } from '../config.js';
 import { wizard, onWizardChange, startWizard, stopWizard, finishWalkNow } from '../lineWizard.js';
 import { checkCamera } from '../camCheck.js';
+import { rings, startRingMarking, ringSkip, ringUndo, cancelRings, clearRings, onRingsChange } from '../rings.js';
 import { beginTask, endTaskRun, taskBlock, onTaskButtons, chosenTask, hideEnd } from '../taskRun.js';
 
 let visible = false, cam = null;   // cam = letztes Ergebnis des Kamera-Checks
@@ -92,15 +93,25 @@ function camPosBlock(){
   return `<p class="muted">Kameraposition:</p><div class="btnrow campos">${Object.keys(CAM_POS).map(k => btn('camPos', CAM_POS[k].name, settings.camPos===k ? 'on' : '', true, k)).join('')}</div>
     <p class="muted">${esc(CAM_POS[settings.camPos]?.where || '')}</p>`;
 }
+// Treffererkennung (nur Position 2, Tor im Bild): Ringe antippen.
+function ringBlock(){
+  const n = rings().length;
+  return `<p class="muted">Treffererkennung: ${n ? `${n} Ringe gesetzt. Treffer und Wurftempo werden geschätzt.` : 'Ringe im Bild antippen, dann erkennt die App Treffer selbst.'}</p>
+    <div class="btnrow">${btn('rings', n ? 'Ringe neu antippen' : 'Ringe antippen')}${n ? btn('ringClear', 'Löschen') : ''}</div>`;
+}
 const FLIP = '<button data-a="flip" class="flip" aria-label="Leiste oben/unten">⇅</button>';   // falls die Leiste die Linie verdeckt
 
 function render(){
-  const box = $('#setup'), busy = !!(app.marking || wizard.phase);
+  const box = $('#setup'), busy = !!(app.marking || wizard.phase || app.ringMark);
   box.hidden = !visible && !busy;
   $('#stage').classList.toggle('marking', busy);
   if(box.hidden) return;
   let h;
-  if(app.marking && app.markStep==='line'){
+  if(app.ringMark){
+    const m = app.ringMark, k = m.pts.length;
+    h = `<p><b>Ringe antippen:</b> Tippe auf die Mitte von „${esc(m.names[k])}“ (${k + 1}/${m.names.length}).</p>
+      <div class="btnrow">${btn('ringUndo','↶ Zurück','',k>0)}${btn('ringSkip','Nicht im Bild')}${btn('ringCancel','Abbrechen')}${FLIP}</div>`;
+  } else if(app.marking && app.markStep==='line'){
     const n = app.marking.length;
     h = `<p><b>Linie antippen:</b> Punkte entlang der ${TXT.line} setzen, von außen nach innen, ${TXT.tapHint}. Gesetzt: ${n}</p>
       <div class="btnrow">${btn('undo','↶ Zurück','',n>0)}${btn('done','Fertig','primaryBtn',n>=2)}${btn('cancel','Abbrechen')}${FLIP}</div>`;
@@ -126,6 +137,7 @@ function render(){
       </ul>
       ${wizard.msg ? `<p class="muted">${esc(wizard.msg)}</p>` : ''}
       <div class="btnrow">${btn('wizard','Linie ablaufen')}${btn('tap','Linie antippen')}${line ? btn('fix','Korrigieren') + btn('clear','Löschen') : ''}</div>
+      ${isCam && settings.camPos==='court' ? ringBlock() : ''}
       ${isCam && (settings.mode==='call' || chosenTask()?.shout) ? micBlock() : ''}
       ${isCam && app.state==='off' ? `<button class="wide primaryBtn" data-a="start" ${line ? '' : 'disabled'}>${chosenTask() ? 'Aufgabe starten' : line && cam?.status==='ok' ? 'Mit dieser Linie starten' : 'Training starten'}</button>` : ''}`;
   }
@@ -146,6 +158,8 @@ const ACTIONS = {
   tapInside(){ const pts = wizard.pts; stopWizard(); startTapMarking(pts, 'inside'); },
   wizCancel(){ stopWizard(); },
   flip(){ $('#stage').classList.toggle('flip'); },
+  rings(){ if(app.source==='cam' && app.state!=='off') stopTraining(); $('#card').style.display = 'none'; startRingMarking(); },
+  ringUndo, ringSkip, ringCancel: cancelRings, ringClear: clearRings,
   micTest(){ micUse.test = !micUse.test; micHits = 0; syncMic().then(render); render(); },
   sens(el){ settings.sens = el.dataset.v; store(); render(); },
   task(el){ settings.task = el.dataset.v; store(); render(); },
@@ -159,7 +173,7 @@ const ACTIONS = {
 };
 
 export function initSetup(){
-  onLineChange(render); onWizardChange(render);
+  onLineChange(render); onWizardChange(render); onRingsChange(render);
   onTaskButtons(startTraining, stopTraining);
   $('#setup').addEventListener('click', e => { const el = e.target.closest('[data-a]'), a = el?.dataset.a; if(a && ACTIONS[a]) ACTIONS[a](el); });
   // Mikro-Test: erkannter Ruf mit Piep quittieren (im Training macht das tracking.js).

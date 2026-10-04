@@ -25,6 +25,7 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
   - `js/utils.js` (Helfer), `js/speech.js` (Sprachausgabe `say(text, {queue})`, Piep `beep()`; Tests lesen `window.__said`), `js/wakelock.js` (Bildschirm wach), `js/pose.js` (`createPose(model)`: MediaPipe laden, GPU mit CPU-Fallback; URLs `TV`, `MODELS`).
   - `js/mic.js` – Mikrofon-Pegel für alle Trainings (`micSampler()`: start/stop, alle 30 ms `onSample(v, hi, now, pk, lvl)`; Stimmbereich und hoher Bereich in dB aus der FFT, dazu aus dem Zeitsignal der letzten ~85 ms der Mittelpegel `lvl` und der lauteste 5-ms-Abschnitt `pk`). Der Zuruf im Außenwurf-Coach (`shout.js`) hängt sich daran.
   - `js/bounceDetect.js` – Ballaufprall erkennen (C2), ohne Browser: Knall = `pk` mindestens 9,5 dB über `lvl` (Crest) in mindestens 2 Messungen hintereinander (der kurze Knall liegt in mehreren 85-ms-Fenstern, der Einsatz eines Rufs nur in einem; Rauschen/Hallenlärm ~6 dB, Aufpralle ~12 dB), `pk` deutlich über dem Grundpegel (Empfindlichkeit `SENS` low 24 / mid 18 / high 12 dB), nicht hoch (Pfiff/Quietschen), 250 ms Sperre. Gezählt, wenn der Knall vorbei ist. Ein erster Versuch nur mit FFT-Pegeln verpasste Aufpralle, weil der Knall auf zwei Fenster fiel.
+  - `js/hitDetect.js` – Treffererkennung ohne Browser: `detectHit(rings, tRelease)` (Bildänderung im Ring-Kreis gegen das Bild vor dem Wurf), `speedKmh`.
   - `js/demo/scene.js` – Demo-Szene: gezeichnete Halle (`setView(pos, look, move)`, `proj`, `drawFloor`) und Person aus Gelenken (`joints(P, R)`, `drawPerson`, `landmarks` im MediaPipe-Format, `ball`, `hand`). Das Verhalten der Person steht im Demo des jeweiligen Trainings.
 - `aussenspieler/` – Außenwurf-Coach (die folgenden Dateien bis `ui/` liegen in diesem Ordner, Pfade darin relativ):
 - `index.html` – nur das HTML-Gerüst; bindet `../shared/css/base.css`, die eigenen CSS-Dateien und `js/main.js` ein. Link „← Alle Trainings“ (`../`) zurück ins Menü.
@@ -45,6 +46,7 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
   - `demo/sim.js` – Demo-Modus: Verhalten der simulierten Person (Linie ablaufen, Würfe, Zuruf), Kamerapositionen, Ersatz für Kamera und KI; Halle und Körper aus `shared/js/demo/scene.js`.
   - `tracking.js` – Zustandsautomat, Absprung-/Landungserkennung, speichert den Wurf.
   - `analysis.js` – `evaluate()`: die sechs Prüfungen (Rückraum: dazu Schritte und Abwurf im höchsten Punkt) und der Sprachtext.
+  - `rings.js` – Treffererkennung: Ringe antippen, Ausschnitte sammeln, nach dem Wurf auswerten, Tempo (siehe Abschnitt „Treffererkennung und Wurftempo“).
   - `steps.js` – Schritte vor dem Absprung zählen (Rückraum), ohne Browser, unit-getestet.
   - `tasks.js` – Aufgaben als Daten (`TASKS`) und ihre Regeln (`judge`, `tally`, Ansagen, Verlauf, Bestwert). Reine Logik ohne Browser, unit-getestet.
   - `taskRun.js` – Aufgabe im Training: Serie starten (`beginTask`), jeden Wurf bewerten (`taskThrow`), Zähler `#taskBox`, Ende-Karte `#taskEnd` mit „Nochmal“/„Fertig“, Auswahl in der Einrichtung (`taskBlock`), Serien des Trainings für Log/Bericht (`sessionRuns`).
@@ -101,7 +103,7 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 
 ## Tests (`tests/`)
 - Einmalig: `cd tests && npm install` (Playwright), Browser bei Bedarf `npx playwright install chromium`. Dann `npm test` (~10 min, alle Trainings) oder nur `npm run unit` (Sekunden, ohne Browser).
-- `unit.mjs` (Node): Sprungkraft (Zählen, Höhe, Bodenkontakt, Bein, Wippen/Rauschen zählt nicht, Zusammenfassung), Pässe (`passen/js/rules.js`: Arm, Gegenbein je Wand-Seite und Wurfhand, Kamera-Zählung, Zusammenfassung), Ballaufprall (Knall zählt, Ruf/Quietschen/Pfiff nicht, schnelle Pässe einzeln, Empfindlichkeit), Rückraum-Schritte (`steps.js`: 2/3/4 Schritte, Rauschen), Abwehr-Regeln (`abwehr/js/rules.js`: Richtung, Reaktion, Verzögerung abziehen, gekreuzt, nächster Ruf, Zusammenfassung), 7-m-Regeln (`rules.js`: Zeit, Linie, Standbein, Hüpfer ist kein Wurf, Serie), Aufgaben-Regeln (`tasks.js`: Grenzen, cm-Ansage, Serie, Verlauf/Bestwert) und Ruf-Erkennung mit künstlichen Pegelverläufen: Ruf, Ballaufpralle, Quietschen, Pfiff, Dauerlärm + Ruf darüber (auch mit kurzen Einbrüchen), Mikro-Start ohne Ton, Sperre, eigene Ansage, Empfindlichkeit.
+- `unit.mjs` (Node): Treffererkennung (Ball im Ring, Rauschen, Ball neben dem Ring, zu spät, zwei Ringe gleich stark, Tempo), Sprungkraft (Zählen, Höhe, Bodenkontakt, Bein, Wippen/Rauschen zählt nicht, Zusammenfassung), Pässe (`passen/js/rules.js`: Arm, Gegenbein je Wand-Seite und Wurfhand, Kamera-Zählung, Zusammenfassung), Ballaufprall (Knall zählt, Ruf/Quietschen/Pfiff nicht, schnelle Pässe einzeln, Empfindlichkeit), Rückraum-Schritte (`steps.js`: 2/3/4 Schritte, Rauschen), Abwehr-Regeln (`abwehr/js/rules.js`: Richtung, Reaktion, Verzögerung abziehen, gekreuzt, nächster Ruf, Zusammenfassung), 7-m-Regeln (`rules.js`: Zeit, Linie, Standbein, Hüpfer ist kein Wurf, Serie), Aufgaben-Regeln (`tasks.js`: Grenzen, cm-Ansage, Serie, Verlauf/Bestwert) und Ruf-Erkennung mit künstlichen Pegelverläufen: Ruf, Ballaufpralle, Quietschen, Pfiff, Dauerlärm + Ruf darüber (auch mit kurzen Einbrüchen), Mikro-Start ohne Ton, Sperre, eigene Ansage, Empfindlichkeit.
 - `browser.mjs` (Playwright, headless Chromium, eigener kleiner Webserver `server.mjs`):
   - Demo von vorn bis hinten (Pause 1 s): Linie ablaufen (eingerastet, Median < 4 px, max < 12 px), 8 Würfe genau wie simuliert bewertet (gut, gut, Übertritt, flach + Arm unten), Videos gespeichert und abspielbar (MP4), „Videos aus“ → keine Clips, Zuruf-Modus (Ziel 2 s nach dem Ruf), Zuruf ohne Spieler im Bild ignoriert, Wurf ohne Ansage (Aufnahme beginnt nicht mitten im Anlauf neu, Clip gespeichert), „Kamera bewegen“ → Linie neu ausgerichtet, Mikro-Test in der Einrichtung (an, Ruf gezählt, Empfindlichkeit, aus); keine Fehler in der Konsole.
   - Demo mit Kameraposition 2: Linie ablaufen (eingerastet, genau), 4 Würfe wie simuliert bewertet, Wechsel 1 ↔ 2 behält die Linie jeder Position.
@@ -112,6 +114,7 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
   - Aufgabe „Gegenstoß auf Zeit“: Mikro an ohne Modus „Zuruf“, vier Würfe (schnell, langsam, schnell, Übertritt) richtig bewertet, Zeiten plausibel, Mikro nach der Serie aus.
   - Aufgabe „Winkel vergrößern“: auf Position 1 Hinweis statt Start; auf Position 2 vier Würfe (nach innen, gerade, nach innen, Übertritt) richtig bewertet.
   - Aufgaben „Wurfhöhe auf Ansage“ (Ansage „Hoch./Hüfte.“ vor dem Ziel, Wurf 3 absichtlich falsch → 3 von 4) und „Serie unter Ermüdung“ (eigene Pause 2 s, Warnung „flacher“, Ergebnis in Prozent, Log).
+  - Treffererkennung (Position 2): Ringe antippen, 4 Würfe (Treffer, Treffer, daneben, Treffer) automatisch richtig erkannt, „Treffer./Daneben.“ gesprochen, Tempo 40–70 km/h (Demo 56), Log; auf Position 1 keine Erkennung.
   - Rückraum-Modus: 9-m-Linie ablaufen (Ansage, genau), 4 Würfe (sauber 3 Schritte / 4 Schritte / innerhalb 9 m / Abwurf zu spät) richtig bewertet, Drehung zählt nicht, Log und Bericht, eigener Speicher.
   - Pässe gegen die Wand in Handy-Größe: Runde 12 s, jeder Pass gezählt und Arm/Gegenbein so bewertet, wie die simulierte Person geworfen hat (sauber, Hüftwurf, falsches Bein), Bestwert, Karte, Log, Bericht.
   - Sprungkraft in Handy-Größe: 10 Strecksprünge, gemessene Höhen proportional zu den simulierten, Bodenkontakt; Einbein links/rechts mit Wechsel, rechts stärker, kein Fehlalarm beim Beinwechsel, Vergleich nur mit gleicher Übung, Log, Bericht.
@@ -184,6 +187,13 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 - Bewertung (`judgeMove`, C5 Reaktionszeit): Bewegung erkannt, wenn die Hüfte > 0,08 KL seitlich oder die Körpergröße > 5 % geändert ist; Reaktion = Beginn dieser Bewegung (halbe Schwelle, weil vor/zurück sich die Größe langsamer ändert als seitlich die Lage), minus Verzögerung der Sprachausgabe (`onstart` der Äußerung, falls gemeldet). Richtung = was zuerst deutlich wird (doppelte Schwelle). Richtig: Richtung stimmt und Reaktion ≤ 1,0 s. Gekreuzt: Knöchel tauschen um > 0,02 KL die Seite. Grundstellung: Anteil der Zeit mit Hüfte ≥ 0,06 KL unter der Stand-Höhe; < 70 % → Tipp „tiefer“.
 - Log-Eintrag je Runde: `{nr, sid, dur, n, ok, avg, crossed, low, moves[{cmd, dir, react, ok, crossed}]}`. Bericht als Text.
 
+## Treffererkennung und Wurftempo (C1, B7; `rings.js`, `shared/js/hitDetect.js`)
+- Nur Kameraposition 2 (Tor im Bild). Einrichtung: „Ringe antippen“ = für jedes aktive Ziel die Mitte des Rings antippen („Nicht im Bild“ überspringt), gespeichert in `settings.rings.court` [{name, x, y}] (normiert). Ring-Größe im Bild (`settings.ringSize`, Anteil der Bildhöhe: klein 0,012 / mittel 0,02 / groß 0,03) und Wurfentfernung (`settings.throwDist`, Standard 7 m) in den Einstellungen.
+- Pro Videobild (`ringFrame`): Bild auf 640 px Breite, je Ring ein quadratischer Graubild-Ausschnitt (Durchmesser 2 × Ring-Radius), die letzten 2,5 s.
+- Nach jedem Wurf (`autoHit` in `tracking.js`), sobald 1 s nach dem Abwurf (Wurf-Frame) vorbei ist: `detectHit` vergleicht je Ring jeden Ausschnitt 0,05–1,0 s nach dem Abwurf mit dem Median der Ausschnitte 0,6–0,05 s davor (mittlere Grauwert-Änderung im Kreis). Getroffen = stärkster Ring mit ≥ `TH_HIT.diff` (22) und ≥ 1,6 × zweitbester; sonst „kein Ring“. Ergebnis `entry.hitAuto`; war Treffer/Daneben noch nicht getippt, wird `entry.hit` gesetzt und „Treffer.“/„Daneben.“ angehängt gesprochen. Antippen auf der Karte überschreibt es weiterhin.
+- Tempo: `m.flight` = s vom Abwurf bis zur stärksten Änderung im getroffenen Ring, `m.speed` = Wurfentfernung / Flugzeit (km/h). Bei 30 fps ±1 Bild ≈ ±10 %; nur als grober Vergleich.
+- Alle Grenzen nur im Demo eingestellt (unkalibriert). Demo: Ringe im Tor gezeichnet (`RINGS` in `demo/sim.js`), der Ball fliegt in 0,45 s zum angesagten Ring oder 0,6 m daneben (`HITS`), `ringTruth()` für Tests.
+
 ## Zuruf (Mikrofon, `shout.js`, `shoutDetect.js`)
 - Kein Spracherkenner, nur Pegel und Klang. Alle 30 ms eine FFT (2048 Punkte): Pegel im Stimmbereich 200–1200 Hz (`v`) und im hohen Bereich 2,5–6 kHz (`hi`). Grundpegel = Mittel der ersten 0,5 s mit Ton (Messungen ganz ohne Ton beim Mikro-Start, unter −150 dB, werden übersprungen), danach unterhalb der Schwelle langsam nachgeführt (nach unten schneller). Schwelle = Grundpegel + Empfindlichkeit (`sens`: low 20 / mid 14 / high 9 dB, mindestens −75 dB).
 - Ein Ruf zählt am **Ende** des lauten Abschnitts, wenn er
@@ -240,6 +250,7 @@ Die Grenzwerte (`TH` in `aussenspieler/js/config.js`) sind bisher nur im Demo ge
 4. Würfe für die Grenzen, je 5–10 und bewusst: saubere Würfe; knapper Übertritt (Fuß auf/hinter der Linie); flache Sprünge; Arm unten; wenig Drehung; Oberkörper nach vorn fallen lassen. Reihenfolge notieren.
 5. Danach im Training-Fenster die Messwerte pro Wurf ansehen (Zweifelsfälle mit „▶︎ Video“ prüfen) und „Bericht als Datei“ teilen: der Bericht hat die Tabelle „Messwerte“.
 6. Grenzen in `TH` (Position 1) bzw. `TH_POS.court` (Position 2) zwischen die Werte der guten und der bewusst schlechten Würfe legen. Übertritt: liegen echte Übertritte nur knapp im Plus oder saubere Absprünge im Plus, zuerst die Linie prüfen (Ablaufen wiederholen, Kamera fester).
+- Treffererkennung (Position 2): Ringe antippen, je 10 Würfe in jeden Ring und bewusst daneben; erkannt? Fehlalarme durch Netzbewegung, Schatten, Torwart-Wand? `TH_HIT` in `shared/js/hitDetect.js`, Ring-Größe in den Einstellungen. Tempo mit einem bekannten Wert vergleichen (z. B. Radar-App), Wurfentfernung einstellen.
 - Aufgabe „Kreisläufer“: je 5 Mal bewusst links und rechts herum drehen; stimmt die erkannte Richtung? Wenn alles vertauscht ist: `TURN_SIGN` auf −1. Reaktionszeit plausibel?
 - Aufgabe „Gegenstoß auf Zeit“: wird der Ruf von der Mittellinie gehört (Mikro-Test vorher, Empfindlichkeit)? Ist 4,0 s als Grenze passend (persönlich, `TH.taskBreakMax`)?
 - Aufgabe „Winkel vergrößern“ (Position 2): je 5 Würfe bewusst gerade und bewusst Richtung Tormitte; `m.flyAng` im Log vergleichen, `TH.taskFlyAng` dazwischenlegen.
@@ -257,14 +268,13 @@ Die Grenzwerte (`TH` in `aussenspieler/js/config.js`) sind bisher nur im Demo ge
 
 ## Bekannte Grenzen
 - Eine Kamera: Drehung, Sprunghöhe und Oberkörper sind Schätzungen. Übertritt hängt von Kamerawinkel und Linienmarkierung ab.
-- Treffer werden nicht automatisch erkannt, sondern per Tippen erfasst.
+- Treffer werden nur mit Kameraposition 2 und angetippten Ringen automatisch erkannt (unkalibriert), sonst per Tippen.
 - Schwellenwerte noch nicht in der Halle kalibriert.
 - Kamera am besten erhöht (1,5–2 m), schräg von vorn auf die Absprungzone, gutes Licht, möglichst 60 fps.
 
 ## Ideen / offene Punkte
 - Weitere Übungen und Trainingsarten mit Prioritäten: [`PLAYBOOK.md`](PLAYBOOK.md).
 - Hallentest nach der Checkliste oben, danach `TH` anpassen.
-- Ballflug/Treffer automatisch erkennen (Farberkennung der Ringe). Kameraposition 2 hat das Tor im Bild, dafür die passende Position.
 - PDF-Bericht direkt erzeugen.
 
 ## Historie
@@ -280,6 +290,7 @@ Die Grenzwerte (`TH` in `aussenspieler/js/config.js`) sind bisher nur im Demo ge
 - 2026-10-03: Zweite Kameraposition „Feld mit Tor“ (hinter dem 7-m-Punkt, Tor und Absprungzone im Bild) in der Einrichtung, eigene Linie je Position, eigene Sprunghöhen-Grenzen, Demo und Test für Position 2.
 - 2026-10-03: Fix Zuruf: die ersten Rufe nach dem Mikro-Start gingen verloren (Messungen ohne Ton zogen den Grundpegel auf −200 dB). Fix: Ruf über Dauerlärm wurde manchmal verpasst, weil der Grundpegel bei kurzen Einbrüchen des Lärms nicht mehr nachzog.
 - 2026-10-04: Baustein „Aufgabe“ (Serie mit Ziel, Zähler, Ansage pro Wurf, Ende-Karte mit „Nochmal“, Verlauf/Bestwert, Abschnitt in Log und Bericht) und erste Aufgabe A1 „Absprung an der Linie“. `TESTSTRATEGIE.md`.
+- 2026-10-04: Treffererkennung (C1) und Wurftempo (B7) mit Kameraposition 2: Ringe antippen, Ball im Ring per Bildvergleich, Tempo aus Flugzeit; Grenzen unkalibriert.
 - 2026-10-04: Kreisläufer (B3) als Aufgabe im Außenwurf-Coach: Drehen auf Ansage links/rechts, Richtung aus der Hüftdrehung, Reaktionszeit.
 - 2026-10-04: Sprungkraft als Training (`sprung/`): Strecksprünge, Einbein links/rechts, Höhe, Bodenkontakt, Vergleich mit dem letzten Mal.
 - 2026-10-04: Aufgabe A6 „Gegenstoß auf Zeit“ (Ruf beim Loslaufen, Zeit bis zum Absprung).

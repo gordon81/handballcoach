@@ -463,6 +463,51 @@ test('Aufgabe „Kreisläufer: Drehen auf Ansage“: Richtung aus der Hüftdrehu
   await page.close();
 });
 
+test('Treffererkennung und Tempo (Kameraposition 2): Ringe antippen, Ball im Ring erkannt', {timeout:200000}, async t => {
+  const {page, errors} = await demoPage({pause:1, camPos:'court'});
+  await page.click('#btnStart');
+  await walkLine(page);
+
+  await t.test('Ringe antippen (je Ziel die Mitte)', async () => {
+    assert.match(await page.textContent('#setup'), /Ringe im Bild antippen/);
+    await page.click('#setup [data-a=rings]');
+    const truth = await page.evaluate(() => M.sim.ringTruth()), names = await page.evaluate(() => M.store.settings.targets.map(x => x.name));
+    const box = await page.locator('#overlay').boundingBox();
+    assert.match(await page.textContent('#setup'), /Mitte von „Orange kurz“ \(1\/4\)/);
+    for(const n of names){ const r = truth.find(x => x.name === n); await page.mouse.click(box.x + r.x*box.width, box.y + r.y*box.height); }
+    assert.equal(await page.evaluate(() => M.store.settings.rings.court.length), 4);
+    assert.match(await page.textContent('#setup'), /4 Ringe gesetzt/);
+  });
+
+  await t.test('4 Würfe: Treffer / Treffer / daneben / Treffer automatisch, Tempo plausibel', async () => {
+    await page.click('#setup [data-a=start]');
+    await until(page, () => M.store.log.length >= 4 && M.store.log[3].hitAuto !== undefined, null, 90000, '4 Würfe ausgewertet');
+    const {log, thr} = await page.evaluate(() => ({log:M.store.log.map(e => ({target:e.target, auto:e.hitAuto, hit:e.hit, speed:e.m.speed})), thr:M.sim.demo.throws}));
+    log.forEach((e, i) => {
+      assert.equal(e.hit, thr[i].hit, `Wurf ${i+1}: ${JSON.stringify(e)}`);
+      assert.equal(e.auto, thr[i].hit ? e.target : null, `Wurf ${i+1}: erkannter Ring`);
+      if(thr[i].hit) assert.ok(e.speed > 40 && e.speed < 70, `Wurf ${i+1}: Tempo ${e.speed} km/h (Demo: 7 m in 0,45 s = 56 km/h)`);
+    });
+    const said = await page.evaluate(() => __said);
+    assert.ok(said.includes('Treffer.') && said.includes('Daneben.'), said.join(' | '));
+    await page.click('#btnLog');
+    assert.match(await page.textContent('#logBody'), /Tempo ca\. \d+ km\/h/);
+    assert.match(await page.textContent('#logBody'), /Treffer/);
+    await page.click('#logSheet [data-close]');
+  });
+
+  await t.test('Kameraposition 1: keine Ringe, keine Erkennung', async () => {
+    await page.click('#btnStart');
+    await page.click('#btnLine');
+    await page.click('#setup [data-a=camPos][data-v=base]');
+    assert.doesNotMatch(await page.textContent('#setup'), /Treffererkennung/);
+    assert.equal(await page.evaluate(async () => (await import('/aussenspieler/js/rings.js')).ringsOn()), false);
+  });
+
+  assert.deepEqual(errors, [], 'Fehler in der Browser-Konsole');
+  await page.close();
+});
+
 test('Rückraum-Modus (?rr=1): 9-m-Linie, Dreischritt, Abwurf im höchsten Punkt, eigener Speicher', {timeout:200000}, async t => {
   const page = await browser.newPage({viewport:{width:1280, height:800}});
   const errors = []; page.on('pageerror', e => errors.push(e.message));

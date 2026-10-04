@@ -11,5 +11,6 @@ export const app = {
   markStep: null,   // 'line' (Punkte auf der Linie) | 'inside' (Punkt im Torraum)
   pending: null,    // Ziel, das erst beim Absprung angesagt wird (Aufgabe „Entscheidung in der Luft“)
   task: null,       // laufende Aufgaben-Serie {id, run, entries[], done} (taskRun.js), null = freies Training
-  holdUntil: 0      // keine Zielansage vor diesem Zeitpunkt (Anleitung der Aufgabe wird noch gesprochen)
+  holdUntil: 0,     // keine Zielansage vor diesem Zeitpunkt (Anleitung der Aufgabe wird noch gesprochen)
+  ringMark: null    // Ringe antippen: {names[], pts[]} (rings.js)
 };
