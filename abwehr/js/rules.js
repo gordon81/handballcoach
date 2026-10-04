@@ -3,8 +3,10 @@
 // „raus“ (zum Angreifer heraustreten) oder „zurück“; gemessen werden Reaktionszeit und Richtung (C5), gekreuzte Füße und
 // die Stellung nach den Technikkriterien des DHB für das 1-gegen-1 (Bundeseinheitliche Landeskaderkriterien des DHB,
 // Abschnitt 3.3.6, nach der C-Lizenz-Ausbildung):
-//  - Grundposition: Oberkörper fast aufrecht, Körperschwerpunkt abgesenkt (Hüfte und Knie gebeugt), Parallelstellung,
-//    Beine etwas mehr als schulterbreit, Arme leicht angewinkelt in Vorhalte.
+//  - Grundposition: Oberkörper fast aufrecht, Körperschwerpunkt abgesenkt (Hüfte und Knie gebeugt), Beine etwas mehr als
+//    schulterbreit, Arme leicht angewinkelt in Vorhalte. Der DHB nennt hier die Parallelstellung; nach Vorgabe des Trainers
+//    (Gordon, 2026-10-04) steht der Spieler in diesem Training aber immer seitlich zur Wurfhand des Gegners: versetzte
+//    Fußstellung mit dem Fuß auf dessen Wurfarmseite vorn, die Hand auf dieser Seite vorn/höher (Führarm).
 //  - Gegner in Wurfauslage (hier: nach „raus“): versetzte Fußstellung mit dem Fuß auf der Wurfarmseite des Angreifers vorn,
 //    „Führarm“ an seinen Wurfarm (vordere Hand etwa auf Schulterhöhe), „Sicherungsarm“ an seinen Oberkörper.
 //    Gegen einen Rechtshänder ist das (dem Angreifer gegenüber) der linke Fuß und die linke Hand, gegen einen Linkshänder
@@ -21,7 +23,7 @@ export const TH_D = {
   lowDrop: 0.06,     // KL: so weit muss die Hüfte unter der Stand-Höhe sein, damit die Grundstellung als tief gilt
   lowShare: 0.7,     // Anteil der Zeit in tiefer Stellung, ab dem es kein „tiefer“ als Tipp gibt
   // Grundposition und Heraustreten (alle unkalibriert, im Demo eingestellt):
-  wide: 1.1,         // Fußabstand / Schulterbreite: „etwas mehr als schulterbreit“
+  wide: 1.0,         // Fußabstand (auch schräg) / Schulterbreite: mindestens schulterbreit
   upright: 0.85,     // Oberkörper (Schulter–Hüfte im Bild) mindestens so viel der Länge im Stand: „fast aufrecht“
   armsShare: 0.7,    // Anteil der Zeit, in der die Hände vorn zwischen Hüft- und Schulterhöhe sind
   stagger: 0.03,     // KL: so viel tiefer im Bild steht der vordere Fuß (näher zur Kamera) bei versetzter Fußstellung
@@ -78,12 +80,17 @@ export function judgeOut(frames, t0, t1, opp, th = TH_D){
   return {foot, arm, front, why, say};
 }
 
-// Grundposition in einem Bild: {wide, arms, upright} (true/false). stand = {torso} aus dem aufrechten Stand (Schulter–Hüfte, px).
-export function baseFrame(f, stand, th = TH_D){
-  const shW = Math.abs(f.lSh.x - f.rSh.x) || 1, ftW = Math.abs(f.lAnk.x - f.rAnk.x);
+// Grundposition in einem Bild: {wide, arms, upright, side} (true/false). stand = {torso} aus dem aufrechten Stand
+// (Schulter–Hüfte, px); opp = Wurfhand des Gegners ('R'/'L'). side = seitlich zur Wurfhand: Fuß auf seiner Wurfarmseite
+// vorn (im Bild tiefer) und die Hand auf dieser Seite höher als die andere.
+export function baseFrame(f, stand, th = TH_D, opp = 'R'){
+  const shW = Math.abs(f.lSh.x - f.rSh.x) || 1, ftW = Math.hypot(f.lAnk.x - f.rAnk.x, f.lAnk.y - f.rAnk.y);
   const shY = (f.lSh.y + f.rSh.y)/2, torso = f.hip.y - shY;
-  const armIn = sd => f[sd+'Wr'].y >= f[sd+'Sh'].y - 0.12*f.bl && f[sd+'Wr'].y <= f.hip.y;   // Hand zwischen Schulter und Hüfte
-  return {wide:ftW/shW >= th.wide, arms:armIn('l') && armIn('r'), upright:!stand?.torso || torso >= th.upright*stand.torso};
+  const armIn = sd => f[sd+'Wr'].y >= f[sd+'Sh'].y - 0.15*f.bl && f[sd+'Wr'].y <= f.hip.y;   // Hand zwischen Schulter und Hüfte
+  const lead = leadSide(opp), other = lead === 'l' ? 'r' : 'l';
+  const fwd = (f[lead+'Ank'].y - f[other+'Ank'].y)/f.bl;   // + = vorderer Fuß (näher an der Kamera) auf der Wurfarmseite
+  const side = fwd >= th.stagger && f[lead+'Wr'].y < f[other+'Wr'].y;
+  return {wide:ftW/shW >= th.wide, arms:armIn('l') && armIn('r'), upright:!stand?.torso || torso >= th.upright*stand.torso, side};
 }
 
 // Nächster Ruf: zurück zur Mitte, wenn er schon weit weg ist; sonst zufällig, nicht dreimal dasselbe.
@@ -107,6 +114,7 @@ export function summary(results, lowShare, th = TH_D, base = null){
   const tips = [];
   if(crossed) tips.push(`Füße ${crossed === 1 ? 'einmal' : crossed + ' mal'} gekreuzt. Seitlich nachstellen, nicht kreuzen.`);
   if(lowShare != null && lowShare < th.lowShare) tips.push('Körperschwerpunkt tiefer, Hüfte und Knie beugen.');
+  if(base?.side != null && base.side < th.shareOk) tips.push('Seitlich zur Wurfhand stehen: Fuß und Hand auf seiner Wurfarmseite vorn.');
   if(base?.wide != null && base.wide < th.shareOk) tips.push('Beine etwas mehr als schulterbreit.');
   if(base?.upright != null && base.upright < th.shareOk) tips.push('Oberkörper fast aufrecht lassen.');
   if(base?.arms != null && base.arms < th.shareOk) tips.push('Arme leicht angewinkelt vor den Körper.');

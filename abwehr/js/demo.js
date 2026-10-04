@@ -16,7 +16,9 @@ export const demo = {done:[]};
 
 const P = {x:HOME.x, y:HOME.y, a:Math.PI/2, phi:0, s:0, lift:0, lf:0, rf:0, lfy:0, rfy:0, raise:0, swing:0, twist:0, lean:0.05, ball:false};
 let mv = null, lastTc = null, k = 0, ko = 0, last = null, running = false, tPrev = 0, pose = null;
-// Stellung: base = Grundposition (parallel, breit), out = herausgetreten {lead, foot, arm}.
+export function resetDemo(){ mv = null; pose = null; lastTc = null; k = 0; ko = 0; demo.done = []; Object.assign(P, {x:HOME.x, y:HOME.y, lfy:0, rfy:0, lf:0, rf:0, lfx:0, rfx:0}); }
+
+// Stellung: base = Grundposition (seitlich zur Wurfhand des Gegners), out = herausgetreten {lead, foot, arm}.
 function setPose(p){ pose = p; }
 
 function behave(dt){
@@ -49,7 +51,11 @@ function behave(dt){
 // Füße und Arme nach der Stellung setzen (Füße als Versatz: lfx/rfx nach vorn = Richtung Kamera, lfy/rfy zur Seite).
 function applyPose(){
   if(!pose || app.state==='off' || app.state==='calib'){ P.lfx = P.rfx = 0; P.lfy = P.rfy = 0; return; }
-  if(pose.kind === 'base'){ P.lfx = P.rfx = 0; P.lfy = -0.12; P.rfy = 0.12; return; }   // parallel, gut schulterbreit
+  if(pose.kind === 'base'){   // seitlich zur Wurfhand: Fuß auf seiner Wurfarmseite vorn, Hand auf dieser Seite vorn und höher
+    const lead = app.curOpp === 'L' ? 'r' : 'l';
+    P.lfy = -0.14; P.rfy = 0.14; P.lfx = lead === 'l' ? 0.22 : -0.1; P.rfx = lead === 'r' ? 0.22 : -0.1;
+    P.guard = {[lead]:-0.12, [lead === 'l' ? 'r' : 'l']:-0.3}; return;
+  }
   P.lfy = -0.04; P.rfy = 0.04;
   P.lfx = pose.foot === 'l' ? 0.3 : -0.1; P.rfx = pose.foot === 'r' ? 0.3 : -0.1;   // versetzte Fußstellung
   if(pose.arm) P.guard = {[pose.arm]:0.0, [pose.arm === 'l' ? 'r' : 'l']:-0.3};   // Führarm auf Schulterhöhe, Sicherungsarm tiefer

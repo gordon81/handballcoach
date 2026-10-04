@@ -519,14 +519,17 @@ test('Abwehr (DHB): Heraustreten mit Fuß und Führarm auf der Wurfarmseite des 
   assert.equal(judgeOut(many(stanceFrame({})), 0, 1, 'R').why.includes('Füße nicht versetzt'), true);
 });
 
-test('Abwehr (DHB): Grundposition breit, Arme in Vorhalte, Oberkörper fast aufrecht', () => {
+test('Abwehr: Grundposition seitlich zur Wurfhand, breit, Arme in Vorhalte, Oberkörper fast aufrecht', () => {
   const stand = {torso:120};
-  assert.deepEqual(baseFrame(stanceFrame({}), stand), {wide:true, arms:true, upright:true});
+  assert.deepEqual(baseFrame(stanceFrame({front:'l', lead:'l'}), stand, TH_D, 'R'), {wide:true, arms:true, upright:true, side:true});
+  assert.equal(baseFrame(stanceFrame({}), stand, TH_D, 'R').side, false, 'parallel ist hier nicht gewollt');
+  assert.equal(baseFrame(stanceFrame({front:'l', lead:'l'}), stand, TH_D, 'L').side, false, 'gegen Linkshänder rechts vorn');
+  assert.equal(baseFrame(stanceFrame({front:'r', lead:'r'}), stand, TH_D, 'L').side, true);
   assert.equal(baseFrame(stanceFrame({width:0.8}), stand).wide, false, 'schmaler als die Schultern');
   assert.equal(baseFrame(stanceFrame({wristY:460}), stand).arms, false, 'Arme hängen unter der Hüfte');
   assert.equal(baseFrame(stanceFrame({torso:80}), stand).upright, false, 'Oberkörper weit nach vorn gebeugt');
-  const s = defSummary([{ok:true, react:0.4, out:{foot:false, arm:true}}], 0.9, TH_D, {wide:0.5, arms:0.9, upright:0.4});
-  assert.match(s.say, /Heraustreten 0 von 1 mit richtiger Stellung\..*Beine etwas mehr als schulterbreit\..*Oberkörper fast aufrecht/);
+  const s = defSummary([{ok:true, react:0.4, out:{foot:false, arm:true}}], 0.9, TH_D, {wide:0.5, arms:0.9, upright:0.4, side:0.3});
+  assert.match(s.say, /Heraustreten 0 von 1 mit richtiger Stellung\..*Seitlich zur Wurfhand stehen.*Beine etwas mehr als schulterbreit\..*Oberkörper fast aufrecht/);
   assert.doesNotMatch(s.say, /Arme leicht angewinkelt/);
 });
 

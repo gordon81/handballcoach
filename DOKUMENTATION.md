@@ -407,8 +407,8 @@ Schnelle Abwehrbewegung ohne Ball: seitlich verschieben, heraustreten und zurüc
 
 Das Handy ist dein **Gegenspieler**. In der Einrichtung stellst du ein, mit welcher Hand er wirft: **Rechts**, **Links** oder **Wechselnd**.
 
-- **Grundposition:** Beine etwas mehr als schulterbreit und parallel, Hüfte und Knie gebeugt (Körperschwerpunkt tief), Oberkörper fast aufrecht, Arme leicht angewinkelt vor dem Körper.
-- **Heraustreten („Raus“):** zum Gegner heraus, mit versetzter Fußstellung. **Vorn steht der Fuß auf seiner Wurfarmseite**, und die Hand auf dieser Seite geht als „Führarm“ an seinen Wurfarm (etwa Schulterhöhe), die andere als „Sicherungsarm“ an seinen Oberkörper.
+- **Grundposition:** immer **seitlich zur Wurfhand** des Gegners: der Fuß auf seiner Wurfarmseite steht vorn, die Hand auf dieser Seite ist vorn und etwas höher (Führarm). Beine etwas mehr als schulterbreit, Hüfte und Knie gebeugt (Körperschwerpunkt tief), Oberkörper fast aufrecht, Arme leicht angewinkelt vor dem Körper.
+- **Heraustreten („Raus“):** in derselben seitlichen Stellung zum Gegner heraus. **Vorn steht der Fuß auf seiner Wurfarmseite**, die Hand auf dieser Seite geht als „Führarm“ an seinen Wurfarm (etwa Schulterhöhe), die andere als „Sicherungsarm“ an seinen Oberkörper.
   - **Gegen einen Rechtshänder:** linker Fuß vorn, linke Hand an seinen Wurfarm, rechte Hand an seinen Oberkörper.
   - **Gegen einen Linkshänder:** rechter Fuß vorn, rechte Hand an seinen Wurfarm, linke Hand an seinen Oberkörper.
 - Seitlich mit Nachstellschritten verschieben, die Füße nicht kreuzen. Zwischen Gegner und eigenem Tor bleiben.
@@ -417,11 +417,11 @@ Quellen und Unterschiede zwischen den Quellen: [`QUELLEN.md`](QUELLEN.md).
 
 ### Ablauf
 1. *„Stell dich aufrecht hin, Gesicht zum Handy.“* Kurz still stehen: die App misst deine Stand-Höhe.
-2. *„Grundposition.“* Wie oben beschrieben.
+2. *„Grundposition, seitlich zur rechten Wurfhand.“* Wie oben beschrieben. Bei „Wechselnd“ sagt die App am Anfang und bei jedem *„Raus“*, mit welcher Hand der Gegner wirft; danach stehst du seitlich zu dieser Hand.
 3. Die App ruft **links**, **rechts**, **raus** (zum Handy) oder **zurück**. Die Richtungen gelten **aus deiner Sicht**. Bei „Wechselnd“ sagt sie beim Heraustreten dazu, ob der Gegner Rechts- oder Linkshänder ist (*„Raus, Linkshänder“*).
 4. Nach dem Heraustreten prüft die App die Stellung und korrigiert kurz, z. B. *„Linker Fuß vor.“* oder *„Linke Hand hoch zum Wurfarm.“* Ein tiefer Piep heißt: falsche Richtung, zu langsam oder keine Bewegung.
 5. Stehst du zu weit außen, ruft die App dich zur Mitte zurück.
-6. Am Ende: *„Fertig. 12 von 14 richtig. Reaktion im Schnitt 0,45 Sekunden. Heraustreten 3 von 4 mit richtiger Stellung.“* und, wenn nötig, Tipps wie *„Beine etwas mehr als schulterbreit.“* Die Karte zeigt dazu, wie viel der Zeit du breit, aufrecht und mit den Armen vorn standst.
+6. Am Ende: *„Fertig. 12 von 14 richtig. Reaktion im Schnitt 0,45 Sekunden. Heraustreten 3 von 4 mit richtiger Stellung.“* und, wenn nötig, Tipps wie *„Seitlich zur Wurfhand stehen …“* oder *„Beine etwas mehr als schulterbreit.“* Die Karte zeigt dazu, wie viel der Zeit du seitlich zur Wurfhand, breit, aufrecht und mit den Armen vorn standst.
 
 Richtig ist eine Bewegung in die gerufene Richtung, die innerhalb von 1 Sekunde beginnt. Die Reaktionszeit zählt vom Ruf bis zur ersten deutlichen Bewegung der Hüfte; wenn das Handy meldet, wann die Sprachausgabe wirklich anfängt, wird diese Verzögerung abgezogen.
 

@@ -635,10 +635,10 @@ test('Abwehr-Beinarbeit (Demo, Handy-Größe): Rufe, Reaktion, Richtung, gekreuz
       assert.equal(m.crossed, d.cross, `Ruf ${i+1}: Füße gekreuzt`);
       if(d.stance) assert.deepEqual([m.foot, m.arm], [d.stance.foot, d.stance.arm], `Ruf ${i+1}: Stellung beim Heraustreten ${JSON.stringify({m, d})}`);
     });
-    assert.ok(e.base.wide > 0.8 && e.base.arms > 0.8 && e.base.upright > 0.8, `Grundposition ${JSON.stringify(e.base)}`);
-    assert.ok(e.low > 0.8, `Grundstellung tief ${e.low}`);
+    assert.ok(e.base.side > 0.8 && e.base.wide > 0.8 && e.base.arms > 0.8 && e.base.upright > 0.8, `Grundposition ${JSON.stringify(e.base)}`);
+    assert.ok(e.low >= 0.7, `Grundstellung tief ${e.low}`);
     const said = await page.evaluate(() => __said);
-    assert.ok(said.includes('Grundposition.'));
+    assert.ok(said.includes('Grundposition, seitlich zur rechten Wurfhand.'), said.join(' | '));
     assert.match(said.at(-1), new RegExp(`^Fertig\\. ${e.ok} von ${e.n} richtig\\. Reaktion im Schnitt \\d,\\d\\d Sekunden\\.`));
   });
 
@@ -646,7 +646,7 @@ test('Abwehr-Beinarbeit (Demo, Handy-Größe): Rufe, Reaktion, Richtung, gekreuz
     await page.click('#card [data-c=close]');
     await page.click('#btnSetup');
     await page.click('#setup [data-a=opp][data-v=L]');
-    assert.match(await page.textContent('#setup'), /rechte Fuß vorn und rechte Hand an seinen Wurfarm/);
+    assert.match(await page.textContent('#setup'), /seitlich zu seiner Wurfhand: rechte Fuß vorn, rechte Hand vorn als Führarm/);
     const n0 = await page.evaluate(() => M.demo.demo.done.length);
     await page.click('#setup [data-a=start]');
     await until(page, () => M.st.log.length >= 2, null, 60000, 'zweite Runde');

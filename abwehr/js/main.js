@@ -8,7 +8,7 @@ import { keepAwake, releaseWake } from '../../shared/js/wakelock.js';
 import { esc, fmtDate } from '../../shared/js/utils.js';
 import { $, video, canvas, ctx, now, hint, big, startSource as startStage, bodyPoints, drawSkeleton, initSheets } from '../../shared/js/stage.js';
 
-let pose = null, setupOpen = false, F = [], lowN = 0, drillN = 0, lag = null, baseN = {n:0, wide:0, arms:0, upright:0};
+let pose = null, setupOpen = false, F = [], lowN = 0, drillN = 0, lag = null, baseN = {n:0, wide:0, arms:0, upright:0, side:0};
 const OPP_SAY = {R:'Rechtshänder', L:'Linkshänder'};
 const median = a => { const s = [...a].sort((x, y) => x - y); return s[s.length >> 1]; };
 
@@ -30,10 +30,10 @@ function step(t){
       const w = F.filter(x => x.t >= t - 0.8);
       app.stand = {y:median(w.map(x => x.hip.y)), x:median(w.map(x => x.hip.x)), bl:median(w.map(x => x.bl)),
         torso:median(w.map(x => x.hip.y - (x.lSh.y + x.rSh.y)/2))};
-      say('Grundposition.'); setState('stance', t);
+      say(`Grundposition, seitlich zur ${app.curOpp === 'L' ? 'linken' : 'rechten'} Wurfhand.`); setState('stance', t);
     }
   } else if(s==='stance'){
-    if(t - app.stateT > 1.8){ app.until = t + settings.dur; lowN = drillN = 0; baseN = {n:0, wide:0, arms:0, upright:0}; app.out = false; say('Los geht’s.'); setState('gap', t); app.nextAt = t + 1.2; }
+    if(t - app.stateT > 1.8){ app.until = t + settings.dur; lowN = drillN = 0; baseN = {n:0, wide:0, arms:0, upright:0, side:0}; app.out = false; say('Los geht’s.'); setState('gap', t); app.nextAt = t + 1.2; }
   } else if(s==='gap'){
     if(t >= app.until){ finishRound(t); return; }
     if(t >= app.nextAt){
@@ -41,7 +41,8 @@ function step(t){
       app.cmd = nextCmd(off, dep, app.last); app.last = [...app.last, app.cmd].slice(-3);
       app.tc = t; lag = null;
       // Gegenspieler (Wurfhand): fest eingestellt oder beim Heraustreten zufällig angesagt.
-      app.cmdOpp = settings.opp === 'mix' ? (Math.random() < 0.5 ? 'R' : 'L') : settings.opp;
+      app.cmdOpp = settings.opp === 'mix' && app.cmd === 'raus' ? (Math.random() < 0.5 ? 'R' : 'L') : app.curOpp;
+      app.curOpp = app.cmdOpp;   // ab jetzt seitlich zu dieser Wurfhand stehen
       const text = app.cmd === 'raus' && settings.opp === 'mix' ? `Raus, ${OPP_SAY[app.cmdOpp]}` : app.cmd;
       const u = say(text); if(u){ const tc = t; u.onstart = () => { if(app.tc === tc) lag = now() - tc; }; }
       big(app.cmd.toUpperCase(), 'target'); setState('cmd', t);
@@ -65,12 +66,13 @@ function step(t){
   // Körperschwerpunkt: Anteil der Zeit, in der die Hüfte deutlich unter der Stand-Höhe ist.
   if((s==='gap' || s==='cmd') && f && app.stand){ drillN++; if((f.hip.y - app.stand.y)/app.stand.bl >= TH_D.lowDrop) lowN++; }
   // Grundposition (nicht während herausgetreten, da ist die Fußstellung versetzt): breit, Arme vorn, Oberkörper aufrecht.
-  if(s==='gap' && f && app.stand && !app.out){ const b = baseFrame(f, app.stand, TH_D); baseN.n++; for(const k of ['wide', 'arms', 'upright']) if(b[k]) baseN[k]++; }
+  if(s==='gap' && f && app.stand && !app.out){ const b = baseFrame(f, app.stand, TH_D, app.curOpp); baseN.n++; for(const k of ['wide', 'arms', 'upright', 'side']) if(b[k]) baseN[k]++; }
 }
 
 function start(){
   closeSetup(); unlockBeep(); ensureSession(); F = []; app.results = []; app.last = []; app.stand = null;
-  say(`Abwehr-Beinarbeit, ${settings.dur} Sekunden${settings.opp === 'mix' ? '' : `, Gegenspieler ${OPP_SAY[settings.opp]}`}. Stell dich aufrecht hin, Gesicht zum Handy.`);
+  app.curOpp = settings.opp === 'mix' ? (Math.random() < 0.5 ? 'R' : 'L') : settings.opp;
+  say(`Abwehr-Beinarbeit, ${settings.dur} Sekunden, Gegenspieler ${OPP_SAY[app.curOpp]}. Stell dich aufrecht hin, Gesicht zum Handy.`);
   setState('calib'); app.stateT = now() + 2.5;
   $('#btnStart').textContent = 'Stopp'; $('#btnStart').classList.add('running'); keepAwake(); $('#card').hidden = true;
 }
@@ -79,7 +81,7 @@ function stop(){
 }
 function finishRound(){
   const share = k => baseN.n ? Math.round(baseN[k]/baseN.n*100)/100 : null;
-  const s = summary(app.results, drillN ? lowN/drillN : null, TH_D, {wide:share('wide'), arms:share('arms'), upright:share('upright')});
+  const s = summary(app.results, drillN ? lowN/drillN : null, TH_D, {wide:share('wide'), arms:share('arms'), upright:share('upright'), side:share('side')});
   ensureSession(); settings.session.last = Date.now();
   const e = {nr:(log.at(-1)?.nr || 0) + 1, sid:settings.session.id, time:Date.now(), dur:settings.dur, n:s.n, ok:s.ok, avg:s.avg, crossed:s.crossed,
     low:s.lowShare == null ? null : Math.round(s.lowShare*100)/100, opp:settings.opp, base:s.base, out:s.out,
@@ -115,7 +117,7 @@ function renderSetup(){
   box.innerHTML = `<div class="sheet-h"><h3>Einrichtung</h3><button class="x" data-a="close" aria-label="Schließen">✕</button></div>
     <p class="muted">Handy frontal vor dir, 4–5 m weg, Hüfthöhe: das Handy ist dein Gegenspieler. Ganzer Körper im Bild und Platz für einen großen Schritt in jede Richtung. Die Richtungen gelten aus deiner Sicht.</p>
     <p class="muted">Gegenspieler wirft mit:</p>${choice('opp', [['R', 'Rechts'], ['L', 'Links'], ['mix', 'Wechselnd']], settings.opp)}
-    <p class="muted">${esc(settings.opp === 'mix' ? 'Beim „Raus“ sage ich, ob er Rechts- oder Linkshänder ist.' : `Beim Heraustreten: ${SIDE[leadSide(settings.opp)]} Fuß vorn und ${SIDE[leadSide(settings.opp)]} Hand an seinen Wurfarm, die andere Hand an seinen Oberkörper.`)}</p>
+    <p class="muted">${esc(settings.opp === 'mix' ? 'Ich sage am Anfang und bei jedem „Raus“, ob er Rechts- oder Linkshänder ist. Du stehst immer seitlich zu seiner Wurfhand.' : `Du stehst immer seitlich zu seiner Wurfhand: ${SIDE[leadSide(settings.opp)]} Fuß vorn, ${SIDE[leadSide(settings.opp)]} Hand vorn als Führarm. Beim Heraustreten geht diese Hand an seinen Wurfarm, die andere an seinen Oberkörper.`)}</p>
     <p class="muted">Dauer einer Runde:</p>${choice('dur', [[30, '30 s'], [40, '40 s'], [60, '60 s']], settings.dur)}
     <p class="muted">Kamera:</p>${choice('facing', [['environment', 'Rückkamera'], ['user', 'Frontkamera']], settings.facing)}
     ${app.state==='off' ? `<button class="wide primaryBtn" data-a="start">Runde starten</button>` : ''}`;
@@ -135,7 +137,7 @@ function showCard(e, s){
     <ul class="checks"><li>${ic(e.avg != null && e.avg <= 0.6)}<span>Reaktion im Schnitt: ${e.avg != null ? fmtS(e.avg) + ' s' : '–'}</span></li>
       <li>${ic(!e.crossed)}<span>${e.crossed ? `Füße ${e.crossed}× gekreuzt` : 'Füße nie gekreuzt'}</span></li>
       <li>${ic(e.low == null || e.low >= TH_D.lowShare)}<span>Körperschwerpunkt tief: ${e.low == null ? '–' : Math.round(e.low*100) + ' % der Zeit'}</span></li>
-      ${e.base?.wide != null ? `<li>${ic(e.base.wide >= TH_D.shareOk && e.base.upright >= TH_D.shareOk && e.base.arms >= TH_D.shareOk)}<span>Grundposition: breit ${pct(e.base.wide)}, aufrecht ${pct(e.base.upright)}, Arme vorn ${pct(e.base.arms)}</span></li>` : ''}
+      ${e.base?.wide != null ? `<li>${ic(e.base.wide >= TH_D.shareOk && e.base.upright >= TH_D.shareOk && e.base.arms >= TH_D.shareOk && !(e.base.side < TH_D.shareOk))}<span>Grundposition: seitlich zur Wurfhand ${pct(e.base.side)}, breit ${pct(e.base.wide)}, aufrecht ${pct(e.base.upright)}, Arme vorn ${pct(e.base.arms)}</span></li>` : ''}
       ${e.out ? `<li>${ic(e.out.ok === e.out.n)}<span>Heraustreten: ${e.out.ok} von ${e.out.n} mit Fuß und Führarm auf der Wurfarmseite</span></li>` : ''}</ul>
     ${s.tips.length ? `<p class="muted">${esc(s.tips.join(' '))}</p>` : ''}
     <div class="btnrow"><button class="primaryBtn" data-c="again">Nochmal</button><button data-c="close">Fertig</button></div>`;
@@ -150,14 +152,14 @@ function renderLog(){
   if(!list.length){ box.innerHTML = '<p class="muted">In diesem Training noch keine Runde. Start drücken und frontal vors Handy stellen.</p>'; return; }
   box.innerHTML = `<p class="muted">${fmtDate(new Date(settings.session.start))}</p>` + [...list].reverse().map(e =>
     `<div class="entry"><b>Runde ${e.nr}: ${e.ok} von ${e.n} richtig</b><br><small>Reaktion ${e.avg != null ? fmtS(e.avg) + ' s' : '–'} · gekreuzt ${e.crossed}× · tief ${e.low == null ? '–' : Math.round(e.low*100) + ' %'}</small><br>
-      ${e.out ? `<small>Heraustreten mit richtiger Stellung: ${e.out.ok}/${e.out.n}${e.base?.wide != null ? ` · Grundposition breit ${pct(e.base.wide)}, aufrecht ${pct(e.base.upright)}, Arme vorn ${pct(e.base.arms)}` : ''}</small><br>` : ''}
+      ${e.out ? `<small>Heraustreten mit richtiger Stellung: ${e.out.ok}/${e.out.n}${e.base?.wide != null ? ` · Grundposition seitlich ${pct(e.base.side)}, breit ${pct(e.base.wide)}, aufrecht ${pct(e.base.upright)}, Arme vorn ${pct(e.base.arms)}` : ''}</small><br>` : ''}
       <small>${e.moves.map(m => `${m.ok ? '✓' : '✗'} ${NAMES[m.cmd]}${m.react != null ? ' ' + fmtS(m.react) : ''}${m.foot != null ? (m.foot && m.arm ? ' (Stellung ✓)' : ' (Stellung ✗)') : ''}`).join(' · ')}</small></div>`).join('');
 }
 export function reportText(){
   const list = sessionEntries(); if(!list.length) return null;
   const L = [`Abwehr-Beinarbeit vom ${fmtDate(new Date(settings.session.start))}`];
   list.forEach(e => L.push(`Runde ${e.nr} (${e.dur} s): ${e.ok} von ${e.n} richtig, Reaktion ${e.avg != null ? fmtS(e.avg) + ' s' : '–'}, Füße gekreuzt ${e.crossed}×, tief ${e.low == null ? '–' : Math.round(e.low*100) + ' %'}`
-    + (e.out ? `, Heraustreten mit richtiger Stellung ${e.out.ok}/${e.out.n}` : '') + (e.base?.wide != null ? `, Grundposition breit ${pct(e.base.wide)}, aufrecht ${pct(e.base.upright)}, Arme vorn ${pct(e.base.arms)}` : '')));
+    + (e.out ? `, Heraustreten mit richtiger Stellung ${e.out.ok}/${e.out.n}` : '') + (e.base?.wide != null ? `, Grundposition seitlich ${pct(e.base.side)}, breit ${pct(e.base.wide)}, aufrecht ${pct(e.base.upright)}, Arme vorn ${pct(e.base.arms)}` : '')));
   L.push('', 'Stellung nach den DHB-Technikkriterien 1-gegen-1 (Landeskaderkriterien des DHB).');
   L.push('', 'Erstellt mit Handballcoach (Abwehr-Beinarbeit)');
   return L.join('\n');

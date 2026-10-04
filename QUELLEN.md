@@ -30,5 +30,5 @@ Stand: 2026-10-04. Die Messgrenzen in der App sind trotzdem nur im Demo eingeste
 
 ## Unterschiede zwischen den Quellen
 
-- Der DHB nennt für die **Grundposition** ausdrücklich die *Parallelstellung* („anstatt nur Wurfarmseitenorientierung“) und erst für den **Gegner in Wurfauslage** die versetzte Fußstellung. Andere Quellen (KNSU, owayo) beschreiben gleich die diagonale Fußstellung. Die App folgt dem DHB: parallel in der Grundposition, versetzt beim Heraustreten.
+- Der DHB nennt für die **Grundposition** ausdrücklich die *Parallelstellung* („anstatt nur Wurfarmseitenorientierung“) und erst für den **Gegner in Wurfauslage** die versetzte Fußstellung. Andere Quellen (KNSU, owayo) beschreiben gleich die diagonale Fußstellung. **Entscheidung des Trainers (Gordon, 2026-10-04):** in diesem Training immer seitlich zur Wurfhand, keine Parallelstellung. Die App prüft deshalb auch in der Grundposition die versetzte Stellung zur Wurfarmseite.
 - Die Höhe des Führarms ist nicht genau festgelegt: DHB „vordere Hand auf Schulterhöhe“, KNSU/owayo „zur Wurfarmschulter“. Die App prüft „Hand etwa auf Schulterhöhe und höher als die andere“.
