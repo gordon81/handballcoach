@@ -137,6 +137,9 @@ Ganz oben in der Einrichtung steht **Übung**:
 
 - **Entscheidung in der Luft:** die App sagt nur **„Los“**. Der Spieler läuft ohne Ziel an, das Ziel kommt erst, **wenn er abspringt**. So lernt man, die Ecke erst in der Luft zu wählen (wie gegen einen Torwart). Geschafft ist ein Wurf mit richtigem Sprungbein, Wurfarm oben und ohne Übertritt; wer auf der Ergebnis-Karte „Daneben“ tippt, hat ihn nicht geschafft. 10 Würfe, Ziel **7 von 10**.
 
+- **Wurfhöhe auf Ansage:** vor dem Ziel sagt die App **„Hoch.“** (über dem Kopf abwerfen) oder **„Hüfte.“** (seitlich, Hand zwischen Hüfte und Schulter), z. B. *„Hüfte. Blau lang“*. Geprüft wird die Hand im Moment des Abwurfs. 10 Würfe, Ziel **7 von 10**.
+- **Serie unter Ermüdung:** 20 Würfe mit nur 2 s Pause. Ab dem 6. Wurf warnt die App *„Sprung wird flacher. Knie hoch.“*, wenn ein Sprung deutlich niedriger ist als am Anfang. Geschafft, wenn die letzten 5 Sprünge im Schnitt mindestens **90 %** so hoch sind wie die ersten 5 und kein Übertritt dabei war. Das Ergebnis steht in Prozent.
+
 Unter der Auswahl stehen kurz die Regeln und, sobald es sie gibt, **Bestwert** und **letztes Ergebnis**. Der Start-Button heißt dann „Aufgabe starten“.
 
 So läuft eine Aufgabe:
@@ -321,7 +324,8 @@ Die Grenzwerte der Prüfungen sind bisher nur im Demo geprüft. Beim ersten Hall
 6. **Grenzen anpassen:** zwischen die Werte der guten und der bewusst schlechten Würfe legen (im Code `TH` bzw. `TH_POS.court` in `aussenspieler/js/config.js`, siehe `brain.md`). Beim Übertritt zuerst die Linie prüfen, wenn echte Übertritte nur knapp im Plus oder saubere Absprünge im Plus liegen.
 7. Beide Kamerapositionen getrennt testen (Spalte „Kamera“ im Bericht).
 8. **Aufgabe „Entscheidung in der Luft“:** 10 Würfe, dann im Bericht die Spalte „Ansage“ ansehen und notieren, ob man das Ziel in der Luft noch rechtzeitig gehört hat.
-9. **Aufgabe „Absprung an der Linie“:** Klebeband 10, 20, 30 und 40 cm vor die Linie kleben, an jedem ein paar Mal abspringen und notieren, was die App ansagt. Passen die cm nicht, wird die Grenze (heute ca. 30 cm) im Code angepasst.
+9. **Aufgaben „Wurfhöhe“ und „Ermüdung“:** je 5 Würfe bewusst hoch und aus der Hüfte; prüfen, ob die Ansage stimmt. Bei der Ermüdung prüfen, ob 2 s Pause reichen, um zurück zum Anlauf zu kommen.
+10. **Aufgabe „Absprung an der Linie“:** Klebeband 10, 20, 30 und 40 cm vor die Linie kleben, an jedem ein paar Mal abspringen und notieren, was die App ansagt. Passen die cm nicht, wird die Grenze (heute ca. 30 cm) im Code angepasst.
 
 ---
 

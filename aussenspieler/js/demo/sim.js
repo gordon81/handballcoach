@@ -46,7 +46,7 @@ export const demo = {calls:[]};   // Zeitpunkte der Zurufe (für Tests)
 // Verhalten: reagiert auf die Ansagen der App wie ein Mensch, der zuhört.
 function behave(dt){
   if(shot){ shotStep(dt); return; }
-  P.lift = 0; P.lf = P.rf = 0; P.raise = Math.max(0, P.raise - dt*3); P.swing = 0; P.twist = 0; P.ball = true;
+  P.lift = 0; P.lf = P.rf = 0; P.raise = Math.max(0, P.raise - dt*3); P.swing = 0; P.twist = 0; P.ball = true; P.low = 0;
   const ph = wizard.phase;
   if(ph==='wait'){ walkTh = null; const A = linePt(172); if(moveTo(A, 1.3, dt)) stand(dt, toward(linePt(160))); return; }
   if(ph==='walk'){
@@ -74,9 +74,13 @@ function behave(dt){
 const VAR = [{r:6.3, h:0.5, arm:1}, {r:6.25, h:0.45, arm:1}, {r:5.85, h:0.45, arm:1}, {r:6.3, h:0.28, arm:0.45}];
 // Eigene Wurf-Folgen je Aufgabe (settings.task), damit Tests wissen, was herauskommen muss.
 // line: nah an der Linie (geschafft), zu weit weg, Übertritt, nah.
-export const TASK_VAR = {line:[{r:6.25, h:0.5, arm:1}, {r:7.0, h:0.5, arm:1}, {r:5.85, h:0.45, arm:1}, {r:6.35, h:0.45, arm:1}]};
+// height: folgt der Ansage „Hoch“/„Hüfte“ (follow) oder macht absichtlich das Gegenteil. tired: Sprung wird ab Wurf 3 flacher.
+export const TASK_VAR = {line:[{r:6.25, h:0.5, arm:1}, {r:7.0, h:0.5, arm:1}, {r:5.85, h:0.45, arm:1}, {r:6.35, h:0.45, arm:1}],
+  height:[{r:6.3, h:0.5, arm:1, follow:true}, {r:6.3, h:0.5, arm:1, follow:true}, {r:6.3, h:0.5, arm:1, follow:false}, {r:6.3, h:0.5, arm:1, follow:true}],
+  tired:[{r:6.3, h:0.5, arm:1}, {r:6.3, h:0.5, arm:1}, {r:6.3, h:0.32, arm:1}, {r:6.3, h:0.3, arm:1}]};
 function startShot(){
-  const vs = (app.task && TASK_VAR[app.task.id]) || VAR, v = vs[shotNo++ % vs.length];
+  const vs = (app.task && TASK_VAR[app.task.id]) || VAR, v = {...vs[shotNo++ % vs.length]};
+  if(v.follow !== undefined){ const hip = app.task?.call === 'Hüfte'; v.low = (hip === v.follow) ? 1 : 0; if(v.low) v.arm = 0.35; }
   shot = {...v, stage:'run', t:0, K:linePt(150, v.r)};
 }
 function shotStep(dt){
@@ -97,7 +101,7 @@ function shotStep(dt){
     P.lf = P.lift*0.85; P.rf = P.lift*0.85 + 0.3*(1-u) + 0.2*Math.sin(Math.PI*u);   // Schwungbein hoch
     if(!R){ [P.lf, P.rf] = [P.rf, P.lf]; }
     P.x += Math.cos(s.dir)*1.6*dt; P.y += Math.sin(s.dir)*1.6*dt;
-    P.raise = s.arm;
+    P.raise = s.arm; P.low = s.low || 0;
     P.swing = u < 0.45 ? 0 : Math.min(1, (u-0.45)/0.22);
     P.twist = (u < 0.45 ? 0.55*Math.min(1, u/0.2) : 0.55 - 0.9*Math.min(1, (u-0.45)/0.25)) * (R ? 1 : -1);
     if(P.swing > 0.8 && P.ball){ P.ball = false; ballFly = {p:hand(), t:0}; }
@@ -106,7 +110,7 @@ function shotStep(dt){
   }
   if(s.stage==='land'){
     P.swing = Math.max(0, 1 - s.t*2); P.raise = Math.max(0, s.arm - s.t*2); P.twist *= 0.9;
-    if(s.t > 0.6 && app.state!=='air' && app.state!=='runup'){ shot = null; P.ball = true; }
+    if(s.t > 0.6 && app.state!=='air' && app.state!=='runup'){ shot = null; P.ball = true; P.low = 0; }
     else if(s.t > 3){ shot = null; P.ball = true; }
   }
 }

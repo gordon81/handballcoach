@@ -356,6 +356,48 @@ test('Aufgabe „Entscheidung in der Luft“: „Los“, Ziel erst beim Absprung
   await page.close();
 });
 
+test('Aufgaben „Wurfhöhe auf Ansage“ und „Serie unter Ermüdung“ (je 4 Würfe)', {timeout:300000}, async t => {
+  const {page, errors} = await demoPage({pause:1, task:'height'});
+  await page.evaluate(() => { for(const k in M.tasks.TASKS) M.tasks.TASKS[k].reps = 4; M.tasks.TASKS.height.goal = 3; });
+  await page.click('#btnStart');
+  await walkLine(page);
+
+  await t.test('Wurfhöhe: „Hoch“/„Hüfte“ vor dem Ziel, Höhe im Wurf geprüft', async () => {
+    await page.click('#setup [data-a=start]');
+    await until(page, () => M.store.log.length >= 4, null, 90000, '4 Würfe');
+    const log = await page.evaluate(() => M.store.log.map(e => ({call:e.call, ok:e.task?.ok, why:e.task?.why, armT:e.m.armT})));
+    // Die simulierte Person folgt der Ansage, nur Wurf 3 macht absichtlich das Gegenteil.
+    assert.deepEqual(log.map(e => e.ok), [true, true, false, true], JSON.stringify(log));
+    log.forEach((e, i) => assert.ok(['Hoch', 'Hüfte'].includes(e.call), `Wurf ${i+1}: Ansage ${e.call}`));
+    const said = await page.evaluate(() => __said);
+    assert.ok(said.some(x => /^(Hoch|Hüfte)\. (Orange|Blau) (kurz|lang)$/.test(x)), said.join(' | '));
+    await until(page, () => !document.querySelector('#taskEnd').hidden, null, 5000, 'Ende-Karte');
+    assert.match(await page.textContent('#taskEnd'), /3 von 4[\s\S]*Aufgabe geschafft/);
+    await page.click('#taskEnd [data-t=end]');
+  });
+
+  await t.test('Ermüdung: kurze Pause, Warnung „flacher“, Ergebnis in Prozent', async () => {
+    await page.click('#btnLine');
+    await page.click('#setup [data-a=task][data-v=tired]');
+    assert.match(await page.textContent('#setup'), /2 s Pause/);
+    await page.click('#setup [data-a=start]');
+    const n0 = await page.evaluate(() => M.store.log.length);
+    assert.equal(await page.evaluate(async () => (await import('/aussenspieler/js/taskRun.js')).taskPause()), 2, 'eigene Pause 2 s statt Einstellung');
+    await until(page, n => M.store.log.length >= n + 4, n0, 90000, '4 Würfe');
+    const said = await page.evaluate(() => __said);
+    assert.ok(said.some(x => /^Sprung wird flacher\. Knie hoch\. Noch 1\.$/.test(x)), said.join(' | '));
+    await until(page, () => !document.querySelector('#taskEnd').hidden, null, 5000, 'Ende-Karte');
+    assert.match(await page.textContent('#taskEnd'), /\d+ %[\s\S]*Sprunghöhe am Ende \d+ Prozent vom Anfang, Ziel 90/);
+    assert.equal(await page.evaluate(() => M.store.settings.taskHist.tired.at(-1).label.endsWith('%')), true);
+    await page.click('#btnLog');
+    assert.match(await page.textContent('#logBody'), /Serie unter Ermüdung \d+ %/);
+    await page.click('#logSheet [data-close]');
+  });
+
+  assert.deepEqual(errors, [], 'Fehler in der Browser-Konsole');
+  await page.close();
+});
+
 test('7-m-Trainer (Demo, Handy-Größe): Linie antippen, Pfiff, Bewertung, Serie, Log, Bericht', {timeout:200000}, async t => {
   const page = await browser.newPage({viewport:{width:390, height:800}});
   const errors = []; page.on('pageerror', e => errors.push(e.message));

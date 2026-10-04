@@ -2,15 +2,27 @@
 // Reine Logik ohne Browser (Unit-Tests in tests/unit.mjs); Ablauf im Training: taskRun.js.
 import { TH, KL_CM } from './config.js';
 
-// reps = Würfe pro Serie, goal = so viele müssen geschafft sein. callInAir: Ziel erst beim Absprung ansagen.
+// reps = Würfe pro Serie, goal = so viele müssen geschafft sein (null: eigenes Serien-Kriterium in result()).
+// callInAir: Ziel erst beim Absprung ansagen. calls: vor das Ziel wird zufällig eins davon gesagt („Hoch. Orange kurz“).
+// pause: eigene Pause nach dem Wurf (s) statt der Einstellung.
 export const TASKS = {
   line: {id:'line', name:'Absprung an der Linie', short:'So nah wie möglich an der Linie abspringen, ohne Übertritt.',
     intro:'Aufgabe Absprung an der Linie. Spring so nah wie möglich an der Linie ab, ohne überzutreten. Nach jedem Wurf sage ich dir den Abstand.',
     reps:10, goal:7},
   air: {id:'air', name:'Entscheidung in der Luft', short:'Auf „Los“ anlaufen. Das Ziel kommt erst beim Absprung.',
     intro:'Aufgabe Entscheidung in der Luft. Auf Los läufst du an. Das Ziel sage ich erst, wenn du springst.',
-    reps:10, goal:7, callInAir:true}
+    reps:10, goal:7, callInAir:true},
+  height: {id:'height', name:'Wurfhöhe auf Ansage', short:'Vor dem Ziel kommt „Hoch“ (über dem Kopf) oder „Hüfte“ (seitlich, Hand unter der Schulter).',
+    intro:'Aufgabe Wurfhöhe auf Ansage. Vor dem Ziel sage ich hoch oder Hüfte. Bei hoch wirfst du über dem Kopf ab, bei Hüfte seitlich aus der Hüfte.',
+    reps:10, goal:7, calls:['Hoch', 'Hüfte']},
+  tired: {id:'tired', name:'Serie unter Ermüdung', short:'20 Würfe mit nur 2 s Pause. Die Sprunghöhe soll bis zum Ende halten, kein Übertritt.',
+    intro:'Aufgabe Serie unter Ermüdung. Zwanzig Würfe mit kurzer Pause. Halte die Sprunghöhe bis zum Schluss und tritt nicht über.',
+    reps:20, goal:null, pause:2}
 };
+
+// Wie viele Würfe am Anfang und am Ende der Ermüdungs-Serie verglichen werden (bei 20 Würfen je 5).
+const edge = task => Math.max(1, Math.min(5, Math.floor(task.reps/2)));
+const avg = a => a.reduce((x, y) => x + y, 0)/a.length;
 
 const BAD = {over:'Übertritt', leg:'Falsches Sprungbein', arm:'Wurfarm zu spät oben'};
 const SAY_BAD = {over:'Übertritt.', leg:'Falsches Bein.', arm:'Arm früher hoch.'};
@@ -20,7 +32,8 @@ export const lineCm = line => Math.max(0, Math.round(-line*KL_CM/5)*5);
 
 // Eine Wiederholung bewerten. entry = Log-Eintrag des Wurfs (issues, m, target, hit).
 // → {ok, why (für Karte/Log), say (Ansage)} oder null, wenn der Wurf für die Aufgabe nicht zählt.
-export function judge(id, entry, th = TH){
+// prev = die bisherigen Würfe dieser Serie (für Vergleiche mit dem Anfang).
+export function judge(id, entry, th = TH, prev = []){
   const is = k => (entry.issues || []).includes(k), m = entry.m || {};
   if(id==='line'){
     if(is('over') || m.line > 0) return {ok:false, why:'Übertritt', say:'Übertritt.'};
@@ -36,19 +49,48 @@ export function judge(id, entry, th = TH){
     if(entry.hit===false) return {ok:false, why:'Ziel verfehlt', say:'Daneben.'};
     return {ok:true, why:'Sauber trotz später Ansage', say:'Sauber.'};
   }
+  if(id==='height'){
+    const c = entry.call; if(!c || m.armT == null) return null;   // ohne Höhen-Ansage oder ohne Wurf-Frame: zählt nicht
+    if(c==='Hoch') return m.armT > (th.taskHighArm ?? TH.taskHighArm) ? {ok:true, why:'Hoch abgeworfen', say:'Hoch, gut.'}
+      : {ok:false, why:'Nicht hoch genug, Hand unter dem Kopf', say:'Höher. Hand über den Kopf.'};
+    if(m.shT >= (th.taskHipShoulder ?? TH.taskHipShoulder)) return {ok:false, why:'Zu hoch für Hüfte', say:'Tiefer. Aus der Hüfte.'};
+    if(m.hipT < (th.taskHipLow ?? TH.taskHipLow)) return {ok:false, why:'Zu tief', say:'Etwas höher, Hüfthöhe.'};
+    return {ok:true, why:'Aus der Hüfte abgeworfen', say:'Hüfte, gut.'};
+  }
+  if(id==='tired'){
+    if(is('over') || m.line > 0) return {ok:false, why:'Übertritt', say:'Übertritt.'};
+    const k = edge(TASKS.tired), first = prev.slice(0, k).map(e => e.m?.jump).filter(x => x != null);
+    if(first.length === k && prev.length >= k && m.jump != null && m.jump < avg(first)*(th.taskTiredKeep ?? TH.taskTiredKeep))
+      return {ok:true, why:`Sprung ${Math.round(m.jump/avg(first)*100)} % vom Anfang`, say:'Sprung wird flacher. Knie hoch.'};
+    return {ok:true, why:'Sprung gehalten', say:'Gut.'};
+  }
   return null;
 }
 
 // Stand einer Serie aus ihren Würfen (neu gerechnet, damit spätere Treffer-Tipps mitzählen).
 export function tally(id, entries, th = TH){
   let n = 0, hits = 0;
-  for(const e of entries){ const v = judge(id, e, th); if(!v) continue; n++; if(v.ok) hits++; }
+  entries.forEach((e, i) => { const v = judge(id, e, th, entries.slice(0, i)); if(!v) return; n++; if(v.ok) hits++; });
   return {n, hits};
 }
 
 export const passed = (task, hits) => hits >= task.goal;
+
+// Ergebnis einer fertigen Serie: {passed, hits, n, score (0–1, für den Bestwert), label (Anzeige), say (Ansage)}.
+export function result(task, entries, th = TH){
+  const {n, hits} = tally(task.id, entries, th);
+  if(task.id==='tired'){
+    const k = edge(task), j = entries.map(e => e.m?.jump).filter(x => x != null), overs = n - hits;
+    const ratio = j.length >= 2*k ? avg(j.slice(-k))/avg(j.slice(0, k)) : null, pct = ratio == null ? null : Math.round(ratio*100);
+    const keep = th.taskTiredKeep ?? TH.taskTiredKeep, ok = ratio != null && ratio >= keep && !overs;
+    const say = ok ? `Aufgabe geschafft: Sprunghöhe gehalten, ${pct} Prozent vom Anfang, kein Übertritt.`
+      : [pct != null && ratio < keep ? `Sprunghöhe am Ende ${pct} Prozent vom Anfang, Ziel ${Math.round(keep*100)}.` : '', overs ? `${overs} Übertritt${overs > 1 ? 'e' : ''}.` : ''].join(' ').trim() || 'Nicht geschafft.';
+    return {passed:ok, hits, n, score:ok ? Math.min(1, ratio) : 0, label:pct != null ? `${pct} %` : '–', say};
+  }
+  return {passed:passed(task, hits), hits, n, score:n ? hits/n : 0, label:`${hits} von ${n}`, say:endSpeech(task, hits, n)};
+}
 // Ansage nach einer Wiederholung: Ergebnis, dann wie viele noch fehlen bzw. das Serien-Ergebnis.
-export function repSpeech(task, v, n, hits){ return `${v.say} ${n < task.reps ? `Noch ${task.reps - n}.` : endSpeech(task, hits, n)}`; }
+export function repSpeech(task, v, n, hits, end = null){ return `${v.say} ${n < task.reps ? `Noch ${task.reps - n}.` : (end?.say ?? endSpeech(task, hits, n))}`; }
 export function endSpeech(task, hits, n){
   return passed(task, hits) ? `Aufgabe geschafft: ${hits} von ${n}.` : `${hits} von ${n}. Ziel war ${task.goal}. Tippe auf Nochmal.`;
 }
@@ -57,7 +99,8 @@ export function endSpeech(task, hits, n){
 export function addHistory(hist, id, rec){ const a = (hist[id] ||= []); a.push(rec); if(a.length > 30) a.splice(0, a.length - 30); return hist; }
 export function best(hist, id){
   const a = hist?.[id] || []; if(!a.length) return null;
-  return a.reduce((b, r) => r.hits/r.n > b.hits/b.n || (r.hits/r.n === b.hits/b.n && r.n > b.n) ? r : b);
+  const sc = r => r.score ?? r.hits/r.n;
+  return a.reduce((b, r) => sc(r) > sc(b) || (sc(r) === sc(b) && r.n > b.n) ? r : b);
 }
 // Ungefähre Sprechdauer (s), damit die erste Zielansage die Anleitung nicht abschneidet.
 export const speakSec = text => Math.min(9, 0.5 + text.split(/\s+/).length*0.36);

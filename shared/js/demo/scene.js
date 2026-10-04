@@ -57,7 +57,7 @@ export function drawFloor(){ g.drawImage(bg, 0, 0); }
 /* ---------- Person ---------- */
 // Person P: {x, y, a (Blickrichtung, rad), phi (Schrittphase), s (Gehen 0–1), lift (Sprung, m), lf/rf (Fuß links/rechts hoch, m),
 // raise (Wurfarm hoch 0–1), swing (Wurf 0–1), twist (Oberkörper gegen Hüfte, rad), lean (rad), ball (Ball in der Hand)}.
-// Optional lfx/rfx: Fuß links/rechts nach vorn versetzt (m), z. B. Ausfallschritt beim 7-m-Wurf.
+// Optional lfx/rfx: Fuß links/rechts nach vorn versetzt (m), z. B. Ausfallschritt beim 7-m-Wurf; low: Abwurf aus der Hüfte (0–1).
 
 // Boden pixelweise: Strahl durch jedes Pixel mit dem Boden schneiden, Holz + Linien (mit Kantenglättung).
 function renderHall(){
@@ -135,8 +135,10 @@ export function joints(P, R){
   const sh = j[thr+'Sh'];
   const elH = add(add(sh, up, -0.28), fws, 0.05), wrH = add(add(elH, up, -0.22), fws, 0.15);
   const elR = add(add(add(sh, up, 0.1), ls, 0.22*side), fws, -0.12), wrR = add(add(elR, up, 0.28), fws, -0.14);
-  const elT = add(add(sh, fws, 0.27), up, 0.12), wrT = add(add(sh, fws, 0.55), up, 0.02);
-  const mix = (A, B, k) => add(A, sub(B, A), k);
+  // Abwurf: hoch über dem Kopf (P.low = 0) oder seitlich aus der Hüfte (P.low = 1, Hand zwischen Hüfte und Schulter).
+  const mix = (A, B, k) => add(A, sub(B, A), k), lo = P.low || 0;
+  const elT = mix(add(add(sh, fws, 0.27), up, 0.15), add(add(add(sh, fws, 0.12), ls, 0.2*side), up, -0.22), lo);
+  const wrT = mix(add(add(sh, fws, 0.5), up, 0.3), add(add(add(sh, fws, 0.42), ls, 0.25*side), up, -0.3), lo);
   j[thr+'El'] = mix(mix(elH, elR, P.raise), elT, P.swing); j[thr+'Wr'] = mix(mix(wrH, wrR, P.raise), wrT, P.swing);
   J = j; return j;
 }

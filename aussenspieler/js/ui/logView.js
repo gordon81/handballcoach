@@ -12,7 +12,7 @@ export function renderLog(){
   const s = summarize(list), T = tips();
   let h = `<p class="muted">${fmtDate(new Date(settings.session.start))}, ${profileText()}<br>${s.n} Würfe, Technik sauber ${s.clean}/${s.n}${s.rotAvg!=null ? `, Drehung im Schnitt ca. ${s.rotAvg}°` : ''}</p>`;
   const runs = sessionRuns();
-  if(runs.length) h += `<h3>Aufgaben</h3>` + runs.map(r => `<div class="entry"><b>${esc(r.name)}</b> ${r.hits} von ${r.n} <small>(Ziel ${r.goal}) ${r.passed ? '✓ geschafft' : 'nicht geschafft'}</small></div>`).join('');
+  if(runs.length) h += `<h3>Aufgaben</h3>` + runs.map(r => `<div class="entry"><b>${esc(r.name)}</b> ${esc(r.label)} <small>${r.goal != null ? `(Ziel ${r.goal}) ` : ''}${r.passed ? '✓ geschafft' : 'nicht geschafft'}</small></div>`).join('');
   if(s.strengths.length) h += `<h3>Stärken</h3><p>${s.strengths.map(k => LABEL_GOOD[k]).join(', ')}</p>`;
   if(s.top.length) h += `<h3>Daran arbeiten</h3>` + s.top.slice(0,3).map(([k,c]) =>
     `<div class="entry"><b>${LABEL_BAD[k]}</b> <small>${c}×</small><br>${esc(T[k].tip)}<br><small>Übung: ${esc(T[k].drill)}</small></div>`).join('');

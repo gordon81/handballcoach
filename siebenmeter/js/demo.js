@@ -18,9 +18,9 @@ function behave(dt){
   if(!shot){ if(app.state!=='go') reset(); return; }
   shot.t0 += dt; const u = shot.t0, front = R() ? 'lfx' : 'rfx';
   P.raise = Math.min(1, Math.max(0, (u - (shot.t - 0.6))/0.4));
-  P.swing = Math.min(1, Math.max(0, (u - shot.t + 0.08)/0.16));
+  P.swing = Math.min(1, Math.max(0, (u - shot.t + 0.04)/0.08));   // Abwurf schnell wie in echt (Hand ~10 m/s)
   P.twist = (R() ? 1 : -1)*(0.4*P.raise - 0.8*P.swing);
-  if(shot.step && u > shot.t - 0.4) P[front] = (R() ? 0.3 : 0.3) + shot.step*Math.min(1, (u - shot.t + 0.4)/0.2);
+  if(shot.step && u > shot.t - 0.4) P[front] = 0.3 + shot.step*Math.min(1, (u - shot.t + 0.4)/0.2);
   if(shot.hop && u > shot.t - 0.5){ const k = Math.min(1, (u - shot.t + 0.5)/0.2); P.y = HOME.y - shot.hop*k; P.lift = 0.12*Math.sin(Math.PI*k); }
   if(P.swing > 0.8 && P.ball){ P.ball = false; ballFly = {p:hand(R()), t:0}; }
   if(u > shot.t + 1.5 && app.state!=='go'){ shot = null; reset(); }

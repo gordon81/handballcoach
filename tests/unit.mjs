@@ -83,7 +83,7 @@ test('Empfindlichkeit: leiser Ruf nur bei „hoch“', () => {
 });
 
 /* ---------- Aufgaben (js/tasks.js) ---------- */
-import { TASKS, judge, tally, repSpeech, endSpeech, addHistory, best, lineCm } from '../aussenspieler/js/tasks.js';
+import { TASKS, judge, tally, repSpeech, endSpeech, addHistory, best, lineCm, result } from '../aussenspieler/js/tasks.js';
 import { TH } from '../aussenspieler/js/config.js';
 
 const throwAt = (line, issues = []) => ({issues, m:{line}});
@@ -210,4 +210,32 @@ test('7 m: Wurf-Erkennung und Serie', () => {
   assert.equal(seriesSpeech(ok, 3, 3), 'Sauber. 1,5 Sekunden. Noch 7.');
   assert.match(seriesSpeech(ok, SERIES.reps, SERIES.goal), /Serie geschafft: 8 von 10/);
   assert.match(seriesSpeech(ok, 10, 6), /6 von 10\. Ziel war 8/);
+});
+
+test('Wurfhöhe auf Ansage: „Hoch“ über dem Kopf, „Hüfte“ zwischen Hüfte und Schulter', () => {
+  const at = (call, armT, shT, hipT) => judge('height', {call, issues:[], m:{armT, shT, hipT}});
+  assert.equal(at('Hoch', 0.15, 0.4, 0.9).ok, true);
+  assert.equal(at('Hoch', -0.05, 0.2, 0.7).ok, false, 'Hand unter der Nase ist nicht hoch');
+  assert.equal(at('Hüfte', -0.6, -0.35, 0.15).ok, true);
+  assert.match(at('Hüfte', 0.1, 0.3, 0.9).say, /Tiefer/);
+  assert.match(at('Hüfte', -1, -0.8, -0.3).say, /höher/);
+  assert.equal(judge('height', {call:null, issues:[], m:{armT:0.1}}), null, 'ohne Ansage zählt nicht');
+  assert.equal(judge('height', {call:'Hoch', issues:[], m:{armT:null}}), null, 'ohne Wurf-Frame zählt nicht');
+});
+
+test('Serie unter Ermüdung: Sprunghöhe Ende gegen Anfang, Übertritte', () => {
+  const t = TASKS.tired, j = (jump, issues = []) => ({issues, m:{jump, line:-0.1}});
+  const keep = Array.from({length:20}, (_, i) => j(i < 15 ? 0.3 : 0.28));
+  const r = result(t, keep);
+  assert.equal(r.passed, true, r.say); assert.equal(r.label, '93 %'); assert.match(r.say, /gehalten, 93 Prozent/);
+  const drop = Array.from({length:20}, (_, i) => j(i < 15 ? 0.3 : 0.24));
+  assert.equal(result(t, drop).passed, false); assert.match(result(t, drop).say, /80 Prozent vom Anfang, Ziel 90/);
+  const over = keep.map((e, i) => i === 7 ? j(0.3, ['over']) : e);
+  assert.equal(result(t, over).passed, false); assert.match(result(t, over).say, /1 Übertritt\./);
+  // Einzelner Wurf: Warnung, wenn er unter 90 % des Anfangs liegt (erst nach den ersten 5).
+  assert.equal(judge('tired', j(0.2), undefined, keep.slice(0, 3)).say, 'Gut.', 'vor Wurf 6 kein Vergleich');
+  assert.match(judge('tired', j(0.2), undefined, keep.slice(0, 8)).say, /flacher/);
+  assert.equal(judge('tired', j(0.29), undefined, keep.slice(0, 8)).say, 'Gut.');
+  assert.equal(judge('tired', j(0.3, ['over'])).ok, false);
+  assert.equal(best({tired:[{hits:20, n:20, score:0.93}, {hits:20, n:20, score:0}]}, 'tired').score, 0.93, 'Bestwert nach Quote');
 });

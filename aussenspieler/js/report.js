@@ -15,7 +15,7 @@ export function reportText(){
   L.push(`Würfe: ${s.n}, Technik sauber: ${s.clean} (${Math.round(s.clean/s.n*100)} %)`);
   if(s.rotAvg!=null) L.push(`Körperdrehung im Schnitt: ca. ${s.rotAvg}°`);
   const runs = sessionRuns();
-  if(runs.length){ L.push('', 'Aufgaben:'); runs.forEach(r => L.push(`- ${r.name}: ${r.hits} von ${r.n} (Ziel ${r.goal}) ${r.passed ? 'geschafft' : 'nicht geschafft'}`)); }
+  if(runs.length){ L.push('', 'Aufgaben:'); runs.forEach(r => L.push(`- ${r.name}: ${r.label}${r.goal != null ? ` (Ziel ${r.goal})` : ''} ${r.passed ? 'geschafft' : 'nicht geschafft'}`)); }
   if(s.strengths.length) L.push('', 'Stärken: ' + s.strengths.map(k => LABEL_GOOD[k]).join(', '));
   if(s.top.length){
     L.push('', 'Schwerpunkte fürs nächste Training:');
@@ -40,7 +40,7 @@ h1{margin:0}h2{margin-top:28px;padding-bottom:4px;border-bottom:3px solid #ff8a1
 table{width:100%;border-collapse:collapse;font-size:.92rem}td,th{border-bottom:1px solid #dde3e9;padding:6px 4px;text-align:left}li{margin-bottom:10px}</style></head><body>
 <h1>Außenwurf-Training</h1><p class="m">${fmtDate(new Date(settings.session.start))}, ${profileText()}</p>
 <p><b>${s.n}</b> Würfe, Technik sauber <b>${s.clean}</b> (${Math.round(s.clean/s.n*100)} %)${s.rotAvg!=null ? `, Körperdrehung im Schnitt ca. ${s.rotAvg}°` : ''}</p>
-${runs.length ? `<h2>Aufgaben</h2><table><tr><th>Aufgabe</th><th>Ergebnis</th><th>Ziel</th><th></th></tr>${runs.map(r => `<tr><td>${esc(r.name)}</td><td>${r.hits} von ${r.n}</td><td>${r.goal}</td><td>${r.passed ? '✓ geschafft' : 'nicht geschafft'}</td></tr>`).join('')}</table>` : ''}
+${runs.length ? `<h2>Aufgaben</h2><table><tr><th>Aufgabe</th><th>Ergebnis</th><th>Ziel</th><th></th></tr>${runs.map(r => `<tr><td>${esc(r.name)}</td><td>${esc(r.label)}</td><td>${r.goal ?? '–'}</td><td>${r.passed ? '✓ geschafft' : 'nicht geschafft'}</td></tr>`).join('')}</table>` : ''}
 ${s.strengths.length ? `<h2>Stärken</h2><p>${s.strengths.map(k => LABEL_GOOD[k]).join(', ')}</p>` : ''}
 <h2>Schwerpunkte fürs nächste Training</h2><ol>${focus}</ol>
 ${targets ? `<h2>Ziele</h2><table><tr><th>Ziel</th><th>Würfe</th><th>Technik ok</th><th>Treffer</th></tr>${targets}</table>` : ''}

@@ -11,7 +11,7 @@ import { recStart, recDrop, recFinish, recAge } from './clips.js';
 import { evaluate } from './analysis.js';
 import { showCard, clipReady } from './ui/card.js';
 import { renderLog } from './ui/logView.js';
-import { taskThrow, taskDone, taskCallInAir, onSeriesDone } from './taskRun.js';
+import { taskThrow, taskDone, taskCallInAir, taskCall, taskPause, onSeriesDone } from './taskRun.js';
 
 const LABELS = {off:'Gestoppt', ready:'Bereit', runup:'Anlauf', air:'Sprung', cool:'Pause'};
 let H=[], visSince=null, lastSeen=-1, lastTarget=null;
@@ -171,7 +171,8 @@ export function announce(t){
     if(app.source==='cam') recStart(t, 'Los');
     return;
   }
-  app.target = c.name; say(c.name); quiet(1.2); hudTarget(c.name); setState('runup', t);
+  const pre = taskCall();   // Aufgabe „Wurfhöhe“: „Hoch. Orange kurz“
+  app.target = c.name; say(pre ? `${pre}. ${c.name}` : c.name); quiet(1.2); hudTarget(pre ? `${pre} · ${c.name}` : c.name); setState('runup', t);
   if(app.source==='cam') recStart(t, c.name);   // Clip ab der Ansage
 }
 
@@ -191,7 +192,7 @@ function tick(t){
     const a = recAge(t), calm = !H.length || t - H.at(-1).t > 0.5 || standing(t);
     if(a===null || (a > 6 && calm) || a > 15) recStart(t);
   }
-  if(app.state==='cool' && t-app.stateT >= (app.source==='file' ? 0.6 : settings.pause)) setState('ready', t);
+  if(app.state==='cool' && t-app.stateT >= (app.source==='file' ? 0.6 : taskPause())) setState('ready', t);
   else if(app.state==='ready' && app.source==='cam' && !app.marking && t >= (app.holdUntil || 0)){
     if(settings.mode==='call'){ if(callAt!==null && t >= callAt){ callAt = null; announce(t); } }
     else if(settings.mode==='timer'){ if(t-app.stateT >= 1.5) announce(t); }

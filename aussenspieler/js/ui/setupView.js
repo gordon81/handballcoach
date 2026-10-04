@@ -58,7 +58,7 @@ export function startTraining(){
   ensureSession(); setState('ready', curT());
   say(beginTask(curT()) || 'Los geht’s'); unlockBeep(); setRunning(true); keepAwake(); syncMic();
 }
-export function stopTraining(){ setState('off', curT()); app.target=null; hudTarget(null); endTaskRun(); setRunning(false); releaseWake(); syncMic(); }
+export function stopTraining(){ setState('off', curT()); app.target=null; hudTarget(null); endTaskRun(); setRunning(false); releaseWake(); syncMic(); render(); }
 
 export function showSetup(check = true){
   const open = visible; visible = true; hideEnd();

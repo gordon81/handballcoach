@@ -52,7 +52,7 @@ Heute bewertet die App jeden Wurf, stellt aber keine **Aufgabe** mit Ziel. Für 
 - **Hinweis:** Sprachausgabe hat Verzögerung (100–300 ms je nach Handy). Kurze, vorab geladene Töne oder Wörter nehmen; im Hallentest messen, ob die Ansage noch rechtzeitig kommt.
 - **Baut auf:** Zustandsautomat, Zielansage. **Aufwand S.**
 
-### A3 · Wurfhöhe auf Ansage (hoch / Hüfte)
+### A3 · Wurfhöhe auf Ansage (hoch / Hüfte) ✅ gebaut
 - **Ziel:** Abwurf aus verschiedenen Armpositionen, damit der Torwart die Ecke nicht ablesen kann.
 - **Ablauf:** Zur Zielansage kommt die Armhöhe: „Hoch – Orange kurz“, „Hüfte – Blau lang“.
 - **Erfolg:** Handgelenk im Wurf-Frame über der Nase („hoch“) bzw. zwischen Hüfte und Schulter („Hüfte“).
@@ -66,7 +66,7 @@ Heute bewertet die App jeden Wurf, stellt aber keine **Aufgabe** mit Ziel. Für 
 - **Prüfbar:** ●●○ – Fußpunkte bei Absprung und Landung sind da; die Richtung im Bild muss aus der eingerichteten Linie abgeleitet werden.
 - **Baut auf:** Absprung-/Landungserkennung, Linie. **Aufwand M.**
 
-### A5 · Serie unter Ermüdung
+### A5 · Serie unter Ermüdung ✅ gebaut
 - **Ziel:** Technik halten, wenn die Beine müde werden (Spielende).
 - **Ablauf:** 20 Würfe mit kurzer Pause (z. B. 2 s), zwischendurch Ansage „Zurück zur Mittellinie und wieder an“ möglich.
 - **Erfolg:** Sprunghöhe der letzten 5 Würfe höchstens ~10 % unter den ersten 5, keine Übertritte.
@@ -158,7 +158,7 @@ Heute bewertet die App jeden Wurf, stellt aber keine **Aufgabe** mit Ziel. Für 
 
 1. [ ] Hallentest Außenwurf-Coach, Grenzen in `TH` / `TH_POS` einstellen (Voraussetzung).
 2. [x] Baustein „Aufgabe“ (Abschnitt 1) im Außenwurf-Coach: Aufgabenkarte, Zähler, „geschafft / nicht geschafft“, Ergebnis im Log und Bericht. **M**
-3. [ ] Erste Aufgaben ohne neue Erkennung: **A1 Absprung an der Linie** ✅, **A5 Serie unter Ermüdung**, **A3 Wurfhöhe auf Ansage**. **S** je Aufgabe
+3. [x] Erste Aufgaben ohne neue Erkennung: **A1 Absprung an der Linie** ✅, **A5 Serie unter Ermüdung** ✅, **A3 Wurfhöhe auf Ansage** ✅. **S** je Aufgabe
 4. [x] **A2 Entscheidung in der Luft** (Ansage beim Absprung) ✅; Verzögerung wird gemessen (`callDet`/`callLag`), **in der Halle ansehen** (offen). **S**
 5. [x] Gemeinsamen Code nach `shared/` ziehen (Kamera, Pose, Sprache, Zuruf, Clips, Demo), zweite Karte im Startmenü vorbereiten. **M**
 6. [x] **B1 7-m-Trainer** ✅ als zweites Training (mit C3 Wurf ohne Sprung, C4 gerade Linie). **M**

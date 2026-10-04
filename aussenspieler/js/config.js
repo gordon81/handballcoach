@@ -20,7 +20,12 @@ export const CAM_POS = {
 // anpassen: die Messwerte jedes Wurfs stehen im Training-Fenster und im Bericht (siehe brain.md, Kalibrieren).
 export const TH = {jumpHigh:0.25, jumpMid:0.17, rot:25, rotWrongSide:35, leanUpright:15, leanForward:25, leanStrong:35,
   // Aufgabe „Absprung an der Linie“: geschafft, wenn der Fuß höchstens so weit vor der Linie abspringt (KL, ~30 cm).
-  taskLineFar:-0.2};
+  taskLineFar:-0.2,
+  // Aufgabe „Wurfhöhe auf Ansage“ (Handgelenk im Wurf-Frame, KL): „Hoch“ = über der Nase um mehr als taskHighArm;
+  // „Hüfte“ = unter der Wurfschulter (taskHipShoulder) und nicht tiefer als taskHipLow unter der Hüfte.
+  taskHighArm:0, taskHipShoulder:0, taskHipLow:-0.1,
+  // Aufgabe „Serie unter Ermüdung“: Sprunghöhe der letzten 5 Würfe mindestens so viel vom Schnitt der ersten 5.
+  taskTiredKeep:0.9};
 // Abweichende Grenzen je Kameraposition (sonst TH). Position 2 sieht den Sprung von der Seite und misst ihn größer:
 // auf Position 1 läuft der Spieler in der Luft auf die erhöhte Kamera zu, die Hüfte sinkt im Bild (im Demo ~1,5× weniger).
 export const TH_POS = {court:{jumpHigh:0.36, jumpMid:0.30}};

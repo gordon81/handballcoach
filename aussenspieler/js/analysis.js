@@ -62,7 +62,10 @@ export function evaluate(e, t, H){
   const r2 = x => x==null ? null : Math.round(x*100)/100;
   const ft = e.tf.foot[e.foot], offs = settings.line ? [ft.toe, ft.heel].map(p => lineOffset({x:p.x/W, y:p.y/Hh})) : null;
   const win = H.filter(h => h.t >= e.t0 - 1 && h.t <= t);
+  // Handgelenk im Wurf-Frame (für „Wurfhöhe auf Ansage“): über Nase / Wurfschulter / Hüfte, KL (+ = darüber).
+  const tw = e.throwF;
   const m = {line: offs ? r2(Math.max(...offs)*Hh/e.bl) : null, arm:r2((a.nose.y - a.wr.y)/e.bl), rot, jump:r2(jr),
+    armT: tw ? r2((tw.nose.y - tw.wr.y)/e.bl) : null, shT: tw ? r2((tw.wsh.y - tw.wr.y)/e.bl) : null, hipT: tw ? r2((tw.hip.y - tw.wr.y)/e.bl) : null,
     lean: Math.round(dir ? lean*dir : al), fps: Math.round(win.length/Math.max(0.1, t - (e.t0 - 1))), cam:settings.camPos};
 
   issues.sort((x,y) => PRIO.indexOf(x) - PRIO.indexOf(y));
