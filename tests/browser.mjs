@@ -633,11 +633,26 @@ test('Abwehr-Beinarbeit (Demo, Handy-Größe): Rufe, Reaktion, Richtung, gekreuz
       assert.ok(m.react >= d.d && m.react <= d.d + 0.3, `Ruf ${i+1}: Reaktion ${m.react} s, simuliert ${d.d} s`);
       assert.equal(m.ok, d.did === d.cmd && d.d < 1, `Ruf ${i+1}: richtig/falsch`);
       assert.equal(m.crossed, d.cross, `Ruf ${i+1}: Füße gekreuzt`);
+      if(d.stance) assert.deepEqual([m.foot, m.arm], [d.stance.foot, d.stance.arm], `Ruf ${i+1}: Stellung beim Heraustreten ${JSON.stringify({m, d})}`);
     });
+    assert.ok(e.base.wide > 0.8 && e.base.arms > 0.8 && e.base.upright > 0.8, `Grundposition ${JSON.stringify(e.base)}`);
     assert.ok(e.low > 0.8, `Grundstellung tief ${e.low}`);
     const said = await page.evaluate(() => __said);
-    assert.ok(said.includes('Grundstellung.'));
+    assert.ok(said.includes('Grundposition.'));
     assert.match(said.at(-1), new RegExp(`^Fertig\\. ${e.ok} von ${e.n} richtig\\. Reaktion im Schnitt \\d,\\d\\d Sekunden\\.`));
+  });
+
+  await t.test('Gegenspieler Linkshänder: Heraustreten mit rechtem Fuß und rechter Hand', async () => {
+    await page.click('#card [data-c=close]');
+    await page.click('#btnSetup');
+    await page.click('#setup [data-a=opp][data-v=L]');
+    assert.match(await page.textContent('#setup'), /rechte Fuß vorn und rechte Hand an seinen Wurfarm/);
+    const n0 = await page.evaluate(() => M.demo.demo.done.length);
+    await page.click('#setup [data-a=start]');
+    await until(page, () => M.st.log.length >= 2, null, 60000, 'zweite Runde');
+    const {e, done} = await page.evaluate(n => ({e:M.st.log[1], done:M.demo.demo.done.slice(n)}), n0);
+    e.moves.forEach((m, i) => { if(done[i].stance){ assert.equal(done[i].stance.lead, 'r'); assert.deepEqual([m.foot, m.arm], [done[i].stance.foot, done[i].stance.arm], `Ruf ${i+1} ${JSON.stringify({m, d:done[i]})}`); } });
+    assert.equal(e.opp, 'L');
   });
 
   await t.test('Ergebnis-Karte, Log, Bericht', async () => {

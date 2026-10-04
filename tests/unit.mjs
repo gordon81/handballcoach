@@ -273,7 +273,7 @@ test('Serie unter Ermüdung: Sprunghöhe Ende gegen Anfang, Übertritte', () => 
 });
 
 /* ---------- Abwehr-Beinarbeit (abwehr/js/rules.js) ---------- */
-import { judgeMove, nextCmd, summary as defSummary, TH_D } from '../abwehr/js/rules.js';
+import { judgeMove, judgeOut, baseFrame, leadSide, nextCmd, summary as defSummary, TH_D } from '../abwehr/js/rules.js';
 
 // Frontal, KL 200 px. Bewegung startet react s nach dem Ruf (t = 0), dauert 0,4 s: dx (px, + = im Bild rechts = links des Spielers), grow (Größe).
 function moveFrames({react = 0.4, dx = 0, grow = 0, cross = false}){
@@ -311,8 +311,8 @@ test('Abwehr: gekreuzte Füße, nächster Ruf, Zusammenfassung', () => {
   assert.notEqual(nextCmd(0, 0, ['raus', 'raus'], () => 0.5), 'raus', 'nicht dreimal dasselbe');
   const s = defSummary([{ok:true, react:0.4}, {ok:true, react:0.6, crossed:true}, {ok:false, react:1.2}], 0.5);
   assert.equal(s.avg, 0.5); assert.equal(s.ok, 2); assert.equal(s.crossed, 1);
-  assert.match(s.say, /^Fertig\. 2 von 3 richtig\. Reaktion im Schnitt 0,50 Sekunden\. Füße einmal gekreuzt\..*Tiefer in die Grundstellung/);
-  assert.doesNotMatch(defSummary([{ok:true, react:0.4}], 0.9).say, /Tiefer/);
+  assert.match(s.say, /^Fertig\. 2 von 3 richtig\. Reaktion im Schnitt 0,50 Sekunden\. Füße einmal gekreuzt\..*Körperschwerpunkt tiefer/);
+  assert.doesNotMatch(defSummary([{ok:true, react:0.4}], 0.9).say, /tiefer/);
 });
 
 /* ---------- Rückraum: Schritte zählen (aussenspieler/js/steps.js) ---------- */
@@ -485,4 +485,40 @@ test('Treffererkennung: Ball im getroffenen Ring, nicht daneben', () => {
   assert.equal(two.ring, null, 'zwei Ringe gleich stark: unklar, kein Treffer');
   assert.equal(circleMask(5).reduce((a, b) => a + b, 0), 9);
   assert.equal(speedKmh(7, 0.35), 72); assert.equal(speedKmh(7, 0.05), null);
+});
+
+// Stellung frontal, KL 200 px, Schultern bei x 450/550 (linke Schulter des Spielers im Bild rechts), Füße am Boden y 600.
+function stanceFrame({front = null, lead = 'l', armUp = true, width = 1.4, wristY = 380, torso = 120}){
+  const half = 50*width, st = 25;   // st: vorderer Fuß 25 px tiefer im Bild (näher an der Kamera)
+  const f = {t:0, bl:200, hip:{x:500, y:300 + torso}, lSh:{x:550, y:300}, rSh:{x:450, y:300},
+    lAnk:{x:500 + half, y:600 + (front === 'l' ? st : 0)}, rAnk:{x:500 - half, y:600 + (front === 'r' ? st : 0)},
+    lWr:{x:560, y:wristY}, rWr:{x:440, y:wristY}};
+  if(front && armUp) f[lead + 'Wr'] = {x:f[lead + 'Wr'].x, y:300};
+  return f;
+}
+const many = f => Array.from({length:10}, (_, i) => ({...f, t:i/30}));
+
+test('Abwehr (DHB): Heraustreten mit Fuß und Führarm auf der Wurfarmseite des Gegners', () => {
+  assert.equal(leadSide('R'), 'l', 'gegen Rechtshänder links'); assert.equal(leadSide('L'), 'r', 'gegen Linkshänder rechts');
+  const ok = judgeOut(many(stanceFrame({front:'l', lead:'l'})), 0, 1, 'R');
+  assert.deepEqual([ok.foot, ok.arm, ok.say], [true, true, '']);
+  const wf = judgeOut(many(stanceFrame({front:'r', lead:'l'})), 0, 1, 'R');
+  assert.equal(wf.foot, false); assert.equal(wf.say, 'Linker Fuß vor.');
+  const wa = judgeOut(many(stanceFrame({front:'l', lead:'l', armUp:false})), 0, 1, 'R');
+  assert.equal(wa.arm, false); assert.equal(wa.say, 'Linke Hand hoch zum Wurfarm.');
+  const lh = judgeOut(many(stanceFrame({front:'r', lead:'r'})), 0, 1, 'L');
+  assert.deepEqual([lh.foot, lh.arm], [true, true], 'gegen Linkshänder: rechts vorn');
+  assert.equal(judgeOut(many(stanceFrame({front:'l', lead:'l'})), 0, 1, 'L').foot, false, 'gegen Linkshänder links vorn ist falsch');
+  assert.equal(judgeOut(many(stanceFrame({})), 0, 1, 'R').why.includes('Füße nicht versetzt'), true);
+});
+
+test('Abwehr (DHB): Grundposition breit, Arme in Vorhalte, Oberkörper fast aufrecht', () => {
+  const stand = {torso:120};
+  assert.deepEqual(baseFrame(stanceFrame({}), stand), {wide:true, arms:true, upright:true});
+  assert.equal(baseFrame(stanceFrame({width:0.8}), stand).wide, false, 'schmaler als die Schultern');
+  assert.equal(baseFrame(stanceFrame({wristY:460}), stand).arms, false, 'Arme hängen unter der Hüfte');
+  assert.equal(baseFrame(stanceFrame({torso:80}), stand).upright, false, 'Oberkörper weit nach vorn gebeugt');
+  const s = defSummary([{ok:true, react:0.4, out:{foot:false, arm:true}}], 0.9, TH_D, {wide:0.5, arms:0.9, upright:0.4});
+  assert.match(s.say, /Heraustreten 0 von 1 mit richtiger Stellung\..*Beine etwas mehr als schulterbreit\..*Oberkörper fast aufrecht/);
+  assert.doesNotMatch(s.say, /Arme leicht angewinkelt/);
 });

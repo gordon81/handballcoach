@@ -60,7 +60,8 @@ export function drawFloor(){ g.drawImage(bg, 0, 0); }
 // Person P: {x, y, a (Blickrichtung, rad), phi (Schrittphase), s (Gehen 0–1), lift (Sprung, m), lf/rf (Fuß links/rechts hoch, m),
 // raise (Wurfarm hoch 0–1), swing (Wurf 0–1), twist (Oberkörper gegen Hüfte, rad), lean (rad), ball (Ball in der Hand)}.
 // Optional lfx/rfx: Fuß links/rechts nach vorn versetzt (m), z. B. Ausfallschritt beim 7-m-Wurf; lfy/rfy: Fuß nach rechts versetzt (m,
-// beim linken Fuß > 0,24 = Füße gekreuzt); low: Abwurf aus der Hüfte (0–1); fl: Fußhub beim Gehen/Laufen (m, Standard 0,1).
+// beim linken Fuß > 0,24 = Füße gekreuzt); low: Abwurf aus der Hüfte (0–1); fl: Fußhub beim Gehen/Laufen (m, Standard 0,1);
+// guard: Abwehr-Armhaltung {l, r} (Handgelenk gegenüber der Schulter, m).
 
 // Boden pixelweise: Strahl durch jedes Pixel mit dem Boden schneiden, Holz + Linien (mit Kantenglättung).
 function renderHall(){
@@ -148,6 +149,11 @@ export function joints(P, R){
   const elT = mix(add(add(sh, fws, 0.27), up, 0.15), add(add(add(sh, fws, 0.12), ls, 0.2*side), up, -0.22), lo);
   const wrT = mix(add(add(sh, fws, 0.5), up, 0.3), add(add(add(sh, fws, 0.42), ls, 0.25*side), up, -0.3), lo);
   j[thr+'El'] = mix(mix(elH, elR, P.raise), elT, P.swing); j[thr+'Wr'] = mix(mix(wrH, wrR, P.raise), wrT, P.swing);
+  // Abwehr: beide Arme in Vorhalte. P.guard = {l, r}: Höhe des Handgelenks gegenüber der eigenen Schulter (m, 0 = Schulterhöhe).
+  if(P.guard) for(const sd of ['l', 'r']){
+    const shp = j[sd+'Sh'], out = sd === 'l' ? 1 : -1, wr = add(add(add(shp, fws, 0.38), up, P.guard[sd]), ls, 0.06*out);
+    j[sd+'Wr'] = wr; j[sd+'El'] = add(add(mix(shp, wr, 0.5), up, -0.1), ls, 0.1*out);
+  }
   J = j; return j;
 }
 // Wurfhand (3D) der zuletzt berechneten Gelenke.

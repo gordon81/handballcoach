@@ -401,12 +401,25 @@ Schnelle Abwehrbewegung ohne Ball: seitlich verschieben, heraustreten und zurüc
 - Handy aufs Stativ, **frontal vor dir**, 4–5 m weg, etwa Hüfthöhe. Ganzer Körper im Bild und Platz für einen großen Schritt nach links, rechts, vorn und hinten. Zwei Hütchen ca. 3 m auseinander helfen.
 - **Start** drücken, in der Einrichtung die **Dauer** (30, 40 oder 60 s) und die **Kamera** wählen (Frontkamera, wenn du dich selbst sehen willst), dann **Runde starten**.
 
+### Die richtige Stellung (nach den Technikkriterien des DHB)
+
+Das Handy ist dein **Gegenspieler**. In der Einrichtung stellst du ein, mit welcher Hand er wirft: **Rechts**, **Links** oder **Wechselnd**.
+
+- **Grundposition:** Beine etwas mehr als schulterbreit und parallel, Hüfte und Knie gebeugt (Körperschwerpunkt tief), Oberkörper fast aufrecht, Arme leicht angewinkelt vor dem Körper.
+- **Heraustreten („Raus“):** zum Gegner heraus, mit versetzter Fußstellung. **Vorn steht der Fuß auf seiner Wurfarmseite**, und die Hand auf dieser Seite geht als „Führarm“ an seinen Wurfarm (etwa Schulterhöhe), die andere als „Sicherungsarm“ an seinen Oberkörper.
+  - **Gegen einen Rechtshänder:** linker Fuß vorn, linke Hand an seinen Wurfarm, rechte Hand an seinen Oberkörper.
+  - **Gegen einen Linkshänder:** rechter Fuß vorn, rechte Hand an seinen Wurfarm, linke Hand an seinen Oberkörper.
+- Seitlich mit Nachstellschritten verschieben, die Füße nicht kreuzen. Zwischen Gegner und eigenem Tor bleiben.
+
+Quellen und Unterschiede zwischen den Quellen: [`QUELLEN.md`](QUELLEN.md).
+
 ### Ablauf
 1. *„Stell dich aufrecht hin, Gesicht zum Handy.“* Kurz still stehen: die App misst deine Stand-Höhe.
-2. *„Grundstellung.“* Tief gehen, Knie gebeugt.
-3. Die App ruft **links**, **rechts**, **raus** (Richtung Handy) oder **zurück**. Die Richtungen gelten **aus deiner Sicht**. Das Wort steht auch groß im Bild. So schnell wie möglich in die Richtung verschieben. Ein tiefer Piep heißt: falsche Richtung, zu langsam oder keine Bewegung.
-4. Stehst du zu weit außen, ruft die App dich zur Mitte zurück.
-5. Am Ende: *„Fertig. 12 von 14 richtig. Reaktion im Schnitt 0,45 Sekunden.“* und, wenn nötig, *„Füße einmal gekreuzt …“* oder *„Tiefer in die Grundstellung …“*. Die Karte zeigt dasselbe mit **Nochmal** und **Fertig**.
+2. *„Grundposition.“* Wie oben beschrieben.
+3. Die App ruft **links**, **rechts**, **raus** (zum Handy) oder **zurück**. Die Richtungen gelten **aus deiner Sicht**. Bei „Wechselnd“ sagt sie beim Heraustreten dazu, ob der Gegner Rechts- oder Linkshänder ist (*„Raus, Linkshänder“*).
+4. Nach dem Heraustreten prüft die App die Stellung und korrigiert kurz, z. B. *„Linker Fuß vor.“* oder *„Linke Hand hoch zum Wurfarm.“* Ein tiefer Piep heißt: falsche Richtung, zu langsam oder keine Bewegung.
+5. Stehst du zu weit außen, ruft die App dich zur Mitte zurück.
+6. Am Ende: *„Fertig. 12 von 14 richtig. Reaktion im Schnitt 0,45 Sekunden. Heraustreten 3 von 4 mit richtiger Stellung.“* und, wenn nötig, Tipps wie *„Beine etwas mehr als schulterbreit.“* Die Karte zeigt dazu, wie viel der Zeit du breit, aufrecht und mit den Armen vorn standst.
 
 Richtig ist eine Bewegung in die gerufene Richtung, die innerhalb von 1 Sekunde beginnt. Die Reaktionszeit zählt vom Ruf bis zur ersten deutlichen Bewegung der Hüfte; wenn das Handy meldet, wann die Sprachausgabe wirklich anfängt, wird diese Verzögerung abgezogen.
 
@@ -414,7 +427,7 @@ Richtig ist eine Bewegung in die gerufene Richtung, die innerhalb von 1 Sekunde 
 **Log** zeigt jede Runde: richtig, Reaktion im Schnitt, wie oft die Füße gekreuzt waren, wie viel der Zeit du tief warst, und jeden Ruf einzeln. **Bericht teilen** schickt das als Text. Daten: localStorage `def-settings` und `def-log` (Demo: `def-demo-…`).
 
 ### Hallentest Abwehr
-Eine Runde machen und prüfen: stimmen links und rechts (auch mit der Frontkamera)? Sind die Reaktionszeiten plausibel? Kommt „gekreuzt“ nur, wenn du wirklich kreuzt? Danach werden die Grenzen eingestellt.
+Eine Runde machen und prüfen: stimmen links und rechts (auch mit der Frontkamera)? Sind die Reaktionszeiten plausibel? Kommt „gekreuzt“ nur, wenn du wirklich kreuzt? Dazu je 5× bewusst richtig und falsch heraustreten (falscher Fuß vorn, Führarm unten), gegen Rechts- und Linkshänder: stimmt die Korrektur? Danach werden die Grenzen eingestellt.
 
 ---
 
