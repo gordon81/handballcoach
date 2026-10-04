@@ -234,6 +234,17 @@ test('Winkel vergrößern: Flug nach innen gegen den Anlauf, Übertritt zählt n
   assert.equal(TASKS.angle.needCam, 'court', 'braucht Kameraposition 2');
 });
 
+test('Gegenstoß auf Zeit: Zeit vom Ruf bis zum Absprung, Technik muss stimmen', () => {
+  const at = (breakT, issues = [], line = -0.1) => judge('fastbreak', {issues, m:{breakT, line}});
+  assert.equal(at(null), null, 'ohne Ruf zählt nicht');
+  assert.equal(at(TH.taskBreakMax).ok, true, 'genau an der Grenze');
+  assert.match(at(TH.taskBreakMax + 0.1).say, /^4,1 Sekunden\. Schneller\.$/);
+  assert.equal(at(2, ['over'], 0.05).ok, false);
+  assert.equal(at(2, ['leg']).ok, false);
+  assert.equal(at(2).say, 'Geschafft. 2,0 Sekunden.');
+  assert.equal(TASKS.fastbreak.shout, true);
+});
+
 test('Serie unter Ermüdung: Sprunghöhe Ende gegen Anfang, Übertritte', () => {
   const t = TASKS.tired, j = (jump, issues = []) => ({issues, m:{jump, line:-0.1}});
   const keep = Array.from({length:20}, (_, i) => j(i < 15 ? 0.3 : 0.28));

@@ -11,7 +11,7 @@ import { recStart, recDrop, recFinish, recAge } from './clips.js';
 import { evaluate } from './analysis.js';
 import { showCard, clipReady } from './ui/card.js';
 import { renderLog } from './ui/logView.js';
-import { taskThrow, taskDone, taskCallInAir, taskCall, taskPause, onSeriesDone } from './taskRun.js';
+import { taskThrow, taskDone, taskCallInAir, taskCall, taskPause, taskShout, onSeriesDone } from './taskRun.js';
 
 const LABELS = {off:'Gestoppt', ready:'Bereit', runup:'Anlauf', air:'Sprung', cool:'Pause'};
 let H=[], visSince=null, lastSeen=-1, lastTarget=null;
@@ -29,12 +29,17 @@ function stateText(){
   const el = $('#state'), s = app.state; el.dataset.s = s;
   el.textContent = (s==='ready' && app.source==='file') ? 'Analyse aktiv'
     : callAt!==null && (s==='ready' || s==='cool') ? 'Zuruf gehört'
-    : s==='ready' && settings.mode==='call' && app.source==='cam' ? 'Warte auf Zuruf' : LABELS[s];
+    : s==='ready' && (settings.mode==='call' || taskShout()) && app.source==='cam' ? 'Warte auf Zuruf' : LABELS[s];
 }
 
 // Zuruf des Spielers (Mikrofon): Ziel nach zufälligen callMin…callMax Sekunden ansagen.
 // Nur wenn der Spieler gerade im Bild ist (in den letzten 2 s erkannt): Lärm von anderen Feldern zählt so nicht.
 export function heardCall(){
+  // Gegenstoß: der Ruf startet die Uhr und das Ziel kommt sofort; der Spieler ist dabei noch weit weg (nicht im Bild).
+  if(taskShout()){
+    if(app.source!=='cam' || app.marking || (app.state!=='ready' && app.state!=='cool')) return;
+    const now = performance.now()/1000; app.breakAt = now; quiet(0.3); beep(); announce(now); return;
+  }
   if(app.source!=='cam' || app.marking || settings.mode!=='call' || callAt!==null) return;
   if(app.state!=='ready' && app.state!=='cool') return;
   const now = performance.now()/1000;
@@ -123,7 +128,7 @@ function startAir(t){
   const win = H.filter(h => h.t >= tf.t-0.04 && h.t <= tf.t+0.08);
   const armF = win.reduce((b,h) => (h.wr.y-h.nose.y) < (b.wr.y-b.nose.y) ? h : b, tf);
   const late = app.pending ? callLate(t, tf.t) : null;
-  ev = {late, ga, runT:app.state==='runup' ? app.stateT : null, t0:tf.t, target:app.target, gy, base:baseMed, bl, foot, tf, armF, peak:Infinity, peakF:null, throwF:null, vmax:0, prevWr:null};
+  ev = {late, ga, breakAt:app.breakAt ?? null, runT:app.state==='runup' ? app.stateT : null, t0:tf.t, target:app.target, gy, base:baseMed, bl, foot, tf, armF, peak:Infinity, peakF:null, throwF:null, vmax:0, prevWr:null};
   for(let k=j; k<H.length; k++) airFrame(H[k], H[k].t, true);
   setState('air', t);
 }
@@ -154,12 +159,14 @@ function airFrame(f, t, replay){
 // Landung: Wurf bewerten, ansagen, speichern, anzeigen.
 function finish(t){
   const e = ev; ev = null; if(!e) return;
+  app.breakAt = null;
   const r = evaluate(e, t, H);
 
   if(!settings.session) ensureSession();
   settings.session.last = Date.now();
   const entry = {nr:(log.at(-1)?.nr || 0) + 1, sid:settings.session.id, target:e.target, res:r.res, issues:r.issues, good:r.good, praise:r.praise, main:r.main,
     tip:r.tip, rot:r.rot, noLine:r.noLine, m:r.m, hit:null, time:Date.now(), video:app.source==='file'};
+  if(e.breakAt != null) entry.m.breakT = Math.round((e.t0 - e.breakAt)*100)/100;   // Gegenstoß: Ruf → Absprung
   if(e.late){ entry.m.callDet = e.late.det; entry.m.callLag = e.late.speak; e.late.entry = entry; }
   say(taskThrow(entry) ?? r.speech, {queue:!!e.late});   // spätes Ziel nicht abschneiden
   log.push(entry); if(log.length > 1000) log.shift(); store();
@@ -206,9 +213,10 @@ function tick(t){
   }
   if(app.state==='cool' && t-app.stateT >= (app.source==='file' ? 0.6 : taskPause())) setState('ready', t);
   else if(app.state==='ready' && app.source==='cam' && !app.marking && t >= (app.holdUntil || 0)){
-    if(settings.mode==='call'){ if(callAt!==null && t >= callAt){ callAt = null; announce(t); } }
+    if(taskShout()){}   // Gegenstoß: nur der Ruf startet (heardCall)
+    else if(settings.mode==='call'){ if(callAt!==null && t >= callAt){ callAt = null; announce(t); } }
     else if(settings.mode==='timer'){ if(t-app.stateT >= 1.5) announce(t); }
     else if(visSince!==null && t-visSince >= 0.6 && t-app.stateT >= 0.5 && standing(t)) announce(t);
   }
-  else if(app.state==='runup' && t-app.stateT > 8){ app.target=null; app.pending=null; hudTarget(null); setState('ready', t); }
+  else if(app.state==='runup' && t-app.stateT > (taskShout() ? 12 : 8)){ app.target=null; app.pending=null; app.breakAt=null; hudTarget(null); setState('ready', t); }
 }

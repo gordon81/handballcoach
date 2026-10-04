@@ -126,7 +126,7 @@ function render(){
       </ul>
       ${wizard.msg ? `<p class="muted">${esc(wizard.msg)}</p>` : ''}
       <div class="btnrow">${btn('wizard','Linie ablaufen')}${btn('tap','Linie antippen')}${line ? btn('fix','Korrigieren') + btn('clear','Löschen') : ''}</div>
-      ${isCam && settings.mode==='call' ? micBlock() : ''}
+      ${isCam && (settings.mode==='call' || chosenTask()?.shout) ? micBlock() : ''}
       ${isCam && app.state==='off' ? `<button class="wide primaryBtn" data-a="start" ${line ? '' : 'disabled'}>${chosenTask() ? 'Aufgabe starten' : line && cam?.status==='ok' ? 'Mit dieser Linie starten' : 'Training starten'}</button>` : ''}`;
   }
   box.innerHTML = h;

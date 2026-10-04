@@ -19,6 +19,8 @@ export function onSeriesDone(){
   if(app.task?.done && app.state!=='off') onStop();
   if(pendingEnd){ const p = pendingEnd; pendingEnd = null; showEnd(...p); }
 }
+// Aufgabe startet jeden Wurf mit einem Ruf des Spielers (Gegenstoß): Mikrofon an, keine Ansage ohne Ruf.
+export const taskShout = () => !!(app.task && !app.task.done && TASKS[app.task.id].shout);
 // Aufgabe sagt das Ziel erst beim Absprung an?
 export const taskCallInAir = () => !!(app.task && !app.task.done && TASKS[app.task.id].callInAir);
 // Vorsatz vor dem Ziel („Hoch“ / „Hüfte“) oder null. Der gewählte steht bis zum Wurf in app.task.call.

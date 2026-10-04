@@ -3,12 +3,14 @@ import { app } from './state.js';
 import { settings } from './store.js';
 import { showHint } from './dom.js';
 import { mic, startMic, stopMic } from './shout.js';
+import { taskShout } from './taskRun.js';
+import { TASKS } from './tasks.js';
 
 // test: Mikro-Test in der Einrichtung (Mikro an, auch ohne Training).
 export const micUse = {test:false};
 
 export async function syncMic(){
-  const want = settings.mode==='call' && app.source==='cam' && (app.state!=='off' || micUse.test);
+  const want = (settings.mode==='call' || taskShout() || (micUse.test && TASKS[settings.task]?.shout)) && app.source==='cam' && (app.state!=='off' || micUse.test);
   if(!want){ stopMic(); return; }   // stoppt auch einen Start, der noch auf die Erlaubnis wartet
   if(mic.on) return;
   try{ await startMic(); }

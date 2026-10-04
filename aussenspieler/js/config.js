@@ -47,6 +47,8 @@ export const TH = {jumpHigh:0.25, jumpMid:0.17, rot:25, rotWrongSide:35, leanUpr
   taskTiredKeep:0.9,
   // Aufgabe „Winkel vergrößern“: Flug im Bild mindestens so viel Grad gegen den Anlauf nach innen gedreht.
   taskFlyAng:20,
+  // Aufgabe „Gegenstoß auf Zeit“: höchstens so viele Sekunden vom Ruf bis zum Absprung (persönlich, nach dem Hallentest anpassen).
+  taskBreakMax:4.0,
   // Rückraum: Abwurf höchstens so weit (s) vom höchsten Punkt der Hüfte (im Demo: sauber ≤ 0,03 s, zu spät 0,18 s); Schritte vor dem Absprung (Bodenkontakte), die als Rhythmus gelten.
   peakDt:0.15, steps:3};
 // Abweichende Grenzen je Kameraposition (sonst TH). Position 2 sieht den Sprung von der Seite und misst ihn größer:

@@ -426,6 +426,26 @@ test('Aufgabe „Winkel vergrößern“ (Kameraposition 2): Flug nach innen gege
   await page.close();
 });
 
+test('Aufgabe „Gegenstoß auf Zeit“: Ruf startet die Uhr, Ziel sofort, Zeit bis zum Absprung', {timeout:200000}, async t => {
+  const {page, errors} = await demoPage({pause:1, task:'fastbreak'});
+  await page.evaluate(() => { M.tasks.TASKS.fastbreak.reps = 4; M.tasks.TASKS.fastbreak.goal = 2; });
+  await page.click('#btnStart');
+  await walkLine(page);
+  assert.ok(await page.isVisible('#setup .mictest'), 'Mikro-Test in der Einrichtung');
+  await page.click('#setup [data-a=start]');
+  assert.ok(await page.evaluate(() => M.shout.mic.on), 'Mikro an (auch ohne Modus „Zuruf“)');
+  await until(page, () => M.store.log.length >= 4, null, 120000, '4 Würfe');
+  const log = await page.evaluate(() => M.store.log.map(e => ({ok:e.task?.ok, why:e.task?.why, b:e.m.breakT})));
+  assert.deepEqual(log.map(e => e.ok), [true, false, true, false], JSON.stringify(log));
+  assert.ok(log[0].b > 1.5 && log[0].b < 3, `schnell ${log[0].b} s`);
+  assert.ok(log[1].b > 4.5, `langsam ${log[1].b} s`);
+  assert.match(log[3].why, /^Übertritt/);
+  await until(page, () => !document.querySelector('#taskEnd').hidden, null, 5000, 'Ende-Karte');
+  assert.equal(await page.evaluate(() => M.shout.mic.on), false, 'Mikro nach der Serie aus');
+  assert.deepEqual(errors, [], 'Fehler in der Browser-Konsole');
+  await page.close();
+});
+
 test('Rückraum-Modus (?rr=1): 9-m-Linie, Dreischritt, Abwurf im höchsten Punkt, eigener Speicher', {timeout:200000}, async t => {
   const page = await browser.newPage({viewport:{width:1280, height:800}});
   const errors = []; page.on('pageerror', e => errors.push(e.message));

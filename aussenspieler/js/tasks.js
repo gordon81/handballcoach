@@ -18,6 +18,9 @@ export const TASKS = {
   angle: {id:'angle', name:'Winkel vergrößern', short:'Kameraposition 2 (Feld mit Tor). Im Sprung Richtung Tormitte fliegen, nicht geradeaus.',
     intro:'Aufgabe Winkel vergrößern. Flieg im Sprung Richtung Tormitte, damit der Wurfwinkel größer wird. Ich sage dir nach jedem Wurf, ob du genug nach innen geflogen bist.',
     reps:10, goal:7, needCam:'court'},
+  fastbreak: {id:'fastbreak', name:'Gegenstoß auf Zeit', short:'Weit weg starten (z. B. Mittellinie) und beim Loslaufen laut rufen. Gemessen wird die Zeit vom Ruf bis zum Absprung.',
+    intro:'Aufgabe Gegenstoß auf Zeit. Stell dich weit weg, zum Beispiel an die Mittellinie. Ruf laut, wenn du losläufst, dann sage ich das Ziel. Ich messe die Zeit bis zum Absprung.',
+    reps:5, goal:4, shout:true},
   tired: {id:'tired', name:'Serie unter Ermüdung', short:'20 Würfe mit nur 2 s Pause. Die Sprunghöhe soll bis zum Ende halten, kein Übertritt.',
     intro:'Aufgabe Serie unter Ermüdung. Zwanzig Würfe mit kurzer Pause. Halte die Sprunghöhe bis zum Schluss und tritt nicht über.',
     reps:20, goal:null, pause:2}
@@ -66,6 +69,14 @@ export function judge(id, entry, th = TH, prev = []){
     // Der Winkel im Bild ist kein echter Winkel in der Halle (Perspektive): nur „gerade“ oder „nach innen“ ansagen.
     if(m.flyAng < (th.taskFlyAng ?? TH.taskFlyAng)) return {ok:false, why:'Zu gerade geflogen', say:'Zu gerade. Mehr Richtung Tormitte.'};
     return {ok:true, why:'Nach innen geflogen', say:'Geschafft. Gut nach innen.'};
+  }
+  if(id==='fastbreak'){
+    if(m.breakT == null) return null;   // ohne Ruf geworfen: zählt nicht
+    const s = m.breakT.toFixed(1).replace('.', ',');
+    if(is('over') || m.line > 0) return {ok:false, why:`Übertritt (${s} s)`, say:`Übertritt. ${s} Sekunden.`};
+    if(is('leg')) return {ok:false, why:`Falsches Sprungbein (${s} s)`, say:`Falsches Bein. ${s} Sekunden.`};
+    if(m.breakT > (th.taskBreakMax ?? TH.taskBreakMax)) return {ok:false, why:`${s} s, zu langsam`, say:`${s} Sekunden. Schneller.`};
+    return {ok:true, why:`${s} s`, say:`Geschafft. ${s} Sekunden.`};
   }
   if(id==='tired'){
     if(is('over') || m.line > 0) return {ok:false, why:'Übertritt', say:'Übertritt.'};

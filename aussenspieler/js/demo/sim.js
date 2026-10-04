@@ -71,8 +71,11 @@ function behave(dt){
   }
   if(ph==='inside'){ const T = linePt(walkTh ?? w1, G.inside); if(moveTo(T, 0.8, dt, 0.6)) stand(dt); return; }
   if(app.state==='runup' && !app.marking){ called = false; startShot(); return; }
-  if(moveTo(S, app.state==='cool' ? 2 : 1.4, dt)){
+  // Gegenstoß: weit weg starten (11 m vor der Linie) und beim Loslaufen rufen.
+  const fb = app.task?.id==='fastbreak' && !app.task.done, home = fb ? onLine(G.th, 11) : S;
+  if(moveTo(home, app.state==='cool' ? 3 : 1.4, dt)){
     stand(dt, toward(faceTo));
+    if(fb && app.state==='ready' && !called){ readyFor += dt; if(readyFor > 0.6){ called = true; demo.calls.push(performance.now()); shoutNow(); } }
     // Modus „Zuruf“: am Startpunkt kurz stehen, dann rufen (einmal pro Wurf).
     if(app.state==='ready' && settings.mode==='call' && !called && autoCall){ readyFor += dt; if(readyFor > 0.8){ called = true; demo.calls.push(performance.now()); shoutNow(); showHint('Demo: Spieler ruft „Hey!“', 1200); } }
   }
@@ -91,6 +94,8 @@ export const VAR_RR = [{dr:0.4, h:0.5, arm:1, steps:3}, {dr:0.4, h:0.5, arm:1, s
 // height: folgt der Ansage „Hoch“/„Hüfte“ (follow) oder macht absichtlich das Gegenteil. tired: Sprung wird ab Wurf 3 flacher.
 export const TASK_VAR = {line:[{dr:0.25, h:0.5, arm:1}, {dr:1.0, h:0.5, arm:1}, {dr:-0.15, h:0.45, arm:1}, {dr:0.35, h:0.45, arm:1}],
   height:[{dr:0.3, h:0.5, arm:1, follow:true}, {dr:0.3, h:0.5, arm:1, follow:true}, {dr:0.3, h:0.5, arm:1, follow:false}, {dr:0.3, h:0.5, arm:1, follow:true}],
+  // fastbreak: aus 11 m Entfernung, schnell (v m/s), langsam, schnell, Übertritt.
+  fastbreak:[{dr:0.3, h:0.5, arm:1, v:5.5}, {dr:0.3, h:0.5, arm:1, v:2.0}, {dr:0.3, h:0.5, arm:1, v:5.5}, {dr:-0.15, h:0.45, arm:1, v:5.5}],
   // angle: Flug Richtung Tormitte (in), geradeaus, Richtung Tormitte, Übertritt.
   angle:[{dr:0.3, h:0.5, arm:1, fly:'in'}, {dr:0.3, h:0.5, arm:1}, {dr:0.3, h:0.5, arm:1, fly:'in'}, {dr:-0.15, h:0.5, arm:1, fly:'in'}],
   tired:[{dr:0.3, h:0.5, arm:1}, {dr:0.3, h:0.5, arm:1}, {dr:0.3, h:0.32, arm:1}, {dr:0.3, h:0.3, arm:1}]};
@@ -109,7 +114,7 @@ function shotStep(dt){
   if(s.stage==='run'){
     const d = Math.hypot(s.K[0]-P.x, s.K[1]-P.y);
     P.raise = Math.min(s.arm, Math.max(P.raise, 1.4 - d));   // Arm hoch in den letzten Schritten
-    const arrived = moveTo(s.K, 3.2, dt, s.stride || 1.3);
+    const arrived = moveTo(s.K, s.v || 3.2, dt, s.stride || 1.3);
     // Letzter Schritt: Sprungbein (links bei Rechtshand) steht, Schwungbein-Knie kommt hoch.
     if(d < 0.8){ P.phi = R ? Math.PI : 0; const k = 0.3*(1 - d/0.8); if(R) P.rf = k; else P.lf = k;
     }

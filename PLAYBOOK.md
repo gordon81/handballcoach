@@ -73,7 +73,7 @@ Heute bewertet die App jeden Wurf, stellt aber keine **Aufgabe** mit Ziel. Für 
 - **Prüfbar:** ●●● (Verlauf der vorhandenen Messwerte).
 - **Baut auf:** Log, Messwerte, Bericht (Verlaufslinie dazu). **Aufwand S.**
 
-### A6 · Gegenstoß-Abschluss auf Zeit
+### A6 · Gegenstoß-Abschluss auf Zeit ✅ gebaut (Aufgabe)
 - **Ziel:** schnell laufen und trotzdem sauber abschließen.
 - **Ablauf:** Spieler startet weit weg (außerhalb des Bildes, z. B. Mittellinie), ruft beim Loslaufen. Die App misst die Zeit vom Ruf bis zum Absprung.
 - **Erfolg:** Zeit unter einer persönlichen Grenze (z. B. 4,0 s) **und** sauberer Wurf.
@@ -165,7 +165,7 @@ Heute bewertet die App jeden Wurf, stellt aber keine **Aufgabe** mit Ziel. Für 
 7. [x] **B5 Abwehr-Beinarbeit** ✅ (ohne Ball, mit C5 Reaktionszeit). **M**
 8. [x] **B2 Rückraum-Sprungwurf** ✅ (großteils Außenwurf-Coach mit 9-m-Linie und Schrittzählung). **M**
 9. [x] **C2 Ballaufprall per Mikro** ✅, dann **B4 Pässe gegen die Wand** ✅. **M**
-10. [ ] **A4 Winkel vergrößern** ✅, **A6 Gegenstoß auf Zeit**, **B3 Kreisläufer**, **B6 Sprungkraft**. **S–M**
+10. [ ] **A4 Winkel vergrößern** ✅, **A6 Gegenstoß auf Zeit** ✅, **B3 Kreisläufer**, **B6 Sprungkraft**. **S–M**
 11. [ ] **C1 Treffererkennung** und **B7 Wurfgeschwindigkeit**. **L / M**, erst wenn der Rest in der Halle läuft.
 
 Jede neue Übung bekommt einen Demo-Ablauf in `demo/sim.js` und einen Test in `tests/browser.mjs`, wie der Außenwurf-Coach heute.
