@@ -159,8 +159,11 @@ function behave(dt){
 // Sprungwurf: Anlauf, Absprung links (Rechtshänder), Ausholen, Drehung, Wurf, Landung.
 // Ab und zu ein Fehler: Übertritt, flacher Sprung, Arm unten.
 const VAR = [{r:6.3, h:0.5, arm:1}, {r:6.25, h:0.45, arm:1}, {r:5.85, h:0.45, arm:1}, {r:6.3, h:0.28, arm:0.45}];
+// Eigene Wurf-Folgen je Aufgabe (settings.task), damit Tests wissen, was herauskommen muss.
+// line: nah an der Linie (geschafft), zu weit weg, Übertritt, nah.
+export const TASK_VAR = {line:[{r:6.25, h:0.5, arm:1}, {r:7.0, h:0.5, arm:1}, {r:5.85, h:0.45, arm:1}, {r:6.35, h:0.45, arm:1}]};
 function startShot(){
-  const v = VAR[shotNo++ % VAR.length];
+  const vs = (app.task && TASK_VAR[app.task.id]) || VAR, v = vs[shotNo++ % vs.length];
   shot = {...v, stage:'run', t:0, K:linePt(150, v.r)};
 }
 function shotStep(dt){

@@ -129,7 +129,24 @@ Erscheint in der Einrichtung, wenn in den Einstellungen „Ansage: Nach Zuruf“
 4. Empfindlichkeit direkt darunter anpassen: **Laute Halle** (braucht lauteren Ruf), **Mittel**, **Leise Halle**.
 5. „Test beenden“ oder Training starten (der Test endet dann automatisch).
 
-### 4.5 Training starten
+### 4.5 Übung wählen: freies Training oder Aufgabe
+
+Ganz oben in der Einrichtung steht **Übung**:
+- **Freies Training** (Standard): Würfe mit Zielansage und Technik-Feedback, ohne feste Anzahl.
+- **Absprung an der Linie:** 10 Würfe, so nah wie möglich an der 6-m-Linie abspringen, ohne überzutreten. Geschafft ist ein Wurf, wenn der Fuß beim Absprung höchstens ca. 30 cm vor der Linie ist und nicht übertritt. Die Aufgabe ist geschafft bei **7 von 10**.
+
+Unter der Auswahl stehen kurz die Regeln und, sobald es sie gibt, **Bestwert** und **letztes Ergebnis**. Der Start-Button heißt dann „Aufgabe starten“.
+
+So läuft eine Aufgabe:
+1. Die App liest die Aufgabe vor, danach kommt die erste Zielansage.
+2. Oben rechts steht groß, der wievielte Wurf es ist („3/10“), darunter wie viele geschafft sind und das Ziel.
+3. Nach jedem Wurf sagt die App das Ergebnis an, z. B. *„Geschafft. 15 Zentimeter vor der Linie. Noch 7.“* oder *„40 Zentimeter vor der Linie. Näher ran.“* oder *„Übertritt.“* Die Ergebnis-Karte zeigt es oben in Grün/Rot, darunter wie gewohnt die Technik.
+4. Nach dem letzten Wurf: *„Aufgabe geschafft: 8 von 10.“* bzw. *„6 von 10. Ziel war 7.“* Das Training stoppt, eine große Karte zeigt das Ergebnis mit **Nochmal** (gleich die nächste Serie) und **Fertig**.
+5. **Stopp** mitten in der Serie bricht sie ab; sie zählt dann nicht im Verlauf.
+
+Die cm-Angaben sind Schätzungen aus dem Kamerabild (siehe Messwerte). Aufgaben gibt es nur mit Kamera, nicht bei Videodateien.
+
+### 4.6 Training starten
 
 „Training starten“ bzw. „Mit dieser Linie starten“. Die App sagt *„Los geht's“*. Ab jetzt läuft der Wurfzyklus (Abschnitt 5). **Stopp** beendet das Training, Mikrofon und Bildschirm-wach gehen aus.
 
@@ -213,6 +230,7 @@ Aus Videodateien werden keine eigenen Clips aufgenommen. Die Würfe landen aber 
 
 Das Fenster „Training“ zeigt **das aktuelle Training**:
 - Zusammenfassung: Anzahl Würfe, davon technisch sauber, Drehung im Schnitt,
+- **Aufgaben:** jede Serie in diesem Training mit Ergebnis („8 von 10, geschafft“), bei den Würfen steht „Aufgabe ✓/✗“ und der Grund,
 - **Stärken** (ab 3 Würfen) und **Daran arbeiten** (die 3 häufigsten Fehler mit Tipp und Übung),
 - **Ziele:** Technik ok und Treffer je Ziel,
 - **Würfe:** neueste oben, mit Lob, Hauptfehler, **Messwerten** und **▶︎ Video**.
@@ -246,7 +264,7 @@ Die App schreibt **keine Log-Dateien** und schickt nichts an einen Server. Alles
 
 | Was | Wo im Browser | Name | Umfang | Löschen in der App |
 |---|---|---|---|---|
-| Einstellungen, 6-m-Linien (je Kameraposition, mit Referenzbild), aktuelles Training | localStorage | `awc-settings` | wenige KB | Linie: „Löschen“ in der Einrichtung / „6-m-Linie löschen“; Einstellungen: nur über die Browser-Daten |
+| Einstellungen, 6-m-Linien (je Kameraposition, mit Referenzbild), aktuelles Training, gewählte Übung, Verlauf der Aufgaben (je Aufgabe die letzten 30 Serien) | localStorage | `awc-settings` | wenige KB | Linie: „Löschen“ in der Einrichtung / „6-m-Linie löschen“; Einstellungen: nur über die Browser-Daten |
 | Wurf-Log (alle Würfe mit Bewertung, Treffer, Messwerten) | localStorage | `awc-log` | die letzten 1000 Würfe | „Gesamtes Log löschen“ |
 | Wurf-Videos | IndexedDB | Datenbank `awc-clips` | die letzten **60** Videos (ca. 20 MB), ältere werden automatisch gelöscht | „Gesamtes Log löschen“ (löscht Log **und** Videos) |
 | Demo-Modus | localStorage / IndexedDB | `awc-demo-settings`, `awc-demo-log`, `awc-demo-clips` | wie oben | wie oben, im Demo-Modus |
@@ -298,6 +316,7 @@ Die Grenzwerte der Prüfungen sind bisher nur im Demo geprüft. Beim ersten Hall
 5. **Auswerten:** im Log die Messwerte pro Wurf ansehen (Zweifelsfälle mit „▶︎ Video“ prüfen) und „Bericht als Datei“ teilen; der Bericht enthält die Tabelle „Messwerte“.
 6. **Grenzen anpassen:** zwischen die Werte der guten und der bewusst schlechten Würfe legen (im Code `TH` bzw. `TH_POS.court` in `aussenspieler/js/config.js`, siehe `brain.md`). Beim Übertritt zuerst die Linie prüfen, wenn echte Übertritte nur knapp im Plus oder saubere Absprünge im Plus liegen.
 7. Beide Kamerapositionen getrennt testen (Spalte „Kamera“ im Bericht).
+8. **Aufgabe „Absprung an der Linie“:** Klebeband 10, 20, 30 und 40 cm vor die Linie kleben, an jedem ein paar Mal abspringen und notieren, was die App ansagt. Passen die cm nicht, wird die Grenze (heute ca. 30 cm) im Code angepasst.
 
 ---
 

@@ -11,7 +11,7 @@ export const L = {nose:0,lSh:11,rSh:12,lEl:13,rEl:14,lWr:15,rWr:16,lHip:23,rHip:
 // Verbindungen für das gezeichnete Skelett.
 export const BONES = [[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28],[27,29],[29,31],[27,31],[28,30],[30,32],[28,32]];
 
-export const DEF = {hand:'R', pos:'LA', camPos:'base', lines:{}, mode:'auto', pause:4, callMin:1, callMax:5, sens:'mid', clips:true, camera:'environment', model:'lite', line:null, session:null,
+export const DEF = {hand:'R', pos:'LA', camPos:'base', lines:{}, mode:'auto', pause:4, callMin:1, callMax:5, sens:'mid', clips:true, camera:'environment', model:'lite', line:null, session:null, task:'free', taskHist:{},
   targets:[{name:'Orange kurz',on:true},{name:'Orange lang',on:true},{name:'Blau kurz',on:true},{name:'Blau lang',on:true}]};
 
 // Kamerapositionen (Einrichtung). Jede Position hat ihre eigene 6-m-Linie (settings.lines).
@@ -22,7 +22,9 @@ export const CAM_POS = {
 
 // Grenzwerte der Prüfungen in Körperlängen (KL = Schulter–Knöchel) bzw. Grad. Nach den ersten Hallentests
 // anpassen: die Messwerte jedes Wurfs stehen im Training-Fenster und im Bericht (siehe brain.md, Kalibrieren).
-export const TH = {jumpHigh:0.25, jumpMid:0.17, rot:25, rotWrongSide:35, leanUpright:15, leanForward:25, leanStrong:35};
+export const TH = {jumpHigh:0.25, jumpMid:0.17, rot:25, rotWrongSide:35, leanUpright:15, leanForward:25, leanStrong:35,
+  // Aufgabe „Absprung an der Linie“: geschafft, wenn der Fuß höchstens so weit vor der Linie abspringt (KL, ~30 cm).
+  taskLineFar:-0.2};
 // Abweichende Grenzen je Kameraposition (sonst TH). Position 2 sieht den Sprung von der Seite und misst ihn größer:
 // auf Position 1 läuft der Spieler in der Luft auf die erhöhte Kamera zu, die Hüfte sinkt im Bild (im Demo ~1,5× weniger).
 export const TH_POS = {court:{jumpHigh:0.36, jumpMid:0.30}};
@@ -30,4 +32,4 @@ export const TH_POS = {court:{jumpHigh:0.36, jumpMid:0.30}};
 export const KL_CM = 140;
 
 // Demo-Modus (gezeichnete Halle, simulierte Person statt Kamera und KI): Seite mit ?demo=1 öffnen.
-export const DEMO = new URLSearchParams(location.search).has('demo');
+export const DEMO = new URLSearchParams(globalThis.location?.search ?? '').has('demo');   // ohne location (Node-Tests): kein Demo

@@ -236,6 +236,79 @@ test('Demo Kameraposition 2 (Feld, Tor im Bild): Linie, Würfe, eigene Linie je 
   await page.close();
 });
 
+// Neue Seite im Demo-Modus mit frischem Speicher; init = Start-Einstellungen. Ansagen landen in window.__said.
+async function demoPage(init, viewport = {width:1280, height:800}){
+  const page = await browser.newPage({viewport});
+  const errors = []; page.on('pageerror', e => errors.push(e.message));
+  page.on('console', m => { if(m.type()==='error') errors.push(m.text()); });
+  await page.addInitScript(init => { window.__said = []; if(!sessionStorage.getItem('init')){ sessionStorage.setItem('init', '1'); localStorage.clear(); localStorage.setItem('awc-demo-settings', JSON.stringify(init)); } }, init);
+  await page.goto(srv.url + 'aussenspieler/?demo=1');
+  await modules(page);
+  await page.evaluate(async () => { M.tasks = await import('/aussenspieler/js/tasks.js'); });
+  return {page, errors};
+}
+async function walkLine(page){
+  await page.click('#setup [data-a=wizard]');
+  await until(page, () => M.store.settings.line?.pts?.length >= 2, null, 90000, 'Linie gespeichert');
+}
+// Höhe der sichtbaren Buttons in einem Bereich (Tipp-Flächen am Handy).
+const minHeight = (page, sel) => page.$$eval(sel, els => Math.min(...els.filter(e => e.offsetParent).map(e => e.getBoundingClientRect().height)));
+
+test('Aufgabe „Absprung an der Linie“ (Handy-Größe): Zähler, Ansagen, Ende, Log, Bericht', {timeout:200000}, async t => {
+  const {page, errors} = await demoPage({pause:1}, {width:390, height:800});
+  await page.evaluate(() => { M.tasks.TASKS.line.reps = 4; M.tasks.TASKS.line.goal = 2; });
+
+  await t.test('Aufgabe in der Einrichtung wählen', async () => {
+    await page.click('#btnStart');
+    await page.click('#setup [data-a=task][data-v=line]');
+    assert.equal(await page.evaluate(() => M.store.settings.task), 'line');
+    assert.match(await page.textContent('#setup'), /4 Würfe, geschafft bei 2/);
+    assert.ok(await minHeight(page, '#setup .tasks button') >= 44, 'Aufgaben-Buttons groß genug');
+    await walkLine(page);
+    assert.match(await page.textContent('#setup [data-a=start]'), /Aufgabe starten/);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'kein Querscrollen');
+  });
+
+  await t.test('4 Würfe: nah, zu weit, Übertritt, nah', async () => {
+    await page.click('#setup [data-a=start]');
+    assert.match(await page.evaluate(() => __said.at(-1)), /^Aufgabe Absprung an der Linie/, 'Anleitung statt „Los geht’s“');
+    assert.equal(await page.textContent('#taskBox b'), '1/4');
+    await until(page, () => M.store.log.length >= 4, null, 90000, '4 Würfe');
+    const log = await page.evaluate(() => M.store.log.map(e => ({ok:e.task?.ok, why:e.task?.why, line:e.m.line})));
+    assert.deepEqual(log.map(e => e.ok), [true, false, false, true], JSON.stringify(log));
+    assert.match(log[1].why, /zu weit weg/); assert.equal(log[2].why, 'Übertritt');
+    const said = await page.evaluate(() => __said);
+    assert.ok(said.some(x => /^Geschafft\. .*Noch 3\.$/.test(x)), said.join(' | '));
+    assert.ok(said.some(x => /Näher ran\. Noch 2\./.test(x)), said.join(' | '));
+    assert.ok(said.some(x => /Aufgabe geschafft: 2 von 4\./.test(x)), said.join(' | '));
+  });
+
+  await t.test('Ende: Karte mit Ergebnis, Training gestoppt, Verlauf gespeichert', async () => {
+    await until(page, () => !document.querySelector('#taskEnd').hidden && M.app.state==='off', null, 5000, 'Ende-Karte, gestoppt');
+    assert.match(await page.textContent('#taskEnd'), /2 von 4[\s\S]*Aufgabe geschafft/);
+    assert.ok(await minHeight(page, '#taskEnd button') >= 48, 'Nochmal/Fertig groß genug');
+    const h = await page.evaluate(() => M.store.settings.taskHist.line);
+    assert.equal(h.length, 1); assert.deepEqual([h[0].hits, h[0].n, h[0].passed], [2, 4, true]);
+    await page.click('#btnLog');
+    assert.match(await page.textContent('#logBody'), /Aufgaben[\s\S]*Absprung an der Linie 2 von 4/);
+    await page.click('#logSheet [data-close]');
+    const rep = await page.evaluate(async () => { const r = await import('/aussenspieler/js/report.js'); return {text:r.reportText(), html:r.reportHTML()}; });
+    assert.match(rep.text, /Aufgaben:\n- Absprung an der Linie: 2 von 4 \(Ziel 2\) geschafft/);
+    assert.match(rep.html, /<h2>Aufgaben<\/h2>/); assert.match(rep.html, /✗ Übertritt/);
+  });
+
+  await t.test('Nochmal startet eine neue Serie', async () => {
+    await page.click('#taskEnd [data-t=again]');
+    await until(page, () => M.app.state!=='off' && M.app.task && !M.app.task.done, null, 5000, 'neue Serie');
+    assert.equal(await page.textContent('#taskBox b'), '1/4');
+    await page.click('#btnStart');   // Stopp mitten in der Serie: Zähler weg
+    assert.equal(await page.isVisible('#taskBox'), false);
+  });
+
+  assert.deepEqual(errors, [], 'Fehler in der Browser-Konsole');
+  await page.close();
+});
+
 test('Mikrofon: Rufe erkannt, Lärm nicht (Fake-Mikrofon)', {timeout:120000}, async t => {
   const page = await browser.newPage();
   await page.goto(srv.url + 'aussenspieler/');

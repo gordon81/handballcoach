@@ -8,5 +8,8 @@ export const app = {
   target: null,     // aktuell angesagtes Ziel
   latest: null,     // letzter erkannter Frame (fürs Zeichnen)
   marking: null,    // Punkte, während die 6-m-Linie markiert wird
-  markStep: null    // 'line' (Punkte auf der Linie) | 'inside' (Punkt im Torraum)
+  markStep: null,   // 'line' (Punkte auf der Linie) | 'inside' (Punkt im Torraum)
+  pending: null,    // Ziel, das erst beim Absprung angesagt wird (Aufgabe „Entscheidung in der Luft“)
+  task: null,       // laufende Aufgaben-Serie {id, run, entries[], done} (taskRun.js), null = freies Training
+  holdUntil: 0      // keine Zielansage vor diesem Zeitpunkt (Anleitung der Aufgabe wird noch gesprochen)
 };

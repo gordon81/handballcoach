@@ -81,3 +81,60 @@ test('Empfindlichkeit: leiser Ruf nur bei „hoch“', () => {
   assert.equal(run(seq, {sens:'mid'}).length, 0);
   assert.equal(run(seq, {sens:'low'}).length, 0);
 });
+
+/* ---------- Aufgaben (js/tasks.js) ---------- */
+import { TASKS, judge, tally, repSpeech, endSpeech, addHistory, best, lineCm } from '../aussenspieler/js/tasks.js';
+import { TH } from '../aussenspieler/js/config.js';
+
+const throwAt = (line, issues = []) => ({issues, m:{line}});
+
+test('Absprung an der Linie: Fenster bis ~30 cm vor der Linie, Übertritt zählt nie', () => {
+  const far = TH.taskLineFar;
+  assert.equal(judge('line', throwAt(-0.05)).ok, true);
+  assert.equal(judge('line', throwAt(0)).ok, true, 'genau auf der Linie, aber kein Übertritt');
+  assert.equal(judge('line', throwAt(far)).ok, true, 'genau an der Grenze');
+  assert.equal(judge('line', throwAt(far - 0.01)).ok, false, 'knapp zu weit weg');
+  assert.match(judge('line', throwAt(far - 0.1)).say, /Näher ran/);
+  assert.equal(judge('line', throwAt(0.02, ['over'])).ok, false);
+  assert.equal(judge('line', throwAt(-0.1, ['over'])).why, 'Übertritt', 'Übertritt-Prüfung hat Vorrang');
+  assert.equal(judge('line', throwAt(null)).ok, false, 'ohne Linie nicht geschafft');
+  assert.equal(judge('line', throwAt(-0.3), {...TH, taskLineFar:-0.35}).ok, true, 'Grenze kommt aus th()');
+});
+
+test('Abstand in cm: auf 5 cm gerundet, nie negativ', () => {
+  assert.equal(lineCm(-0.1), 15);   // 0,1 KL × 140 cm = 14 cm → 15
+  assert.equal(lineCm(-0.02), 5);
+  assert.equal(lineCm(0.05), 0);
+  assert.match(judge('line', throwAt(-0.01)).say, /Direkt an der Linie/);
+  assert.match(judge('line', throwAt(-0.1)).say, /^Geschafft\. 15 Zentimeter vor der Linie\.$/);
+});
+
+test('Entscheidung in der Luft: nur Würfe nach „Los“, sauber und nicht daneben', () => {
+  assert.equal(judge('air', {target:null, issues:[]}), null, 'ohne Ansage zählt nicht');
+  assert.equal(judge('air', {target:'Blau kurz', issues:['jump','rot']}).ok, true, 'Sprunghöhe/Drehung zählen hier nicht');
+  assert.equal(judge('air', {target:'Blau kurz', issues:['arm']}).ok, false);
+  assert.equal(judge('air', {target:'Blau kurz', issues:[], hit:false}).ok, false);
+  assert.equal(judge('air', {target:'Blau kurz', issues:[], hit:true}).ok, true);
+});
+
+test('Serie: Zähler, Ansagen, Ende geschafft / nicht geschafft', () => {
+  const t = TASKS.line, list = [throwAt(-0.05), throwAt(0.1, ['over']), {issues:[], m:{line:null}, ignored:true}];
+  assert.deepEqual(tally('line', list.slice(0, 2)), {n:2, hits:1});
+  assert.equal(repSpeech(t, judge('line', list[0]), 3, 3), 'Geschafft. 5 Zentimeter vor der Linie. Noch 7.');
+  assert.equal(endSpeech(t, 7, 10), 'Aufgabe geschafft: 7 von 10.');
+  assert.match(endSpeech(t, 6, 10), /6 von 10\. Ziel war 7/);
+  // Treffer nachträglich getippt: tally rechnet neu.
+  const a = {target:'X', issues:[], hit:null}, b = {target:'Y', issues:[], hit:null};
+  assert.deepEqual(tally('air', [a, b]), {n:2, hits:2});
+  b.hit = false; assert.deepEqual(tally('air', [a, b]), {n:2, hits:1});
+});
+
+test('Verlauf: höchstens 30 Serien je Aufgabe, Bestwert nach Quote', () => {
+  let h = {};
+  for(let i = 0; i < 35; i++) h = addHistory(h, 'line', {run:i, hits:i % 8, n:10});
+  assert.equal(h.line.length, 30);
+  assert.equal(h.line[0].run, 5, 'die ältesten fallen weg');
+  assert.equal(best(h, 'line').hits, 7);
+  assert.equal(best({}, 'line'), null);
+  assert.equal(best({line:[{hits:4, n:4}, {hits:9, n:10}]}, 'line').n, 4, '4/4 schlägt 9/10');
+});

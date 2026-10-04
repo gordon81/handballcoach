@@ -73,3 +73,21 @@
 #demoBar .chip{background:var(--warn);color:#1a1400;border-color:transparent}
 #demoBar button,#demoBar a{background:rgba(10,15,20,.75);border:1px solid var(--line);border-radius:10px;padding:7px 11px;font-weight:600;color:var(--text);text-decoration:none;font-size:.9rem}
 .demoLink{align-self:flex-start;margin-top:6px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:9px 14px;font-weight:600;color:var(--text);text-decoration:none}
+
+/* Aufgabe: großer Zähler oben rechts (aus einigen Metern lesbar) und Ende-Karte */
+#taskBox{position:absolute;right:10px;top:52px;text-align:right;z-index:5;pointer-events:none;background:rgba(10,15,20,.75);border:1px solid rgba(255,255,255,.14);
+  border-radius:14px;padding:6px 14px 8px;font-family:var(--head);line-height:1}
+#taskBox[hidden]{display:none}
+#taskBox b{display:block;font-size:3.4rem;font-weight:800}
+#taskBox b small{font-size:1.6rem;color:var(--muted);font-weight:600}
+#taskBox span{display:block;font-size:1.15rem;font-weight:600;margin-top:2px}
+#taskEnd{position:absolute;left:10px;right:10px;top:50%;transform:translateY(-50%);max-width:520px;margin:0 auto;z-index:16;
+  background:rgba(20,29,38,.97);border:2px solid var(--line);border-radius:16px;padding:16px;text-align:center}
+#taskEnd[hidden]{display:none}
+#taskEnd h3{margin:0;font-family:var(--head);font-size:1.5rem;font-weight:600}
+#taskEnd .big{font-family:var(--head);font-weight:800;font-size:4rem;line-height:1;margin:8px 0}
+#taskEnd .big.ok{color:var(--ok)} #taskEnd .big.bad{color:var(--warn)}
+#taskEnd .btnrow button{min-height:56px;font-size:1.2rem}
+.btnrow.tasks{margin-top:4px}
+#card .taskline{margin:0 0 8px;font-family:var(--head);font-size:1.4rem;font-weight:800}
+#card .taskline.ok{color:var(--ok)} #card .taskline.bad{color:var(--bad)}

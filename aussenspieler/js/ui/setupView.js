@@ -15,6 +15,7 @@ import { onLineChange, startTapMarking, finishLinePoints, undoPoint, cancelMarki
 import { CAM_POS } from '../config.js';
 import { wizard, onWizardChange, startWizard, stopWizard, finishWalkNow } from '../lineWizard.js';
 import { checkCamera } from '../camCheck.js';
+import { beginTask, endTaskRun, taskBlock, onTaskButtons, chosenTask, hideEnd } from '../taskRun.js';
 
 let visible = false, cam = null;   // cam = letztes Ergebnis des Kamera-Checks
 let micHits = 0;                   // erkannte Rufe beim Mikro-Test
@@ -53,13 +54,14 @@ export function startTraining(){
     // Erst prüfen lassen. Wer „bewegt“ schon gesehen hat und trotzdem startet, darf (z. B. nur Licht anders).
     if(c && (c.status==='adjusted' || (c.status==='moved' && prev!=='moved'))){ showSetup(false); return; }
   }
-  cancelMarking(); stopWizard(); hideSetup();
-  say('Los geht’s'); unlockBeep(); ensureSession(); setState('ready', curT()); setRunning(true); keepAwake(); syncMic();
+  cancelMarking(); stopWizard(); hideSetup(); hideEnd();
+  ensureSession(); setState('ready', curT());
+  say(beginTask(curT()) || 'Los geht’s'); unlockBeep(); setRunning(true); keepAwake(); syncMic();
 }
-export function stopTraining(){ setState('off', curT()); app.target=null; hudTarget(null); setRunning(false); releaseWake(); syncMic(); }
+export function stopTraining(){ setState('off', curT()); app.target=null; hudTarget(null); endTaskRun(); setRunning(false); releaseWake(); syncMic(); }
 
 export function showSetup(check = true){
-  const open = visible; visible = true;
+  const open = visible; visible = true; hideEnd();
   if(check && !open && !app.marking && !wizard.phase) runCamCheck();
   render();
 }
@@ -110,6 +112,7 @@ function render(){
       : cam.status==='adjusted' ? `<li><span class="ic mid">!</span><span>Kamera hat sich bewegt: Linie neu ausgerichtet. Passt die rote Linie?</span></li>`
       : cam.status==='moved' ? `<li><span class="ic bad">✗</span><span>Kamera hat sich bewegt: Linie bitte neu ablaufen oder antippen.</span></li>` : '';
     h = `<div class="sheet-h"><h3>Einrichtung</h3><button class="x" data-a="close" aria-label="Schließen">✕</button></div>
+      ${isCam ? taskBlock(btn) : ''}
       ${isCam ? camPosBlock() : ''}
       <ul class="checks">
         <li>${icon(app.source!=='none')}<span>${isCam ? 'Kamera läuft' : app.source==='file' ? 'Video geladen' : 'Kamera aus'}. ${settings.camPos==='court' ? 'Tor, Linie und Absprungzone' : 'Ganzer Körper und Linie'} im Bild?</span></li>
@@ -119,7 +122,7 @@ function render(){
       ${wizard.msg ? `<p class="muted">${esc(wizard.msg)}</p>` : ''}
       <div class="btnrow">${btn('wizard','Linie ablaufen')}${btn('tap','Linie antippen')}${line ? btn('fix','Korrigieren') + btn('clear','Löschen') : ''}</div>
       ${isCam && settings.mode==='call' ? micBlock() : ''}
-      ${isCam && app.state==='off' ? `<button class="wide primaryBtn" data-a="start" ${line ? '' : 'disabled'}>${line && cam?.status==='ok' ? 'Mit dieser Linie starten' : 'Training starten'}</button>` : ''}`;
+      ${isCam && app.state==='off' ? `<button class="wide primaryBtn" data-a="start" ${line ? '' : 'disabled'}>${chosenTask() ? 'Aufgabe starten' : line && cam?.status==='ok' ? 'Mit dieser Linie starten' : 'Training starten'}</button>` : ''}`;
   }
   box.innerHTML = h;
 }
@@ -140,6 +143,7 @@ const ACTIONS = {
   flip(){ $('#stage').classList.toggle('flip'); },
   micTest(){ micUse.test = !micUse.test; micHits = 0; syncMic().then(render); render(); },
   sens(el){ settings.sens = el.dataset.v; store(); render(); },
+  task(el){ settings.task = el.dataset.v; store(); render(); },
   // Andere Position: deren Linie laden und prüfen, ob die Kamera so steht wie bei deren Einrichtung.
   camPos(el){
     if(el.dataset.v===settings.camPos) return;
@@ -151,6 +155,7 @@ const ACTIONS = {
 
 export function initSetup(){
   onLineChange(render); onWizardChange(render);
+  onTaskButtons(startTraining, stopTraining);
   $('#setup').addEventListener('click', e => { const el = e.target.closest('[data-a]'), a = el?.dataset.a; if(a && ACTIONS[a]) ACTIONS[a](el); });
   // Mikro-Test: erkannter Ruf mit Piep quittieren (im Training macht das tracking.js).
   onShout(() => { if(micUse.test && app.state==='off'){ micHits++; beep(); render(); } });

@@ -27,3 +27,4 @@
 .clipbar button.on{background:var(--orange);color:#1a1000;border-color:transparent}
 .vbtn{float:right;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:5px 10px;font-weight:600}
 #clipSheet{z-index:11}
+.entry small.tok{color:var(--ok)} .entry small.tbad{color:var(--bad)}

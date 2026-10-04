@@ -11,6 +11,7 @@ import { recStart, recDrop, recFinish, recAge } from './clips.js';
 import { evaluate } from './analysis.js';
 import { showCard, clipReady } from './ui/card.js';
 import { renderLog } from './ui/logView.js';
+import { taskThrow, taskDone, taskCallInAir, onSeriesDone } from './taskRun.js';
 
 const LABELS = {off:'Gestoppt', ready:'Bereit', runup:'Anlauf', air:'Sprung', cool:'Pause'};
 let H=[], visSince=null, lastSeen=-1, lastTarget=null;
@@ -20,6 +21,7 @@ let groundY=null, groundAt=null, baseHip=null, bodyRef=null, ev=null;
 export function setState(s, t){
   app.state = s; app.stateT = t;
   if(s==='off' || s==='air'){ callAt = null; }
+  if(s==='off') app.pending = null;
   if(s==='off') recDrop();
   stateText();
 }
@@ -41,7 +43,7 @@ export function heardCall(){
   callAt = now + lo + Math.random()*(hi - lo);
   quiet(0.3); beep(); stateText();
 }
-export function resetTracking(t){ H=[]; app.latest=null; visSince=null; ev=null; groundY=groundAt=baseHip=bodyRef=null; app.target=null; hudTarget(null); if(app.state!=='off') setState('ready', t); }
+export function resetTracking(t){ H=[]; app.latest=null; visSince=null; ev=null; groundY=groundAt=baseHip=bodyRef=null; app.target=null; app.pending=null; hudTarget(null); if(app.state!=='off') setState('ready', t); }
 export function hudTarget(name){ const el=$('#target'); el.textContent = name || ''; el.style.color = name ? colorOf(name) : ''; }
 
 // Ein Ergebnis der KI pro Videobild verarbeiten (aus der Hauptschleife).
@@ -111,9 +113,21 @@ function startAir(t){
   const foot = tf.foot[0].y >= tf.foot[1].y ? 0 : 1;      // 0 = links, 1 = rechts
   const win = H.filter(h => h.t >= tf.t-0.04 && h.t <= tf.t+0.08);
   const armF = win.reduce((b,h) => (h.wr.y-h.nose.y) < (b.wr.y-b.nose.y) ? h : b, tf);
-  ev = {t0:tf.t, target:app.target, gy, base:baseHip, bl, foot, tf, armF, peak:Infinity, peakF:null, throwF:null, vmax:0, prevWr:null};
+  const late = app.pending ? callLate(t, tf.t) : null;
+  ev = {late, t0:tf.t, target:app.target, gy, base:baseHip, bl, foot, tf, armF, peak:Infinity, peakF:null, throwF:null, vmax:0, prevWr:null};
   for(let k=j; k<H.length; k++) airFrame(H[k], H[k].t, true);
   setState('air', t);
+}
+
+// Ziel erst jetzt ansagen (Aufgabe „Entscheidung in der Luft“). Gemessen wird, wie lange nach dem Absprung
+// die App das Ziel abschickt (Erkennung) und wann die Sprachausgabe wirklich anfängt (Handy-Verzögerung).
+function callLate(t, t0){
+  const name = app.pending; app.pending = null;
+  app.target = name; hudTarget(name);
+  const box = {det:Math.round((t - t0)*1000), speak:null, entry:null};
+  const u = say(name);
+  if(u) u.onstart = () => { box.speak = Math.round((performance.now()/1000 - t0)*1000); if(box.entry){ box.entry.m.callLag = box.speak; store(); } };
+  return box;
 }
 
 function airFrame(f, t, replay){
@@ -130,17 +144,19 @@ function airFrame(f, t, replay){
 function finish(t){
   const e = ev; ev = null; if(!e) return;
   const r = evaluate(e, t, H);
-  say(r.speech);
 
   if(!settings.session) ensureSession();
   settings.session.last = Date.now();
   const entry = {nr:(log.at(-1)?.nr || 0) + 1, sid:settings.session.id, target:e.target, res:r.res, issues:r.issues, good:r.good, praise:r.praise, main:r.main,
     tip:r.tip, rot:r.rot, noLine:r.noLine, m:r.m, hit:null, time:Date.now(), video:app.source==='file'};
+  if(e.late){ entry.m.callDet = e.late.det; entry.m.callLag = e.late.speak; e.late.entry = entry; }
+  say(taskThrow(entry) ?? r.speech, {queue:!!e.late});   // spätes Ziel nicht abschneiden
   log.push(entry); if(log.length > 1000) log.shift(); store();
   showCard(entry); renderLog();
   if(recAge(t)!==null) recFinish(entry.time).then(ok => { if(ok){ entry.clip = true; store(); clipReady(entry); renderLog(); } });
   app.target = null; hudTarget(null);
   setState('cool', t);
+  if(taskDone()) setTimeout(onSeriesDone, 1200);   // Serie fertig: nach dem Speichern des letzten Clips stoppen
 }
 
 // Zufälliges Ziel ansagen (nie zweimal dasselbe hintereinander).
@@ -148,7 +164,14 @@ export function announce(t){
   const list = settings.targets.filter(x => x.on && x.name.trim());
   if(!list.length){ showHint('Keine Ziele aktiv (Einstellungen)', 2500); return; }
   let c; do{ c = pick(list); } while(list.length > 1 && c.name === lastTarget);
-  app.target = lastTarget = c.name; say(c.name); quiet(1.2); hudTarget(c.name); setState('runup', t);
+  lastTarget = c.name;
+  if(taskCallInAir()){
+    // Nur „Los“: das Ziel kommt erst beim Absprung (startAir).
+    app.pending = c.name; app.target = null; say('Los'); quiet(1.2); hudTarget('Los!'); setState('runup', t);
+    if(app.source==='cam') recStart(t, 'Los');
+    return;
+  }
+  app.target = c.name; say(c.name); quiet(1.2); hudTarget(c.name); setState('runup', t);
   if(app.source==='cam') recStart(t, c.name);   // Clip ab der Ansage
 }
 
@@ -169,10 +192,10 @@ function tick(t){
     if(a===null || (a > 6 && calm) || a > 15) recStart(t);
   }
   if(app.state==='cool' && t-app.stateT >= (app.source==='file' ? 0.6 : settings.pause)) setState('ready', t);
-  else if(app.state==='ready' && app.source==='cam' && !app.marking){
+  else if(app.state==='ready' && app.source==='cam' && !app.marking && t >= (app.holdUntil || 0)){
     if(settings.mode==='call'){ if(callAt!==null && t >= callAt){ callAt = null; announce(t); } }
     else if(settings.mode==='timer'){ if(t-app.stateT >= 1.5) announce(t); }
     else if(visSince!==null && t-visSince >= 0.6 && t-app.stateT >= 0.5 && standing(t)) announce(t);
   }
-  else if(app.state==='runup' && t-app.stateT > 8){ app.target=null; hudTarget(null); setState('ready', t); }
+  else if(app.state==='runup' && t-app.stateT > 8){ app.target=null; app.pending=null; hudTarget(null); setState('ready', t); }
 }

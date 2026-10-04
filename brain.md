@@ -39,13 +39,16 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
   - `demo/sim.js` – Demo-Modus: gezeichnete Halle, simulierte Person, Ersatz für Kamera und KI.
   - `tracking.js` – Zustandsautomat, Absprung-/Landungserkennung, speichert den Wurf.
   - `analysis.js` – `evaluate()`: die sechs Prüfungen und der Sprachtext.
+  - `tasks.js` – Aufgaben als Daten (`TASKS`) und ihre Regeln (`judge`, `tally`, Ansagen, Verlauf, Bestwert). Reine Logik ohne Browser, unit-getestet.
+  - `taskRun.js` – Aufgabe im Training: Serie starten (`beginTask`), jeden Wurf bewerten (`taskThrow`), Zähler `#taskBox`, Ende-Karte `#taskEnd` mit „Nochmal“/„Fertig“, Auswahl in der Einrichtung (`taskBlock`), Serien des Trainings für Log/Bericht (`sessionRuns`).
   - `feedback.js` – Labels, `PRIO`, `tips()`.
   - `draw.js` – Overlay (Linie, Skelett). `summary.js` + `report.js` – Auswertung und Bericht.
   - `ui/` – `setupView.js` (Einrichtung vor dem Training, Start/Stopp), `controls.js` (Buttons, Video-Leiste, Training-Fenster), `settingsView.js`, `card.js` (Ergebnis-Karte), `logView.js`, `sheets.js`.
 - `tests/` (Wurzel) – automatische Tests (siehe „Tests“), nicht Teil der App.
 - `README.md` – Kurzbeschreibung für GitHub.
 - `DOKUMENTATION.md` – Anleitung für Nutzer: Bedienung, Einrichtung, Modi, Demo, Hallentest, wo Log, Videos und Einstellungen liegen und wie man sie löscht. Bei Änderungen an Bedienung oder Speicher mitpflegen.
-- `PLAYBOOK.md` – Vorschläge für weitere Übungen und Trainings (Übungskarten, Prüfbarkeit, Aufwand, TODO-Liste, Reihenfolge). Planung, noch nicht gebaut.
+- `PLAYBOOK.md` – Vorschläge für weitere Übungen und Trainings (Übungskarten, Prüfbarkeit, Aufwand, TODO-Liste, Reihenfolge). Erledigtes ist dort abgehakt.
+- `TESTSTRATEGIE.md` – was Unit-Tests, Browser-Tests im Demo und der Hallentest jeweils prüfen; Regeln für neue Übungen.
 - `brain.md` – diese Datei.
 
 ## Technik
@@ -81,10 +84,11 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 
 ## Tests (`tests/`)
 - Einmalig: `cd tests && npm install` (Playwright), Browser bei Bedarf `npx playwright install chromium`. Dann `npm test` (~2 min) oder nur `npm run unit` (Sekunden, ohne Browser).
-- `unit.mjs` (Node): Ruf-Erkennung mit künstlichen Pegelverläufen: Ruf, Ballaufpralle, Quietschen, Pfiff, Dauerlärm + Ruf darüber (auch mit kurzen Einbrüchen), Mikro-Start ohne Ton, Sperre, eigene Ansage, Empfindlichkeit.
+- `unit.mjs` (Node): Aufgaben-Regeln (`tasks.js`: Grenzen, cm-Ansage, Serie, Verlauf/Bestwert) und Ruf-Erkennung mit künstlichen Pegelverläufen: Ruf, Ballaufpralle, Quietschen, Pfiff, Dauerlärm + Ruf darüber (auch mit kurzen Einbrüchen), Mikro-Start ohne Ton, Sperre, eigene Ansage, Empfindlichkeit.
 - `browser.mjs` (Playwright, headless Chromium, eigener kleiner Webserver `server.mjs`):
   - Demo von vorn bis hinten (Pause 1 s): Linie ablaufen (eingerastet, Median < 4 px, max < 12 px), 8 Würfe genau wie simuliert bewertet (gut, gut, Übertritt, flach + Arm unten), Videos gespeichert und abspielbar (MP4), „Videos aus“ → keine Clips, Zuruf-Modus (Ziel 2 s nach dem Ruf), Zuruf ohne Spieler im Bild ignoriert, Wurf ohne Ansage (Aufnahme beginnt nicht mitten im Anlauf neu, Clip gespeichert), „Kamera bewegen“ → Linie neu ausgerichtet, Mikro-Test in der Einrichtung (an, Ruf gezählt, Empfindlichkeit, aus); keine Fehler in der Konsole.
   - Demo mit Kameraposition 2: Linie ablaufen (eingerastet, genau), 4 Würfe wie simuliert bewertet, Wechsel 1 ↔ 2 behält die Linie jeder Position.
+  - Aufgabe „Absprung an der Linie“ in Handy-Größe (390 px): Auswahl in der Einrichtung, 4 Würfe (nah, zu weit, Übertritt, nah) richtig bewertet, Ansagen (über `window.__said`), Ende-Karte, Verlauf, Log und Bericht, „Nochmal“, Tipp-Flächen ≥ 44 px.
   - Startmenü: Karte öffnet `aussenspieler/`, „← Alle Trainings“ führt zurück, kein Querscrollen bei 390 px.
   - Mikrofon über das Fake-Mikrofon von Chromium mit der künstlichen Hallen-Tonspur aus `wav.mjs`: genau die 3 Rufe; Stopp während des Starts → Mikro bleibt aus.
 - Nach jeder Änderung an Erkennung, Ablauf oder Zuruf `npm test` laufen lassen.
@@ -98,6 +102,17 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
   - Absprung-Frame = letzter Frame mit Fuß < 0,035 × Körperlänge über Boden; Sprungbein = der tiefere Fuß dort.
 - **Landung**: nach > 0,25 s, wenn Fuß wieder am Boden oder Hüfte < 0,04 über Basis; spätestens nach 1,8 s oder 0,4 s ohne Pose.
 - **cool**: Pause nach Wurf (Einstellung, Standard 4 s; im Video-Modus 0,6 s).
+
+## Aufgaben (`tasks.js`, `taskRun.js`)
+- Auswahl oben in der Einrichtung (nur Kamera-Modus): „Freies Training“ (Standard) oder eine Aufgabe (`settings.task`). Der Start-Button heißt dann „Aufgabe starten“.
+- Start: statt „Los geht's“ wird die Anleitung der Aufgabe gesprochen; die erste Zielansage wartet, bis sie vorbei ist (`app.holdUntil`, Dauer grob aus der Wortzahl).
+- Jeder Wurf wird nach der normalen Bewertung mit `judge(id, entry, th())` geprüft → `{ok, why, say}` oder `null` (zählt nicht). Die Ansage nach dem Wurf ist dann das Aufgaben-Ergebnis + „Noch N.“ statt Lob/Tipp (der Tipp steht weiter auf der Karte). Log-Eintrag bekommt `task:{id, run, ok, why, n}`.
+- Zähler oben rechts groß („3/10“, darunter „✓ 2 · Ziel 7“). Nach der letzten Wiederholung: „Aufgabe geschafft: 8 von 10“ bzw. „7 von 10. Ziel war 8 …“, Training stoppt (nach dem Speichern des letzten Clips), Ende-Karte mit „Nochmal“ (neue Serie) und „Fertig“.
+- Verlauf: `settings.taskHist[id]` = die letzten 30 Serien `{at, run, sid, hits, n, goal, passed}`; Bestwert (beste Quote) und letztes Ergebnis stehen in der Einrichtung. Log-Fenster und Bericht haben einen Abschnitt „Aufgaben“ (Serien des aktuellen Trainings).
+- Stopp mitten in einer Serie verwirft sie (kein Verlauf-Eintrag).
+- **A1 Absprung an der Linie** (`line`): 10 Würfe, Ziel 7. Geschafft: kein Übertritt und `m.line` ≥ `TH.taskLineFar` (−0,2 KL ≈ 30 cm vor der Linie). Ansage „Geschafft. 15 Zentimeter vor der Linie.“ / „40 Zentimeter vor der Linie. Näher ran.“ / „Übertritt.“ (cm auf 5 gerundet, über `KL_CM` geschätzt).
+- Demo: `TASK_VAR` in `demo/sim.js` gibt je Aufgabe eine feste Wurf-Folge vor (A1: nah, zu weit, Übertritt, nah).
+- Neue Aufgabe = Eintrag in `TASKS` + Fall in `judge()` + Unit-Test + Wurf-Folge in `TASK_VAR` + Browser-Test.
 
 ## Zuruf (Mikrofon, `shout.js`, `shoutDetect.js`)
 - Kein Spracherkenner, nur Pegel und Klang. Alle 30 ms eine FFT (2048 Punkte): Pegel im Stimmbereich 200–1200 Hz (`v`) und im hohen Bereich 2,5–6 kHz (`hi`). Grundpegel = Mittel der ersten 0,5 s mit Ton (Messungen ganz ohne Ton beim Mikro-Start, unter −150 dB, werden übersprungen), danach unterhalb der Schwelle langsam nachgeführt (nach unten schneller). Schwelle = Grundpegel + Empfindlichkeit (`sens`: low 20 / mid 14 / high 9 dB, mindestens −75 dB).
@@ -137,9 +152,9 @@ Alle Grenzwerte stehen in `TH` (`aussenspieler/js/config.js`), Abweichungen je K
 Feedback: Sprachansage = zufälliges Lob aus den guten Punkten + Kurz-Tipp des wichtigsten Fehlers. Texte in `tips()` (`aussenspieler/js/feedback.js`) (short / tip / drill), Labels in `LABEL_GOOD` / `LABEL_BAD`, Reihenfolge in `PRIO`.
 
 ## Daten (localStorage)
-- `awc-settings`: `hand` (R/L), `pos` (LA/RA), `camPos` (base/court), `lines{base,court}` (Linie je Kameraposition), `mode` (auto/timer/call), `callMin`, `callMax`, `sens` (low/mid/high), `clips` (Wurf-Videos an/aus), `pause`, `camera`, `model`, `targets[{name,on}]`, `line{pts[],inside,at,snapped,ref{w,h,g}}` (normalisiert 0–1; altes Format `{a,b,inside}` wird beim Laden zu `pts:[a,b]`), `session{id,start,last}`.
+- `awc-settings`: `task` (`free` oder Aufgaben-id), `taskHist` (Verlauf je Aufgabe), `hand` (R/L), `pos` (LA/RA), `camPos` (base/court), `lines{base,court}` (Linie je Kameraposition), `mode` (auto/timer/call), `callMin`, `callMax`, `sens` (low/mid/high), `clips` (Wurf-Videos an/aus), `pause`, `camera`, `model`, `targets[{name,on}]`, `line{pts[],inside,at,snapped,ref{w,h,g}}` (normalisiert 0–1; altes Format `{a,b,inside}` wird beim Laden zu `pts:[a,b]`), `session{id,start,last}`.
 - Demo-Modus: dieselben Daten unter `awc-demo-settings` / `awc-demo-log`.
-- `awc-log`: Array von Würfen `{nr, sid, target, res[{ok,txt}], issues[], good[], praise, main, tip, rot, noLine, m, hit, time, video, clip}`; max. 1000 Einträge.
+- `awc-log`: Array von Würfen `{nr, sid, target, res[{ok,txt}], issues[], good[], praise, main, tip, rot, noLine, m, hit, time, video, clip, task}`; max. 1000 Einträge. `task` nur bei Würfen in einer Aufgabe: `{id, run, ok, why, n}`.
   - `m` = rohe Messwerte zum Kalibrieren: `line` (Fuß zur Linie beim Absprung, KL, + = im Torraum), `arm` (Handgelenk über der Nase, KL), `rot` (°), `jump` (Hüfte über Anlauf-Höhe, KL), `lean` (Oberkörper beim Wurf, °, + = Richtung Torraum), `fps` (Pose-Bilder pro Sekunde um den Sprung), `cam` (Kameraposition base/court). KL = Körperlänge Schulter–Knöchel.
 - Neues Training automatisch nach > 3 h Pause oder per Button.
 
@@ -155,6 +170,7 @@ Die Grenzwerte (`TH` in `aussenspieler/js/config.js`) sind bisher nur im Demo ge
 4. Würfe für die Grenzen, je 5–10 und bewusst: saubere Würfe; knapper Übertritt (Fuß auf/hinter der Linie); flache Sprünge; Arm unten; wenig Drehung; Oberkörper nach vorn fallen lassen. Reihenfolge notieren.
 5. Danach im Training-Fenster die Messwerte pro Wurf ansehen (Zweifelsfälle mit „▶︎ Video“ prüfen) und „Bericht als Datei“ teilen: der Bericht hat die Tabelle „Messwerte“.
 6. Grenzen in `TH` (Position 1) bzw. `TH_POS.court` (Position 2) zwischen die Werte der guten und der bewusst schlechten Würfe legen. Übertritt: liegen echte Übertritte nur knapp im Plus oder saubere Absprünge im Plus, zuerst die Linie prüfen (Ablaufen wiederholen, Kamera fester).
+- Aufgabe „Absprung an der Linie“: 10 Würfe bewusst in verschiedenen Abständen (Maßband/Klebeband 10, 20, 30, 40 cm vor der Linie), angesagte cm mit den echten vergleichen. Fenster `TH.taskLineFar` (heute −0,2 KL ≈ 30 cm) so legen, dass 30 cm gerade noch zählt.
 - Beide Kamerapositionen getrennt kalibrieren (Spalte „Kamera“ im Bericht). Auch Oberkörper und Drehung können sich je Position unterscheiden; dann weitere Werte in `TH_POS` eintragen.
 - cm-Angaben in Log und Bericht sind Schätzungen (`KL_CM` = 140 cm Schulter–Knöchel). Für die Grenzen zählen die Verhältnisse, nicht die genauen cm.
 
@@ -182,4 +198,5 @@ Die Grenzwerte (`TH` in `aussenspieler/js/config.js`) sind bisher nur im Demo ge
 - 2026-10-03: Prüfung und Verbesserungen: Zuruf löst nicht mehr bei Dauerlärm, Quietschen, Pfiff aus, nur mit Spieler im Bild; Mikro bleibt nach Stopp aus; Mikro testen in der Einrichtung mit Pegelanzeige; Wurf-Videos in H.264/MP4 und abschaltbar, Anlauf bleibt im Clip; Ansage „Wenn Spieler im Bild steht“ wartet aufs Stehen (vorher Übertritt/Sprung falsch bei kurzer Pause); Messwerte pro Wurf für das Kalibrieren, Grenzen gesammelt in `TH`; automatische Tests in `tests/`.
 - 2026-10-03: Zweite Kameraposition „Feld mit Tor“ (hinter dem 7-m-Punkt, Tor und Absprungzone im Bild) in der Einrichtung, eigene Linie je Position, eigene Sprunghöhen-Grenzen, Demo und Test für Position 2.
 - 2026-10-03: Fix Zuruf: die ersten Rufe nach dem Mikro-Start gingen verloren (Messungen ohne Ton zogen den Grundpegel auf −200 dB). Fix: Ruf über Dauerlärm wurde manchmal verpasst, weil der Grundpegel bei kurzen Einbrüchen des Lärms nicht mehr nachzog.
+- 2026-10-04: Baustein „Aufgabe“ (Serie mit Ziel, Zähler, Ansage pro Wurf, Ende-Karte mit „Nochmal“, Verlauf/Bestwert, Abschnitt in Log und Bericht) und erste Aufgabe A1 „Absprung an der Linie“. `TESTSTRATEGIE.md`.
 - 2026-10-03: Außenwurf-Coach in den Ordner `aussenspieler/` verschoben, im Wurzelverzeichnis ein Startmenü für mehrere Trainingsarten. Neue Adresse: https://gordon81.github.io/handballcoach/aussenspieler/ (Daten bleiben erhalten).

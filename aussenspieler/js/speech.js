@@ -5,9 +5,11 @@ let voice = null, actx = null;
 function pickVoice(){ if(!synth) return; const vs=synth.getVoices(); voice = vs.find(v=>/^de/i.test(v.lang)) || null; }
 if(synth){ pickVoice(); synth.onvoiceschanged = pickVoice; }
 
-export function say(text){
-  if(!synth) return;
-  try{ synth.cancel(); const u=new SpeechSynthesisUtterance(text); u.lang='de-DE'; if(voice) u.voice=voice; u.rate=1.05; synth.speak(u); }catch(e){}
+// queue: nicht abbrechen, was gerade gesprochen wird, sondern danach sprechen. → die Äußerung (für onstart) oder null.
+export function say(text, {queue = false} = {}){
+  if(window.__said) window.__said.push(text);   // Tests: was gesagt wurde
+  if(!synth) return null;
+  try{ if(!queue) synth.cancel(); const u=new SpeechSynthesisUtterance(text); u.lang='de-DE'; if(voice) u.voice=voice; u.rate=1.05; synth.speak(u); return u; }catch(e){ return null; }
 }
 
 // Piep als Quittung („Zuruf gehört“). Beim ersten Mal aus einem Klick heraus aufrufen (unlock), sonst bleibt es stumm.

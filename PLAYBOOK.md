@@ -1,7 +1,7 @@
 # PLAYBOOK – Was der Einzeltrainer noch trainieren könnte
 
 Vorschläge für weitere Übungen, die ein Spieler **allein** mit Handy auf dem Stativ machen kann: die App stellt die Aufgabe, prüft sie per Kamera (MediaPipe Pose) und Mikrofon und sagt, ob sie geschafft ist.
-Das ist ein Planungsdokument, noch nichts davon ist gebaut. Was heute schon geht, steht in [`DOKUMENTATION.md`](DOKUMENTATION.md), die Technik in [`brain.md`](brain.md).
+Das ist ein Planungsdokument. Was gebaut ist, ist in der TODO-Liste (Abschnitt 5) abgehakt und mit ✅ markiert. Was heute schon geht, steht in [`DOKUMENTATION.md`](DOKUMENTATION.md), die Technik in [`brain.md`](brain.md).
 
 **Legende**
 - **Prüfbar**: wie verlässlich Handy-Kamera und Mikro das Erfolgskriterium prüfen können. ●●● sicher, ●●○ brauchbare Schätzung, ●○○ nur grob oder mit Hilfe (Antippen).
@@ -16,7 +16,7 @@ Alle Übungen unten stehen auf denselben Messungen wie der Außenwurf-Coach (Abs
 
 ---
 
-## 1. Gemeinsamer Baustein: „Aufgabe“
+## 1. Gemeinsamer Baustein: „Aufgabe“ ✅ gebaut (2026-10-04, `tasks.js` / `taskRun.js`)
 
 Heute bewertet die App jeden Wurf, stellt aber keine **Aufgabe** mit Ziel. Für „Spieler Aufgaben stellen und prüfen“ fehlt ein Rahmen, den alle Übungen nutzen:
 
@@ -36,7 +36,7 @@ Heute bewertet die App jeden Wurf, stellt aber keine **Aufgabe** mit Ziel. Für 
 
 ## 2. Weitere Übungen für Außenspieler
 
-### A1 · Absprung an der Linie
+### A1 · Absprung an der Linie ✅ gebaut
 - **Ziel:** so nah wie möglich an der 6-m-Linie abspringen, ohne zu übertreten (größerer Wurfwinkel, weniger Übertritte im Spiel).
 - **Aufbau:** Kameraposition 1, Linie wie gewohnt eingerichtet.
 - **Ablauf:** 10 Würfe mit normaler Zielansage. Nach jedem Wurf sagt die App den Abstand an („20 Zentimeter vor der Linie“).
@@ -157,8 +157,8 @@ Heute bewertet die App jeden Wurf, stellt aber keine **Aufgabe** mit Ziel. Für 
 ## 5. TODO-Liste (Vorschlag, nach Priorität)
 
 1. [ ] Hallentest Außenwurf-Coach, Grenzen in `TH` / `TH_POS` einstellen (Voraussetzung).
-2. [ ] Baustein „Aufgabe“ (Abschnitt 1) im Außenwurf-Coach: Aufgabenkarte, Zähler, „geschafft / nicht geschafft“, Ergebnis im Log und Bericht. **M**
-3. [ ] Erste Aufgaben ohne neue Erkennung: **A1 Absprung an der Linie**, **A5 Serie unter Ermüdung**, **A3 Wurfhöhe auf Ansage**. **S** je Aufgabe
+2. [x] Baustein „Aufgabe“ (Abschnitt 1) im Außenwurf-Coach: Aufgabenkarte, Zähler, „geschafft / nicht geschafft“, Ergebnis im Log und Bericht. **M**
+3. [ ] Erste Aufgaben ohne neue Erkennung: **A1 Absprung an der Linie** ✅, **A5 Serie unter Ermüdung**, **A3 Wurfhöhe auf Ansage**. **S** je Aufgabe
 4. [ ] **A2 Entscheidung in der Luft** (Ansage beim Absprung) + Verzögerung der Sprachausgabe in der Halle messen. **S**
 5. [ ] Gemeinsamen Code nach `shared/` ziehen (Kamera, Pose, Sprache, Zuruf, Clips, Demo), zweite Karte im Startmenü vorbereiten. **M**
 6. [ ] **B1 7-m-Trainer** als zweites Training (mit C3 Wurf ohne Sprung, C4 gerade Linie). **M**
