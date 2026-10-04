@@ -315,28 +315,75 @@ test('Rückraum: Bodenkontakte im Anlauf zählen', () => {
 /* ---------- Ballaufprall per Mikro (shared/js/bounceDetect.js) ---------- */
 import { bounceDetector, SENS as BSENS } from '../shared/js/bounceDetect.js';
 
+// Messungen {v, hi, pk, lvl} alle STEP ms. Grundrauschen: pk ≈ lvl + 2 dB (kein Knall).
+const bq = (s, lvl = -55) => Array.from({length:n(s)}, () => { const l = lvl + (rnd()-0.5)*2; return {v:l + 3, hi:l - 2, lvl:l, pk:l + 2 + rnd()}; });
+// Knall: 2–3 Messungen mit hohem pk (der 5-ms-Abschnitt), Mittelpegel nur mäßig höher, danach Nachhall ohne Knall.
+const knall = (pk = -18) => [{v:pk - 8, hi:pk - 10, lvl:pk - 12, pk}, {v:pk - 10, hi:pk - 12, lvl:pk - 13, pk:pk - 1}, {v:pk - 14, hi:pk - 16, lvl:pk - 16, pk:pk - 4},
+  ...Array.from({length:10}, (_, k) => { const l = pk - 22 - k*1.5; return {v:l + 3, hi:l - 2, lvl:l, pk:l + 2}; })];
+// Ruf: am Anfang ein Fenster mit hohem pk (Einsatz der Stimme), dann gleichmäßig.
+const ruf = (ms = 500, l = -25) => [{v:l - 5, hi:l - 20, lvl:l - 12, pk:l + 1}, ...Array.from({length:Math.round(ms/STEP)}, () => ({v:l, hi:l - 15, lvl:l - 2, pk:l + 1}))];
+const pfiff = () => Array.from({length:15}, () => ({v:-40, hi:-18, lvl:-20, pk:-17}));
+const klatsch = () => knall(-40);   // leises Fangen / weit weg
+
 function runBounce(seq, sens = 'mid'){
   const d = bounceDetector(), hits = [];
-  seq.forEach((m, i) => { const t = i*STEP; if(d.push(m.v, m.hi, t, BSENS[sens])) hits.push(t/1000); });
+  seq.forEach((m, i) => { const t = i*STEP; if(d.push(m.v, m.hi, t, BSENS[sens], false, m.pk, m.lvl)) hits.push(t/1000); });
   return hits;
 }
 
-test('Ballaufprall: Knall mit Nachhall zählt, Ruf, Quietschen, Pfiff nicht', () => {
-  assert.equal(runBounce([...noise(2), ...bounce(), ...noise(1)]).length, 1, 'ein Aufprall');
-  assert.equal(runBounce([...noise(2), ...shout(), ...noise(1)]).length, 0, 'Ruf');
-  assert.equal(runBounce([...noise(2), ...squeak(), ...noise(1)]).length, 0, 'Quietschen');
-  assert.equal(runBounce([...noise(2), ...whistle(), ...noise(1)]).length, 0, 'Pfiff');
+test('Ballaufprall: Knall zählt einmal, Ruf und Pfiff nicht', () => {
+  assert.equal(runBounce([...bq(2), ...knall(), ...bq(1)]).length, 1, 'ein Aufprall');
+  assert.equal(runBounce([...bq(2), ...ruf(), ...bq(1)]).length, 0, 'Ruf');
+  assert.equal(runBounce([...bq(2), ...pfiff(), ...bq(1)]).length, 0, 'Pfiff');
+  assert.equal(runBounce([...bq(2), ...bq(3, -35), ...bq(1)]).length, 0, 'lauter Dauerlärm ohne Knall');
 });
 
-test('Ballaufprall: schnelle Pässe (alle 0,6 s) einzeln gezählt', () => {
-  const seq = [...noise(2)];
-  for(let k = 0; k < 10; k++) seq.push(...bounce(), ...noise(0.6 - (bounce().length*STEP)/1000));
-  seq.push(...noise(1));
-  assert.equal(runBounce(seq).length, 10);
+test('Ballaufprall: schnelle Pässe (alle 0,6 s) einzeln gezählt, auch über Lärm', () => {
+  const seq = [...bq(2)];
+  for(let k = 0; k < 10; k++) seq.push(...knall(), ...bq(0.6 - knall().length*STEP/1000));
+  assert.equal(runBounce([...seq, ...bq(1)]).length, 10);
+  const loud = [...bq(2, -38)];
+  for(let k = 0; k < 5; k++) loud.push(...knall(-12), ...bq(0.6 - knall().length*STEP/1000, -38));
+  assert.equal(runBounce([...loud, ...bq(1, -38)]).length, 5, 'über Hallenlärm');
 });
 
-test('Ballaufprall: leiser Aufprall nur mit hoher Empfindlichkeit', () => {
-  const soft = () => [{v:-36, hi:-44}, ...tail(-44)];
-  assert.equal(runBounce([...noise(2), ...soft(), ...noise(1)], 'low').length, 0);
-  assert.equal(runBounce([...noise(2), ...soft(), ...noise(1)], 'high').length, 1);
+test('Ballaufprall: leiser Klatsch nur mit hoher Empfindlichkeit', () => {
+  assert.equal(runBounce([...bq(2), ...klatsch(), ...bq(1)], 'low').length, 0);
+  assert.equal(runBounce([...bq(2), ...klatsch(), ...bq(1)], 'high').length, 1);
+});
+
+/* ---------- Pässe gegen die Wand (passen/js/rules.js) ---------- */
+import { judgePass, throwsFromPose, summary as passSummary } from '../passen/js/rules.js';
+
+// Seitenansicht, Wand links. KL 200 px. Wurf: Handgelenk schnell nach links bei tThrow; armY = Höhe (px) gegen die Schulter (− = darüber).
+function passFrames({tThrow = 1.0, armY = -30, front = 'l'} = {}){
+  const out = [];
+  for(let t = 0; t <= tThrow + 0.6; t += 1/30){
+    const dx = t > tThrow - 0.1 && t <= tThrow ? -(t - (tThrow - 0.1))*1200 : t > tThrow ? -120 : 0;
+    const lx = front === 'l' ? 460 : 540, rx = front === 'l' ? 540 : 460;
+    out.push({t, wr:{x:560 + dx, y:300 + armY}, wsh:{x:520, y:300}, hip:{x:500, y:420}, bl:200, lAnk:{x:lx, y:600}, rAnk:{x:rx, y:600}});
+  }
+  return out;
+}
+test('Pässe: Arm über der Schulter, Gegenbein vorn', () => {
+  const ok = judgePass(passFrames(), 1.3, 'left', true);
+  assert.deepEqual([ok.arm, ok.foot, ok.ok], [true, true, true], JSON.stringify(ok));
+  assert.equal(judgePass(passFrames({armY:40}), 1.3, 'left', true).arm, false, 'Hand unter der Schulter');
+  assert.equal(judgePass(passFrames({front:'r'}), 1.3, 'left', true).foot, false, 'Rechtshänder mit rechts vorn');
+  assert.equal(judgePass(passFrames({front:'r'}), 1.3, 'left', false).foot, true, 'Linkshänder mit rechts vorn');
+  assert.equal(judgePass(passFrames({front:'r'}), 1.3, 'right', true).foot, true, 'Wand rechts: größeres x ist vorn');
+  assert.equal(judgePass(passFrames(), 3.0, 'left', true).ok, null, 'kein Abwurf vor dem Aufprall gesehen');
+});
+test('Pässe: Kamera-Zählung und Zusammenfassung', () => {
+  // Zwei Würfe (1,0 s und 2,5 s), dazwischen kommt die Hand langsam zurück (nicht als Wurf zählen).
+  const two = [];
+  for(let t = 0; t <= 3.2; t += 1/30){
+    const one = t0 => t <= t0 - 0.1 ? 0 : t <= t0 ? -(t - (t0 - 0.1))*1200 : Math.min(0, -120 + (t - t0)*150);
+    two.push({t, wr:{x:560 + (t < 1.8 ? one(1.0) : one(2.5)), y:270}, wsh:{x:520, y:300}, hip:{x:500, y:420}, bl:200});
+  }
+  const ts = throwsFromPose(two);
+  assert.equal(ts.length, 2, `Würfe bei ${ts}`);
+  const s = passSummary([{ok:true, arm:true, foot:true}, {ok:false, arm:false, foot:true}, {ok:null}], 30);
+  assert.deepEqual([s.n, s.seen, s.arm, s.foot, s.perMin], [3, 2, 1, 2, 6]);
+  assert.match(s.say, /^Fertig\. 3 Pässe in 30 Sekunden\. 1 mit Arm oben, 2 mit dem richtigen Bein vorn\. Ellbogen und Hand über die Schulter\.$/);
 });

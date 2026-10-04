@@ -106,7 +106,7 @@ Heute bewertet die App jeden Wurf, stellt aber keine **Aufgabe** mit Ziel. Für 
 - **Prüfbar:** ●●○ – Drehrichtung aus 3D-Schätzung ist zuverlässig genug für links/rechts; Übertritt wie gehabt.
 - **Baut auf:** Linie, Körperdrehung, Übertritt. **Aufwand M.**
 
-### B4 · Passen gegen die Wand
+### B4 · Passen gegen die Wand ✅ gebaut (`passen/`)
 - **Ziel:** genaues, schnelles Passen und Fangen allein.
 - **Aufbau:** Ziel an der Wand (Klebeband-Kreuz, Ring), Spieler 4–6 m davor, Handy seitlich.
 - **Ablauf:** „30 Sekunden, so viele saubere Pässe wie möglich“, oder Wechsel Schlagwurf / Handgelenkpass auf Ansage.
@@ -164,7 +164,7 @@ Heute bewertet die App jeden Wurf, stellt aber keine **Aufgabe** mit Ziel. Für 
 6. [x] **B1 7-m-Trainer** ✅ als zweites Training (mit C3 Wurf ohne Sprung, C4 gerade Linie). **M**
 7. [x] **B5 Abwehr-Beinarbeit** ✅ (ohne Ball, mit C5 Reaktionszeit). **M**
 8. [x] **B2 Rückraum-Sprungwurf** ✅ (großteils Außenwurf-Coach mit 9-m-Linie und Schrittzählung). **M**
-9. [ ] **C2 Ballaufprall per Mikro**, dann **B4 Pässe gegen die Wand**. **M**
+9. [x] **C2 Ballaufprall per Mikro** ✅, dann **B4 Pässe gegen die Wand** ✅. **M**
 10. [ ] **A4 Winkel vergrößern**, **A6 Gegenstoß auf Zeit**, **B3 Kreisläufer**, **B6 Sprungkraft**. **S–M**
 11. [ ] **C1 Treffererkennung** und **B7 Wurfgeschwindigkeit**. **L / M**, erst wenn der Rest in der Halle läuft.
 

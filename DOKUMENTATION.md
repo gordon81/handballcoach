@@ -428,3 +428,26 @@ Die Körperdrehung wird nur angezeigt, sie zählt im Rückraum nicht. Die Schrit
 
 ### Hallentest Rückraum
 Je 5 Würfe mit drei Schritten, mit zwei und vier Schritten, bewusst früh und spät abwerfen, knapp innerhalb der 9 m abspringen. Danach im Bericht die Spalten „Schritte“ und „Abwurf“ ansehen; daraus werden die Grenzen eingestellt.
+
+---
+
+## 15. Pässe gegen die Wand
+
+**App:** https://gordon81.github.io/handballcoach/passen/ (Karte „Pässe gegen die Wand“ im Startmenü) · **Demo:** `passen/?demo=1`
+
+So viele saubere Pässe wie möglich in 30 oder 60 Sekunden. Das Handy **hört den Aufprall an der Wand** und zählt; die Kamera prüft bei jedem Pass, ob der **Arm über der Schulter** ist und das **Gegenbein vorn** (Rechtshänder links).
+
+### Aufbau
+- Ziel an die Wand (Klebeband-Kreuz oder Ring), 4–6 m davor stellen.
+- Handy seitlich aufs Stativ, ganzer Körper im Bild. In der Einrichtung angeben, ob die **Wand links oder rechts** im Bild ist.
+- **Mikro testen:** ein paar Pässe werfen, jeder Aufprall soll genau einmal zählen (Piep). Zählt das Fangen oder Lärm vom Nachbarfeld mit, Empfindlichkeit „Laute Halle“ wählen oder **Zählen über Kamera** (dann zählt die Wurfbewegung).
+
+### Ablauf
+1. **Runde starten:** *„30 Sekunden Pässe gegen die Wand. Auf den Piep.“* Nach drei Sekunden kommt der Piep.
+2. Passen. Groß im Bild: die Zahl der Pässe (gelb, wenn der letzte nicht sauber war) und die Restzeit. Bei 10 s: *„Noch zehn Sekunden.“*
+3. Schluss-Piep, dann z. B. *„Fertig. 24 Pässe in 30 Sekunden. 20 mit Arm oben, 18 mit dem richtigen Bein vorn.“* und bei Rekord *„Neuer Bestwert!“*. Die Karte zeigt dasselbe mit **Nochmal**.
+
+**Log** zeigt alle Runden des Trainings und den Bestwert, **Bericht teilen** schickt sie als Text. Daten: localStorage `pass-settings`, `pass-log` (Demo `pass-demo-…`).
+
+### Hallentest Pässe
+Mikro-Test vor der Wand (zählt jeder Aufprall, das Fangen nicht?), einmal mit Lärm vom Nachbarfeld. Eine Runde mit Absicht ein paar Pässe aus der Hüfte und mit dem falschen Bein vorn: erkennt die App das?

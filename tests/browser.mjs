@@ -546,6 +546,47 @@ test('Abwehr-Beinarbeit (Demo, Handy-Größe): Rufe, Reaktion, Richtung, gekreuz
   await page.close();
 });
 
+test('Pässe gegen die Wand (Demo, Handy-Größe): Zählen, Arm und Gegenbein je Pass, Bestwert, Log', {timeout:120000}, async t => {
+  const page = await browser.newPage({viewport:{width:390, height:800}});
+  const errors = []; page.on('pageerror', e => errors.push(e.message));
+  page.on('console', m => { if(m.type()==='error') errors.push(m.text()); });
+  await page.addInitScript(() => { window.__said = []; if(!sessionStorage.getItem('init')){ sessionStorage.setItem('init', '1'); localStorage.clear(); localStorage.setItem('pass-demo-settings', JSON.stringify({dur:12})); } });
+  await page.goto(srv.url + 'passen/?demo=1');
+  await page.evaluate(async () => { window.M = {st:await import('/passen/js/state.js'), demo:await import('/passen/js/demo.js')}; });
+
+  await t.test('Runde: jeder Pass gezählt und so bewertet, wie die Person geworfen hat', async () => {
+    await page.click('#btnStart');
+    await page.waitForSelector('#setup [data-a=start]');
+    assert.ok(await minHeight(page, '#setup button') >= 44);
+    await page.click('#setup [data-a=start]');
+    await until(page, () => M.st.app.state === 'run', null, 8000, 'Runde läuft');
+    assert.ok(await page.isVisible('#count'), 'großer Zähler');
+    await until(page, () => M.st.log.length >= 1, null, 40000, 'Runde fertig');
+    const {e, done, passes} = await page.evaluate(() => ({e:M.st.log[0], done:M.demo.demo.done, passes:M.st.app.passes}));
+    assert.ok(e.n >= 6, `${e.n} Pässe`);
+    passes.forEach((p, i) => {
+      const d = done[i];
+      assert.equal(p.arm, !d.low, `Pass ${i+1}: Arm`);
+      assert.equal(p.foot, !d.wrongFoot, `Pass ${i+1}: Gegenbein`);
+    });
+    assert.equal(e.best, true, 'erster Bestwert');
+    assert.match(await page.evaluate(() => __said.at(-1)), new RegExp(`^Fertig\\. ${e.n} Pässe in 12 Sekunden\\. .* Neuer Bestwert!$`));
+  });
+
+  await t.test('Karte, Log, Bericht', async () => {
+    assert.match(await page.textContent('#card'), /Pässe in 12 s · Bestwert!/);
+    await page.click('#card [data-c=close]');
+    await page.click('#btnLog');
+    assert.match(await page.textContent('#logBody'), /Runde 1: \d+ Pässe in 12 s/);
+    await page.click('#logSheet [data-close]');
+    const rep = await page.evaluate(async () => (await import('/passen/js/main.js')).reportText());
+    assert.match(rep, /Bestwert: \d+ Pässe/);
+  });
+
+  assert.deepEqual(errors, [], 'Fehler in der Browser-Konsole');
+  await page.close();
+});
+
 test('Mikrofon: Rufe erkannt, Lärm nicht (Fake-Mikrofon)', {timeout:120000}, async t => {
   const page = await browser.newPage();
   await page.goto(srv.url + 'aussenspieler/');
@@ -574,7 +615,7 @@ test('Mikrofon: Rufe erkannt, Lärm nicht (Fake-Mikrofon)', {timeout:120000}, as
     const r = await page.evaluate(async ms => {
       const {micSampler} = await import('/shared/js/mic.js'), {bounceDetector, SENS} = await import('/shared/js/bounceDetect.js');
       const m = micSampler(), d = bounceDetector(), hits = [];
-      let t0 = null; m.onSample((v, hi, now) => { t0 ??= now; if(d.push(v, hi, now, SENS.mid)) hits.push((now - t0)/1000); });
+      let t0 = null; m.onSample((v, hi, now, pk, lvl) => { t0 ??= now; if(d.push(v, hi, now, SENS.mid, false, pk, lvl)) hits.push((now - t0)/1000); });
       await m.start(); await new Promise(r => setTimeout(r, ms)); m.stop();
       return hits;
     }, (DURATION - 0.5)*1000);
@@ -601,6 +642,11 @@ test('Startmenü: Karten öffnen alle Trainings, „Alle Trainings“ führt zur
   await page.click('#trainings a[href="siebenmeter/"]');
   await page.waitForSelector('#btnStart');
   assert.ok(page.url().endsWith('/siebenmeter/'), page.url());
+  await page.click('a[href="../"]');
+  await page.waitForSelector('#trainings');
+  await page.click('#trainings a[href="passen/"]');
+  await page.waitForSelector('#btnStart');
+  assert.ok(page.url().endsWith('/passen/'), page.url());
   await page.click('a[href="../"]');
   await page.waitForSelector('#trainings');
   await page.click('#trainings a[href="abwehr/"]');

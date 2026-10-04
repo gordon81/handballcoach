@@ -77,3 +77,15 @@ button:disabled{opacity:.45}
 .entry{border-top:1px solid var(--line);padding:8px 0}
 .entry b{font-family:var(--head);font-size:1.1rem}
 .entry small{color:var(--muted)} .entry small.tok{color:var(--ok)} .entry small.tbad{color:var(--bad)}
+
+/* Großer Zähler (Pässe), aus einigen Metern lesbar */
+#countBox{position:absolute;left:50%;top:44px;transform:translateX(-50%);text-align:center;pointer-events:none;font-family:var(--head);line-height:1;
+  text-shadow:0 4px 20px rgba(0,0,0,.85)}
+#countBox[hidden]{display:none}
+#countBox b{display:block;font-size:clamp(4rem,22vw,9rem);font-weight:800}
+#countBox b.bad{color:var(--warn)} #countBox b.ok{color:var(--text)}
+#countBox span{display:block;font-size:1.6rem;font-weight:600;color:var(--muted)}
+/* Mikro-Test: Pegel */
+.mictest{margin-top:10px;padding-top:8px;border-top:1px solid var(--line)}
+.meter{position:relative;display:block;height:10px;background:var(--panel2);border-radius:5px;overflow:hidden;margin-top:6px}
+.meter .lvl{position:absolute;left:0;top:0;bottom:0;background:var(--blue);width:0}
