@@ -171,7 +171,7 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 - Aufbau: Ziel an der Wand, 4–6 m davor, Handy seitlich (Wand links oder rechts im Bild, `settings.wall`). Einrichtung: Wand-Seite, Wurfhand, Dauer 30/60 s, Zählen über Mikrofon (Standard) oder Kamera, Mikro-Test mit Pegel und Zähler, Empfindlichkeit.
 - Ablauf: „30 Sekunden Pässe gegen die Wand. Auf den Piep.“ → 3 s → Piep → Runde, großer Zähler und Restzeit, „Noch zehn Sekunden.“ → Schluss-Piep, Zusammenfassung gesprochen und als Karte, Bestwert (`settings.best`), Log.
 - Zählen: Mikrofon mit `shared/js/bounceDetect.js` (Aufprall an der Wand). Ein Knall ohne Wurf davor, obwohl der Spieler im Bild war, zählt nicht (Fangen, Nachbarfeld; `app.ignored`). Kein Mikro → automatisch Kamera: Würfe = Spitzen der Handgelenk-Geschwindigkeit relativ zur Hüfte, ≥ 0,5 s auseinander. Im Demo meldet die Person den Aufprall direkt.
-- Technik je Pass (`judgePass`): Abwurf = schnellstes Handgelenk (relativ zur Hüfte) 1,0–0,12 s vor dem Aufprall. Arm oben = Handgelenk über der Wurfschulter. Gegenbein vorn = der Knöchel näher an der Wand gehört zum Bein gegenüber der Wurfhand. Kein Abwurf gefunden → Pass zählt, Technik „nicht gesehen“.
+- Technik je Pass (`judgePass`, DHB-Kriterien Schlagwurf): Abwurf = schnellstes Handgelenk (relativ zur Hüfte) 1,0–0,12 s vor dem Aufprall. Arm oben = Handgelenk über der Wurfschulter und Ellbogen höchstens 0,1 KL unter der Schulter („Ellbogen auf Schulterhöhe“). Gegenbein vorn = der Knöchel näher an der Wand gehört zum Bein gegenüber der Wurfhand. Kein Abwurf gefunden → Pass zählt, Technik „nicht gesehen“.
 - Log je Runde: `{nr, sid, dur, n, seen, arm, foot, count, best}`. Bericht als Text.
 
 ## Sprungkraft (`sprung/`)
@@ -228,7 +228,7 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 3. **arm – Wurfarm**: bestes Frame im Fenster −0,04 … +0,08 s um den Absprung. Handgelenk über Nase = gut, über Schulter = mittel (Tipp), sonst zu tief.
 4. **rot – Körperdrehung**: Schulter-Yaw minus Hüft-Yaw aus worldLandmarks (x/z-Ebene). Wert = max(Spannweite der Verwindung, Änderung Schulter-Yaw) vom Absprung bis Wurf + 0,1 s. Grenze 25°, bei „falscher Seite“ (RH auf RA, LH auf LA) 35°; ≥ Grenze gut, ≥ halbe Grenze mittel (Tipp), darunter schlecht.
 5. **jump – Sprunghöhe**: (Basis − Hüft-Höchstpunkt) / Körperlänge: ≥ 0,25 hoch, ≥ 0,17 mittel, sonst flach. Kameraposition 2: ≥ 0,36 hoch, ≥ 0,30 mittel (`TH_POS.court`). Grund: auf Position 1 läuft der Spieler in der Luft auf die erhöhte Kamera zu, die Hüfte sinkt im Bild, die Höhe wird zu klein gemessen; von der Seite (Position 2) passt sie fast zur echten Höhe. Im Demo dieselben Würfe: Position 1 0,32 / 0,26 / 0,13, Position 2 0,42 / 0,38 / 0,24.
-6. **lean – Oberkörper** beim Wurf (Wurf-Frame = max. Geschwindigkeit des Handgelenks relativ zur Hüfte, damit die Körperbewegung beim Absprung nicht mitzählt): < 15° aufrecht; > 25° Richtung Torraum = kippt nach vorn; weg vom Torraum = Rücklage (ok).
+6. **lean – Oberkörper** in der Wurfauslage = im höchsten Punkt des Sprungs (`e.peakF`; nach dem Abwurf klappt er bei gutem Sprungwurf nach vorn, das ist kein Fehler, siehe `QUELLEN.md`). Der Wurf-Frame (max. Geschwindigkeit des Handgelenks relativ zur Hüfte) bleibt für Drehung, Wurfhöhe und Tempo: < 15° aufrecht; > 25° Richtung Torraum = kippt nach vorn; weg vom Torraum = Rücklage (ok).
 
 Alle Grenzwerte stehen in `TH` (`aussenspieler/js/config.js`), Abweichungen je Kameraposition in `TH_POS`; der Code holt sie über `th()` (`store.js`).
 
@@ -294,6 +294,7 @@ Die Grenzwerte (`TH` in `aussenspieler/js/config.js`) sind bisher nur im Demo ge
 - 2026-10-03: Zweite Kameraposition „Feld mit Tor“ (hinter dem 7-m-Punkt, Tor und Absprungzone im Bild) in der Einrichtung, eigene Linie je Position, eigene Sprunghöhen-Grenzen, Demo und Test für Position 2.
 - 2026-10-03: Fix Zuruf: die ersten Rufe nach dem Mikro-Start gingen verloren (Messungen ohne Ton zogen den Grundpegel auf −200 dB). Fix: Ruf über Dauerlärm wurde manchmal verpasst, weil der Grundpegel bei kurzen Einbrüchen des Lärms nicht mehr nachzog.
 - 2026-10-04: Baustein „Aufgabe“ (Serie mit Ziel, Zähler, Ansage pro Wurf, Ende-Karte mit „Nochmal“, Verlauf/Bestwert, Abschnitt in Log und Bericht) und erste Aufgabe A1 „Absprung an der Linie“. `TESTSTRATEGIE.md`.
+- 2026-10-04: Außenwurf/Rückraum: Oberkörper wird in der Wurfauslage (höchster Punkt) bewertet statt im Abwurf; Pässe: Ellbogen auf Schulterhöhe geprüft (DHB-/KNSU-Kriterien).
 - 2026-10-04: 7-m-Trainer nach den Regeln korrigiert: Standfuß darf rutschen, Fehler nur, wenn kein Fuß am Boden bleibt (IHF 15:1); angehobener Fuß zählt nicht als Linienberührung.
 - 2026-10-04: Abwehr-Beinarbeit nach den DHB-Technikkriterien korrigiert (Grundposition parallel/breit/aufrecht/Arme vorn, Heraustreten mit Fuß und Führarm auf der Wurfarmseite, Gegner Rechts-/Linkshänder), `QUELLEN.md`.
 - 2026-10-04: Treffererkennung (C1) und Wurftempo (B7) mit Kameraposition 2: Ringe antippen, Ball im Ring per Bildvergleich, Tempo aus Flugzeit; Grenzen unkalibriert.

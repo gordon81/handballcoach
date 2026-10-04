@@ -65,13 +65,14 @@ export function evaluate(e, t, H){
   res.push({ok: jump!=='flach', txt:`Sprunghöhe ${jump}`});
   if(jump==='hoch') good.push('jump'); else if(jump==='flach') issues.push('jump');
 
-  // Oberkörper beim Wurf
-  const tf = e.throwF || e.peakF || e.tf;
+  // Oberkörper in der Wurfauslage (höchster Punkt des Sprungs): dort soll er aufgerichtet sein. Im Abwurf und danach klappt
+  // er bei einem guten Sprungwurf nach vorn (Lehrmaterial KNSU „Sprungwurftechnik“, siehe QUELLEN.md); das ist kein Fehler.
+  const tf = e.peakF || e.throwF || e.tf;
   const lean = Math.atan2(tf.sh.x - tf.hip.x, tf.hip.y - tf.sh.y) * 180/Math.PI, al = Math.abs(lean);
   let dir = 0; if(settings.line){ const l=settings.line, m=lineCenter(l); dir = Math.sign(l.inside.x - m.x); }
   const toward = dir ? Math.sign(lean) === dir : null;
-  if(al < TH.leanUpright){ res.push({ok:true, txt:'Oberkörper beim Wurf aufrecht'}); good.push('lean'); }
-  else if(toward===true && al > TH.leanForward){ res.push({ok:false, txt:`Oberkörper kippt nach vorn (${Math.round(al)}°)`}); issues.push('lean'); }
+  if(al < TH.leanUpright){ res.push({ok:true, txt:'Oberkörper in der Luft aufgerichtet'}); good.push('lean'); }
+  else if(toward===true && al > TH.leanForward){ res.push({ok:false, txt:`Oberkörper schon in der Luft nach vorn (${Math.round(al)}°)`}); issues.push('lean'); }
   else if(toward===false){ res.push({ok:true, txt:`Rücklage ${Math.round(al)}°`}); good.push('lean'); }
   else if(al > TH.leanStrong) res.push({ok:null, txt:`Starke Neigung ${Math.round(al)}°`});
   else res.push({ok:true, txt:`Leichte Neigung ${Math.round(al)}°`});

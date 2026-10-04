@@ -3,7 +3,7 @@ import { settings } from './store.js';
 import { RR } from './config.js';
 
 // Rückraum: „over“ heißt dort „innerhalb der 9 m abgesprungen“; dazu Schritte (steps) und Abwurf im höchsten Punkt (peak).
-export const LABEL_BAD = {over:RR ? 'Absprung zu nah (innerhalb 9 m)' : 'Übertritt', leg:'Falsches Sprungbein', arm:'Wurfarm zu spät oben', rot:'Zu wenig Körperdrehung', jump:'Sprung zu flach', lean:'Oberkörper kippt nach vorn',
+export const LABEL_BAD = {over:RR ? 'Absprung zu nah (innerhalb 9 m)' : 'Übertritt', leg:'Falsches Sprungbein', arm:'Wurfarm zu spät oben', rot:'Zu wenig Körperdrehung', jump:'Sprung zu flach', lean:'Oberkörper zu früh vorn',
   steps:'Schrittrhythmus', peak:'Abwurf nicht im höchsten Punkt'};
 export const LABEL_GOOD = {over:RR ? 'Absprung vor der 9-m-Linie' : 'Kein Übertritt', leg:'Richtiges Sprungbein', arm:'Wurfarm früh oben', rot:'Gute Körperdrehung', jump:'Starker Sprung', lean:'Stabiler Oberkörper',
   steps:'Dreischritt sauber', peak:'Abwurf im höchsten Punkt'};
@@ -26,6 +26,6 @@ export function tips(){
     jump:{short:'Knie hoch, höher springen.', tip:'Das Schwungbein-Knie aktiv nach oben ziehen und den letzten Schritt explosiv setzen.', drill:'Einbeinige Sprünge auf einen Kasten und Hopserlauf, 3×8 je Bein.'},
     steps:{short:'Drei Schritte, dann hoch.', tip:`Rhythmus: Ball fangen, drei Schritte (${R ? 'links, rechts, links' : 'rechts, links, rechts'}) und mit dem dritten abspringen.`, drill:'Dreischritt ohne Ball über Markierungen am Boden, 10×, dann mit Ball.'},
     peak:{short:'Im höchsten Punkt werfen.', tip:'Erst hochspringen, dann werfen: der Ball soll die Hand verlassen, wenn du oben bist, nicht im Steigen oder schon im Fallen.', drill:'Sprungwürfe über eine Zauberschnur in Hüfthöhe, 3×8.'},
-    lean:{short:'Oberkörper aufrichten.', tip:'Blick zum Ziel, Schultern zurück. Erst in der Luft aufdrehen, nicht nach vorn fallen.', drill:'Sprungwürfe auf einen Weichboden mit bewusster leichter Rücklage.'}
+    lean:{short:'Oberkörper aufrichten.', tip:'Nach dem Absprung den Oberkörper aufrichten, Wurfschulter zurück, Blick zum Ziel. Erst mit dem Abwurf nach vorn klappen, nicht schon in der Luft nach vorn fallen.', drill:'Sprungwürfe auf einen Weichboden: bewusst aufrecht in die Wurfauslage, dann werfen.'}
   };
 }

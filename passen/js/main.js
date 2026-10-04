@@ -100,7 +100,7 @@ function loop(){
   const lm = res?.landmarks?.[0], p = lm ? bodyPoints(lm) : null;
   if(p?.valid){
     const R = settings.hand==='R';
-    F.push({t, wr:R ? p.rWr : p.lWr, wsh:R ? p.rSh : p.lSh, hip:p.hip, bl:p.bl, lAnk:p.lAnk, rAnk:p.rAnk});
+    F.push({t, wr:R ? p.rWr : p.lWr, wsh:R ? p.rSh : p.lSh, wel:R ? p.rEl : p.lEl, hip:p.hip, bl:p.bl, lAnk:p.lAnk, rAnk:p.rAnk});
     while(F.length && t - F[0].t > 4) F.shift();
   }
   if(app.state!=='off') step(t);

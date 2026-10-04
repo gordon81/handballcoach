@@ -29,7 +29,7 @@ Alles läuft im Browser auf dem Handy. Es gibt keinen Server, kein Konto und kei
 | **Wurfarm** | Höhe des Wurf-Handgelenks beim Absprung | Handgelenk über der Nase (über der Schulter = mittel) |
 | **Körperdrehung** | wie weit die Schultern gegen die Hüfte aufdrehen (3D-Schätzung) | ab 25°, auf der „falschen Seite“ (Rechtshänder auf Rechtsaußen bzw. Linkshänder auf Linksaußen) ab 35° |
 | **Sprunghöhe** | Hüfte im höchsten Punkt über der Anlauf-Höhe | hoch genug (Grenzen je Kameraposition) |
-| **Oberkörper** | Neigung beim Wurf | aufrecht oder leichte Rücklage; nach vorn Richtung Torraum kippen ist ein Fehler |
+| **Oberkörper** | Neigung im höchsten Punkt des Sprungs (Wurfauslage) | in der Luft aufgerichtet oder leichte Rücklage; schon in der Luft nach vorn Richtung Torraum fallen ist ein Fehler (nach dem Abwurf darf er nach vorn klappen) |
 
 Angesagt wird immer nur **ein** Tipp, und zwar der wichtigste Fehler in dieser Reihenfolge: Übertritt, Sprungbein, Wurfarm, Drehung, Sprung, Oberkörper.
 Drehung, Sprunghöhe und Oberkörper sind Schätzungen aus einer einzigen Kamera. Treffer erkennt die App nur mit Kameraposition 2 und angetippten Ringen selbst (Abschnitt 4.6); sonst tippt man sie auf der Ergebnis-Karte an.

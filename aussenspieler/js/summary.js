@@ -19,7 +19,7 @@ export function measureText(m){
 }
 export const MEASURE_HELP = (RR ? 'Linie: Fuß beim Absprung zur 9-m-Linie (+ = innerhalb der 9 m). Schritte: Bodenkontakte ab der Zielansage bis zum Absprung. Abwurf: Zeit vom höchsten Punkt der Hüfte bis zum Abwurf (− = früher). '
   : 'Linie: Fuß beim Absprung zur 6-m-Linie (+ = im Torraum, also Übertritt). ') + 'Arm: Handgelenk beim Absprung über (+) oder unter (−) der Nase. '
-  + 'Sprung: Hüfte über der Anlauf-Höhe. Oberkörper beim Wurf (+ = Richtung Torraum). fps: Bilder pro Sekunde der Pose-Erkennung. Kamera: Position 1 (Grundlinie) oder 2 (Feld mit Tor). '
+  + 'Sprung: Hüfte über der Anlauf-Höhe. Oberkörper im höchsten Punkt, also in der Wurfauslage (+ = Richtung Torraum). fps: Bilder pro Sekunde der Pose-Erkennung. Kamera: Position 1 (Grundlinie) oder 2 (Feld mit Tor). '
   + 'Ansage (nur „Entscheidung in der Luft“): wie lange nach dem Absprung die App das Ziel abschickt / die Sprachausgabe wirklich zu sprechen beginnt. '
   + 'Tempo (nur mit angetippten Ringen, Kamera 2): Wurfentfernung / Zeit vom Abwurf bis zum Ball im Ring, grobe Schätzung. '
   + `cm geschätzt (Schulter–Knöchel = ${KL_CM} cm angenommen).`;

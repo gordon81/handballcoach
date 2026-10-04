@@ -405,6 +405,9 @@ test('Pässe: Arm über der Schulter, Gegenbein vorn', () => {
   const ok = judgePass(passFrames(), 1.3, 'left', true);
   assert.deepEqual([ok.arm, ok.foot, ok.ok], [true, true, true], JSON.stringify(ok));
   assert.equal(judgePass(passFrames({armY:40}), 1.3, 'left', true).arm, false, 'Hand unter der Schulter');
+  const lowElbow = passFrames().map(f => ({...f, wel:{x:540, y:f.wsh.y + 40}}));   // Ellbogen 0,2 KL unter der Schulter
+  assert.equal(judgePass(lowElbow, 1.3, 'left', true).arm, false, 'Ellbogen nicht auf Schulterhöhe');
+  assert.equal(judgePass(passFrames().map(f => ({...f, wel:{x:540, y:f.wsh.y + 5}})), 1.3, 'left', true).arm, true, 'Ellbogen auf Schulterhöhe');
   assert.equal(judgePass(passFrames({front:'r'}), 1.3, 'left', true).foot, false, 'Rechtshänder mit rechts vorn');
   assert.equal(judgePass(passFrames({front:'r'}), 1.3, 'left', false).foot, true, 'Linkshänder mit rechts vorn');
   assert.equal(judgePass(passFrames({front:'r'}), 1.3, 'right', true).foot, true, 'Wand rechts: größeres x ist vorn');
@@ -421,7 +424,7 @@ test('Pässe: Kamera-Zählung und Zusammenfassung', () => {
   assert.equal(ts.length, 2, `Würfe bei ${ts}`);
   const s = passSummary([{ok:true, arm:true, foot:true}, {ok:false, arm:false, foot:true}, {ok:null}], 30);
   assert.deepEqual([s.n, s.seen, s.arm, s.foot, s.perMin], [3, 2, 1, 2, 6]);
-  assert.match(s.say, /^Fertig\. 3 Pässe in 30 Sekunden\. 1 mit Arm oben, 2 mit dem richtigen Bein vorn\. Ellbogen und Hand über die Schulter\.$/);
+  assert.match(s.say, /^Fertig\. 3 Pässe in 30 Sekunden\. 1 mit Arm oben, 2 mit dem richtigen Bein vorn\. Ellbogen auf Schulterhöhe, Hand über der Schulter\.$/);
 });
 
 /* ---------- Sprungkraft (sprung/js/rules.js) ---------- */

@@ -6,6 +6,7 @@
 export const TH_P = {
   vThrow: 3.0,     // KL/s: Handgelenk relativ zur Hüfte, ab hier ist es ein Wurf
   armOver: 0.0,    // KL: Handgelenk so weit über der Wurfschulter = Arm oben
+  elbow: -0.1,     // KL: Ellbogen höchstens so weit unter der Schulter (DHB: „Ellbogen ist vor dem Ball auf Schulterhöhe“)
   before: 1.0,     // s: so lange vor dem Aufprall wird der Abwurf gesucht
   flight: 0.12,    // s: mindestens so lange fliegt der Ball zur Wand (Abwurf davor)
   gap: 0.5         // s: Kamera-Zählung ohne Mikro: Mindestabstand zweier Würfe
@@ -24,12 +25,13 @@ export function releaseFrame(frames, t0, t1, th = TH_P){
   return best;
 }
 
-// Technik eines Passes. frames: [{t, wr, wsh, hip, lAnk, rAnk, bl}], tHit = Aufprall, wall = 'left' | 'right' (Wand im Bild),
+// Technik eines Passes. frames: [{t, wr, wsh, wel (Ellbogen, optional), hip, lAnk, rAnk, bl}], tHit = Aufprall, wall = 'left' | 'right' (Wand im Bild),
 // R = Rechtshänder. → {arm, foot (true/false/null = nicht erkannt), ok, why}
 export function judgePass(frames, tHit, wall, R, th = TH_P){
   const f = releaseFrame(frames, tHit - th.before, tHit - th.flight, th);
   if(!f) return {arm:null, foot:null, ok:null, why:'Abwurf nicht gesehen'};
-  const arm = (f.wsh.y - f.wr.y)/f.bl > th.armOver;
+  // Schlagwurf (DHB-Technikkriterien): Hand hinter dem Ball über der Schulter, Ellbogen auf Schulterhöhe.
+  const arm = (f.wsh.y - f.wr.y)/f.bl > th.armOver && (f.wel ? (f.wsh.y - f.wel.y)/f.bl >= th.elbow : true);
   // Vorn = näher an der Wand. Wand links: kleineres x ist vorn.
   const front = (wall === 'left') === (f.lAnk.x < f.rAnk.x) ? 'l' : 'r';
   const foot = front === (R ? 'l' : 'r');
@@ -53,7 +55,7 @@ export function throwsFromPose(frames, th = TH_P){
 export function summary(passes, dur){
   const n = passes.length, seen = passes.filter(p => p.ok !== null), arm = seen.filter(p => p.arm).length, foot = seen.filter(p => p.foot).length;
   const tips = [];
-  if(seen.length && arm < seen.length*0.8) tips.push('Ellbogen und Hand über die Schulter.');
+  if(seen.length && arm < seen.length*0.8) tips.push('Ellbogen auf Schulterhöhe, Hand über der Schulter.');
   if(seen.length && foot < seen.length*0.8) tips.push('Gegenbein vor, Richtung Wand.');
   const say = `Fertig. ${n} Pässe in ${dur} Sekunden.` + (seen.length ? ` ${arm} mit Arm oben, ${foot} mit dem richtigen Bein vorn.` : '') + (tips.length ? ' ' + tips.join(' ') : '');
   return {n, perMin:dur ? Math.round(n*60/dur) : 0, seen:seen.length, arm, foot, tips, say};

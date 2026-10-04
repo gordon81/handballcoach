@@ -36,7 +36,7 @@ export function layout(){
 addEventListener('resize', layout); video.addEventListener('loadedmetadata', layout);
 
 // Körperpunkte (MediaPipe-Indizes) in Pixeln; valid, wenn Rumpf und Beine sicher erkannt sind. bl = Körperlänge (Schulter–Knöchel).
-const IX = {nose:0, lSh:11, rSh:12, lWr:15, rWr:16, lHip:23, rHip:24, lAnk:27, rAnk:28, lHeel:29, rHeel:30, lToe:31, rToe:32};
+const IX = {nose:0, lSh:11, rSh:12, lEl:13, rEl:14, lWr:15, rWr:16, lHip:23, rHip:24, lAnk:27, rAnk:28, lHeel:29, rHeel:30, lToe:31, rToe:32};
 export function bodyPoints(lm){
   const W = canvas.width, H = canvas.height, p = {};
   for(const k in IX){ const q = lm[IX[k]]; p[k] = {x:q.x*W, y:q.y*H, v:q.visibility ?? 1}; }
