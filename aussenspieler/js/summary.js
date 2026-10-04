@@ -8,14 +8,16 @@ const cm = x => Math.round(x*KL_CM), sgn = x => (x > 0 ? '+' : '') + x;
 export function measures(m){
   if(!m) return null;
   return {line: m.line!=null ? sgn(cm(m.line)) + ' cm' : '–', arm: sgn(cm(m.arm)) + ' cm', rot: m.rot!=null ? m.rot + '°' : '–',
-    jump: cm(m.jump) + ' cm', lean: sgn(m.lean) + '°', fps: m.fps + '', cam: m.cam==='court' ? '2' : '1'};
+    jump: cm(m.jump) + ' cm', lean: sgn(m.lean) + '°', fps: m.fps + '', cam: m.cam==='court' ? '2' : '1',
+    call: m.callDet!=null ? `${m.callDet} ms` + (m.callLag!=null ? ` / ${m.callLag} ms` : '') : '–'};
 }
 export function measureText(m){
   const s = measures(m); if(!s) return '';
-  return `Kamera ${s.cam} · Linie ${s.line} · Arm ${s.arm} · Drehung ${s.rot} · Sprung ${s.jump} · Oberkörper ${s.lean} · ${s.fps} fps`;
+  return `Kamera ${s.cam} · Linie ${s.line} · Arm ${s.arm} · Drehung ${s.rot} · Sprung ${s.jump} · Oberkörper ${s.lean} · ${s.fps} fps` + (m.callDet!=null ? ` · Ansage ${s.call}` : '');
 }
 export const MEASURE_HELP = 'Linie: Fuß beim Absprung zur 6-m-Linie (+ = im Torraum, also Übertritt). Arm: Handgelenk beim Absprung über (+) oder unter (−) der Nase. '
   + 'Sprung: Hüfte über der Anlauf-Höhe. Oberkörper beim Wurf (+ = Richtung Torraum). fps: Bilder pro Sekunde der Pose-Erkennung. Kamera: Position 1 (Grundlinie) oder 2 (Feld mit Tor). '
+  + 'Ansage (nur „Entscheidung in der Luft“): wie lange nach dem Absprung die App das Ziel abschickt / die Sprachausgabe wirklich zu sprechen beginnt. '
   + `cm geschätzt (Schulter–Knöchel = ${KL_CM} cm angenommen).`;
 export const LIMITS_TEXT = (TH = th()) => `Grenzen${settings.camPos==='court' ? ' (Kamera 2)' : ''}: Sprung hoch ab ${cm(TH.jumpHigh)} cm, mittel ab ${cm(TH.jumpMid)} cm; Drehung ab ${TH.rot}° (falsche Seite ${TH.rotWrongSide}°); `
   + `Oberkörper aufrecht unter ${TH.leanUpright}°, kippt nach vorn ab ${TH.leanForward}°; Arm über der Nase = oben.`;

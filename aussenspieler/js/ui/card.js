@@ -20,7 +20,7 @@ export function showCard(en){
     <div class="btnrow"><button data-v ${en.clip ? '' : 'hidden'}>▶︎ Video ansehen</button></div>
     ${en.target ? `<div class="hitrow"><span>Ziel getroffen?</span><button data-h="1">Treffer</button><button class="no" data-h="0">Daneben</button></div>` : ''}`;
   c.querySelectorAll('[data-h]').forEach(b => b.onclick = () => {
-    en.hit = b.dataset.h === '1'; store(); renderLog(); taskRecount();
+    en.hit = b.dataset.h === '1'; taskRecount(en); store(); renderLog();
     c.querySelectorAll('[data-h]').forEach(x => x.classList.toggle('on', x===b));
     clearTimeout(cardTimer); cardTimer = setTimeout(() => c.style.display='none', 1500);
   });

@@ -50,7 +50,11 @@ export function taskThrow(entry){
 }
 export const taskDone = () => !!app.task?.done;
 // Treffer wurde nachträglich getippt (zählt bei „Entscheidung in der Luft“): Zähler neu rechnen.
-export function taskRecount(){ renderTaskBox(); }
+export function taskRecount(entry){
+  const v = entry?.task && judge(entry.task.id, entry, th());
+  if(v){ entry.task.ok = v.ok; entry.task.why = v.why; store(); }
+  renderTaskBox();
+}
 
 /* ---------- Anzeige ---------- */
 // Großer Zähler oben rechts: aus 4 m lesbar, wie weit die Serie ist.

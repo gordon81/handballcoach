@@ -44,7 +44,7 @@ Heute bewertet die App jeden Wurf, stellt aber keine **Aufgabe** mit Ziel. Für 
 - **Prüfbar:** ●●○ – der Abstand wird schon gemessen; cm sind Schätzungen, das Fenster muss nach dem Hallentest eingestellt werden.
 - **Baut auf:** Übertritt-Prüfung, `m.line`. **Aufwand S.**
 
-### A2 · Entscheidung in der Luft
+### A2 · Entscheidung in der Luft ✅ gebaut (Ansage beim Absprung; die leichtere Variante „beim letzten Schritt“ erst, wenn der Hallentest zeigt, dass es zu spät kommt)
 - **Ziel:** Torwart lesen lernen: das Ziel steht erst fest, wenn der Spieler schon springt.
 - **Ablauf:** Spieler läuft ohne Ziel an. Die App sagt das Ziel **beim Absprung** an (Zustand `air`), kurz und laut („Blau!“, „Lang!“). Variante leichter: Ansage beim letzten Schritt (Fuß nähert sich der Linie).
 - **Erfolg:** Treffer im angesagten Ziel (heute per Antippen), Technik trotzdem sauber.
@@ -159,7 +159,7 @@ Heute bewertet die App jeden Wurf, stellt aber keine **Aufgabe** mit Ziel. Für 
 1. [ ] Hallentest Außenwurf-Coach, Grenzen in `TH` / `TH_POS` einstellen (Voraussetzung).
 2. [x] Baustein „Aufgabe“ (Abschnitt 1) im Außenwurf-Coach: Aufgabenkarte, Zähler, „geschafft / nicht geschafft“, Ergebnis im Log und Bericht. **M**
 3. [ ] Erste Aufgaben ohne neue Erkennung: **A1 Absprung an der Linie** ✅, **A5 Serie unter Ermüdung**, **A3 Wurfhöhe auf Ansage**. **S** je Aufgabe
-4. [ ] **A2 Entscheidung in der Luft** (Ansage beim Absprung) + Verzögerung der Sprachausgabe in der Halle messen. **S**
+4. [x] **A2 Entscheidung in der Luft** (Ansage beim Absprung) ✅; Verzögerung wird gemessen (`callDet`/`callLag`), **in der Halle ansehen** (offen). **S**
 5. [ ] Gemeinsamen Code nach `shared/` ziehen (Kamera, Pose, Sprache, Zuruf, Clips, Demo), zweite Karte im Startmenü vorbereiten. **M**
 6. [ ] **B1 7-m-Trainer** als zweites Training (mit C3 Wurf ohne Sprung, C4 gerade Linie). **M**
 7. [ ] **B5 Abwehr-Beinarbeit** (ohne Ball, mit C5 Reaktionszeit). **M**

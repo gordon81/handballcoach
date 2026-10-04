@@ -135,6 +135,8 @@ Ganz oben in der Einrichtung steht **Übung**:
 - **Freies Training** (Standard): Würfe mit Zielansage und Technik-Feedback, ohne feste Anzahl.
 - **Absprung an der Linie:** 10 Würfe, so nah wie möglich an der 6-m-Linie abspringen, ohne überzutreten. Geschafft ist ein Wurf, wenn der Fuß beim Absprung höchstens ca. 30 cm vor der Linie ist und nicht übertritt. Die Aufgabe ist geschafft bei **7 von 10**.
 
+- **Entscheidung in der Luft:** die App sagt nur **„Los“**. Der Spieler läuft ohne Ziel an, das Ziel kommt erst, **wenn er abspringt**. So lernt man, die Ecke erst in der Luft zu wählen (wie gegen einen Torwart). Geschafft ist ein Wurf mit richtigem Sprungbein, Wurfarm oben und ohne Übertritt; wer auf der Ergebnis-Karte „Daneben“ tippt, hat ihn nicht geschafft. 10 Würfe, Ziel **7 von 10**.
+
 Unter der Auswahl stehen kurz die Regeln und, sobald es sie gibt, **Bestwert** und **letztes Ergebnis**. Der Start-Button heißt dann „Aufgabe starten“.
 
 So läuft eine Aufgabe:
@@ -245,6 +247,8 @@ Hinweis: Die App zeigt und berichtet nur das **aktuelle** Training. Frühere Tra
 
 ### Messwerte
 
+Bei „Entscheidung in der Luft“ zusätzlich **Ansage**: wie viele Millisekunden nach dem Absprung die App das Ziel abschickt und wann die Sprachausgabe des Handys wirklich zu sprechen beginnt. Ist der zweite Wert deutlich über 300 ms, kommt das Ziel zu spät.
+
 Pro Wurf: Kameraposition (1/2), **Linie** (Fuß zur 6-m-Linie beim Absprung, + = im Torraum, also Übertritt), **Arm** (Handgelenk über + oder unter − der Nase), **Drehung** (°), **Sprung** (Hüfte über Anlauf-Höhe), **Oberkörper** (°, + = Richtung Torraum), **fps**. Die cm-Werte sind Schätzungen (angenommen 140 cm von Schulter bis Knöchel); sie dienen zum Einstellen der Grenzen nach dem Hallentest.
 
 ### Wurf-Videos ansehen
@@ -316,7 +320,8 @@ Die Grenzwerte der Prüfungen sind bisher nur im Demo geprüft. Beim ersten Hall
 5. **Auswerten:** im Log die Messwerte pro Wurf ansehen (Zweifelsfälle mit „▶︎ Video“ prüfen) und „Bericht als Datei“ teilen; der Bericht enthält die Tabelle „Messwerte“.
 6. **Grenzen anpassen:** zwischen die Werte der guten und der bewusst schlechten Würfe legen (im Code `TH` bzw. `TH_POS.court` in `aussenspieler/js/config.js`, siehe `brain.md`). Beim Übertritt zuerst die Linie prüfen, wenn echte Übertritte nur knapp im Plus oder saubere Absprünge im Plus liegen.
 7. Beide Kamerapositionen getrennt testen (Spalte „Kamera“ im Bericht).
-8. **Aufgabe „Absprung an der Linie“:** Klebeband 10, 20, 30 und 40 cm vor die Linie kleben, an jedem ein paar Mal abspringen und notieren, was die App ansagt. Passen die cm nicht, wird die Grenze (heute ca. 30 cm) im Code angepasst.
+8. **Aufgabe „Entscheidung in der Luft“:** 10 Würfe, dann im Bericht die Spalte „Ansage“ ansehen und notieren, ob man das Ziel in der Luft noch rechtzeitig gehört hat.
+9. **Aufgabe „Absprung an der Linie“:** Klebeband 10, 20, 30 und 40 cm vor die Linie kleben, an jedem ein paar Mal abspringen und notieren, was die App ansagt. Passen die cm nicht, wird die Grenze (heute ca. 30 cm) im Code angepasst.
 
 ---
 

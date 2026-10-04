@@ -309,6 +309,48 @@ test('Aufgabe „Absprung an der Linie“ (Handy-Größe): Zähler, Ansagen, End
   await page.close();
 });
 
+test('Aufgabe „Entscheidung in der Luft“: „Los“, Ziel erst beim Absprung, Verzögerung gemessen', {timeout:200000}, async t => {
+  const {page, errors} = await demoPage({pause:1, task:'air'});
+  await page.evaluate(() => {
+    M.tasks.TASKS.air.reps = 4; M.tasks.TASKS.air.goal = 2;
+    // Zustand bei jeder Ansage mitschreiben: das Ziel muss im Sprung kommen.
+    const push = __said.push.bind(__said); window.__sayState = [];
+    __said.push = x => { __sayState.push({x, s:M.app.state}); return push(x); };
+  });
+  await page.click('#btnStart');
+  await walkLine(page);
+  assert.match(await page.textContent('#setup'), /Ziel kommt erst beim Absprung/);
+
+  await t.test('4 Würfe: Ziel im Sprung angesagt, Bewertung sauber / Übertritt / Arm', async () => {
+    await page.click('#setup [data-a=start]');
+    await until(page, () => M.store.log.length >= 1, null, 40000, 'erster Wurf');
+    await page.click('#card [data-h="0"]');   // erster Wurf: daneben getippt → zählt nicht
+    await until(page, () => M.store.log.length >= 4, null, 90000, '4 Würfe');
+    const log = await page.evaluate(() => M.store.log.map(e => ({target:e.target, ok:e.task?.ok, why:e.task?.why, det:e.m.callDet, hit:e.hit})));
+    log.forEach((e, i) => { assert.ok(e.target, `Wurf ${i+1}: Ziel gesetzt`); assert.ok(e.det >= 0 && e.det < 250, `Wurf ${i+1}: Ansage ${e.det} ms nach dem Absprung`); });
+    assert.deepEqual(log.slice(1).map(e => e.ok), [true, false, false], JSON.stringify(log));
+    const ss = await page.evaluate(() => __sayState);
+    const targets = ss.filter(x => log.some(e => e.target === x.x));
+    assert.ok(targets.length >= 4 && targets.every(x => x.s === 'runup'), 'Ziel beim Absprung (Zustand wechselt direkt danach auf Sprung): ' + JSON.stringify(targets));
+    assert.ok(ss.filter(x => x.x === 'Los').length >= 4, '„Los“ vor jedem Wurf');
+    const iLos = ss.findIndex(x => x.x === 'Los'), iT = ss.findIndex(x => x.x === log[0].target);
+    assert.ok(iLos >= 0 && iT > iLos, 'erst „Los“, dann das Ziel');
+  });
+
+  await t.test('Ende: nachträglich getipptes „Daneben“ zählt, Messwert im Log', async () => {
+    await until(page, () => !document.querySelector('#taskEnd').hidden, null, 5000, 'Ende-Karte');
+    assert.match(await page.textContent('#taskEnd'), /1 von 4/);
+    await page.click('#taskEnd [data-t=end]');
+    await page.click('#btnLog');
+    assert.match(await page.textContent('#logBody'), /Ansage \d+ ms/);
+    assert.deepEqual(await page.evaluate(() => [M.store.log[0].task.ok, M.store.log[0].task.why]), [false, 'Ziel verfehlt'], 'Log-Eintrag nachgezogen');
+    await page.click('#logSheet [data-close]');
+  });
+
+  assert.deepEqual(errors, [], 'Fehler in der Browser-Konsole');
+  await page.close();
+});
+
 test('Mikrofon: Rufe erkannt, Lärm nicht (Fake-Mikrofon)', {timeout:120000}, async t => {
   const page = await browser.newPage();
   await page.goto(srv.url + 'aussenspieler/');
