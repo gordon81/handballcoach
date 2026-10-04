@@ -54,6 +54,10 @@ export function startTraining(){
     // Erst prüfen lassen. Wer „bewegt“ schon gesehen hat und trotzdem startet, darf (z. B. nur Licht anders).
     if(c && (c.status==='adjusted' || (c.status==='moved' && prev!=='moved'))){ showSetup(false); return; }
   }
+  const tk = chosenTask();
+  if(app.source==='cam' && tk?.needCam && settings.camPos !== tk.needCam){
+    showSetup(false); showHint(`Für „${tk.name}“ die Kameraposition ${CAM_POS[tk.needCam].name} wählen.`, 4500); say('Für diese Aufgabe bitte Kameraposition zwei wählen.'); return;
+  }
   cancelMarking(); stopWizard(); hideSetup(); hideEnd();
   ensureSession(); setState('ready', curT());
   say(beginTask(curT()) || 'Los geht’s'); unlockBeep(); setRunning(true); keepAwake(); syncMic();
@@ -98,7 +102,7 @@ function render(){
   let h;
   if(app.marking && app.markStep==='line'){
     const n = app.marking.length;
-    h = `<p><b>Linie antippen:</b> Punkte entlang der ${TXT.line} setzen, ${TXT.tapHint}. Gesetzt: ${n}</p>
+    h = `<p><b>Linie antippen:</b> Punkte entlang der ${TXT.line} setzen, von außen nach innen, ${TXT.tapHint}. Gesetzt: ${n}</p>
       <div class="btnrow">${btn('undo','↶ Zurück','',n>0)}${btn('done','Fertig','primaryBtn',n>=2)}${btn('cancel','Abbrechen')}${FLIP}</div>`;
   } else if(app.marking){
     h = `<p><b>${TXT.insideLabel}:</b> Jetzt ${TXT.insideTap}.</p>

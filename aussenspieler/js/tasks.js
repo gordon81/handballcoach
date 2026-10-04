@@ -15,6 +15,9 @@ export const TASKS = {
   height: {id:'height', name:'Wurfhöhe auf Ansage', short:'Vor dem Ziel kommt „Hoch“ (über dem Kopf) oder „Hüfte“ (seitlich, Hand unter der Schulter).',
     intro:'Aufgabe Wurfhöhe auf Ansage. Vor dem Ziel sage ich hoch oder Hüfte. Bei hoch wirfst du über dem Kopf ab, bei Hüfte seitlich aus der Hüfte.',
     reps:10, goal:7, calls:['Hoch', 'Hüfte']},
+  angle: {id:'angle', name:'Winkel vergrößern', short:'Kameraposition 2 (Feld mit Tor). Im Sprung Richtung Tormitte fliegen, nicht geradeaus.',
+    intro:'Aufgabe Winkel vergrößern. Flieg im Sprung Richtung Tormitte, damit der Wurfwinkel größer wird. Ich sage dir nach jedem Wurf, ob du genug nach innen geflogen bist.',
+    reps:10, goal:7, needCam:'court'},
   tired: {id:'tired', name:'Serie unter Ermüdung', short:'20 Würfe mit nur 2 s Pause. Die Sprunghöhe soll bis zum Ende halten, kein Übertritt.',
     intro:'Aufgabe Serie unter Ermüdung. Zwanzig Würfe mit kurzer Pause. Halte die Sprunghöhe bis zum Schluss und tritt nicht über.',
     reps:20, goal:null, pause:2}
@@ -56,6 +59,13 @@ export function judge(id, entry, th = TH, prev = []){
     if(m.shT >= (th.taskHipShoulder ?? TH.taskHipShoulder)) return {ok:false, why:'Zu hoch für Hüfte', say:'Tiefer. Aus der Hüfte.'};
     if(m.hipT < (th.taskHipLow ?? TH.taskHipLow)) return {ok:false, why:'Zu tief', say:'Etwas höher, Hüfthöhe.'};
     return {ok:true, why:'Aus der Hüfte abgeworfen', say:'Hüfte, gut.'};
+  }
+  if(id==='angle'){
+    if(is('over') || m.line > 0) return {ok:false, why:'Übertritt', say:'Übertritt.'};
+    if(m.flyAng == null) return {ok:false, why:'Flug nicht gemessen (Linie fehlt?)', say:'Nicht gemessen.'};
+    // Der Winkel im Bild ist kein echter Winkel in der Halle (Perspektive): nur „gerade“ oder „nach innen“ ansagen.
+    if(m.flyAng < (th.taskFlyAng ?? TH.taskFlyAng)) return {ok:false, why:'Zu gerade geflogen', say:'Zu gerade. Mehr Richtung Tormitte.'};
+    return {ok:true, why:'Nach innen geflogen', say:'Geschafft. Gut nach innen.'};
   }
   if(id==='tired'){
     if(is('over') || m.line > 0) return {ok:false, why:'Übertritt', say:'Übertritt.'};

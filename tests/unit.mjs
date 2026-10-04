@@ -223,6 +223,17 @@ test('Wurfhöhe auf Ansage: „Hoch“ über dem Kopf, „Hüfte“ zwischen Hü
   assert.equal(judge('height', {call:'Hoch', issues:[], m:{armT:null}}), null, 'ohne Wurf-Frame zählt nicht');
 });
 
+test('Winkel vergrößern: Flug nach innen gegen den Anlauf, Übertritt zählt nie', () => {
+  const at = (flyAng, issues = [], line = -0.1) => judge('angle', {issues, m:{flyAng, line}});
+  assert.equal(at(TH.taskFlyAng).ok, true, 'genau an der Grenze');
+  assert.equal(at(TH.taskFlyAng - 1).ok, false);
+  assert.match(at(5).say, /Zu gerade/);
+  assert.equal(at(-30).ok, false, 'nach außen geflogen');
+  assert.equal(at(90, ['over'], 0.05).why, 'Übertritt');
+  assert.equal(at(null).ok, false, 'ohne Linie nicht gemessen');
+  assert.equal(TASKS.angle.needCam, 'court', 'braucht Kameraposition 2');
+});
+
 test('Serie unter Ermüdung: Sprunghöhe Ende gegen Anfang, Übertritte', () => {
   const t = TASKS.tired, j = (jump, issues = []) => ({issues, m:{jump, line:-0.1}});
   const keep = Array.from({length:20}, (_, i) => j(i < 15 ? 0.3 : 0.28));

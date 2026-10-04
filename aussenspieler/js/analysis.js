@@ -2,7 +2,7 @@
 import { settings, th } from './store.js';
 import { canvas } from './dom.js';
 import { pick, angDiff } from '../../shared/js/utils.js';
-import { inTorraum, lineOffset, lineCenter } from './line.js';
+import { inTorraum, lineOffset, lineCenter, lineTangent } from './line.js';
 import { LABEL_GOOD, PRIO, wrongSide, tips } from './feedback.js';
 import { RR } from './config.js';
 import { countSteps } from './steps.js';
@@ -80,11 +80,27 @@ export function evaluate(e, t, H){
   const r2 = x => x==null ? null : Math.round(x*100)/100;
   const ft = e.tf.foot[e.foot], offs = settings.line ? [ft.toe, ft.heel].map(p => lineOffset({x:p.x/W, y:p.y/Hh})) : null;
   const win = H.filter(h => h.t >= e.t0 - 1 && h.t <= t);
+  // Flug Richtung Tormitte (für „Winkel vergrößern“): Winkel zwischen Anlaufrichtung (Hüfte, letzte 0,35 s) und Flug
+  // (Hüfte beim Absprung → bei der Landung) im Bild, + = zur Linie hin nach innen (Richtung der Linienpunkte), in Grad.
+  // Gegen den Anlauf gemessen, weil im schrägen Kamerabild auch ein gerader Flug ein Stück „entlang der Linie“ aussieht;
+  // beides an der Hüfte, weil Absprung- und Landefuß verschiedene Füße sein können.
+  const lf = H.filter(h => h.t <= t).at(-1), ft0 = e.tf.foot[e.foot];
+  const tan = settings.line ? lineTangent({x:(ft0.toe.x + ft0.heel.x)/2, y:(ft0.toe.y + ft0.heel.y)/2}) : null;
+  const run = H.filter(h => h.t >= e.t0 - 0.35 && h.t <= e.t0);
+  let flyAng = null;
+  if(tan && lf && run.length >= 3){
+    const r = {x:run.at(-1).hip.x - run[0].hip.x, y:run.at(-1).hip.y - run[0].hip.y}, f = {x:lf.hip.x - e.tf.hip.x, y:lf.hip.y - e.tf.hip.y};
+    const cr = (a, b) => a.x*b.y - a.y*b.x, rl = Math.hypot(r.x, r.y) || 1, fl = Math.hypot(f.x, f.y);
+    // Betrag: Winkel zwischen Anlauf und Flug; Vorzeichen: + wenn der Flug weiter nach innen (entlang der Linie) geht als ein gerader.
+    const inward = Math.sign((f.x*tan.x + f.y*tan.y) - fl*(r.x*tan.x + r.y*tan.y)/rl) || 1;
+    if(fl > 0.1*e.bl) flyAng = Math.round(Math.abs(Math.atan2(cr(r, f), r.x*f.x + r.y*f.y))*180/Math.PI*inward);
+  }
+
   // Handgelenk im Wurf-Frame (für „Wurfhöhe auf Ansage“): über Nase / Wurfschulter / Hüfte, KL (+ = darüber).
   const tw = e.throwF;
   const m = {line: offs ? r2(Math.max(...offs)*Hh/e.bl) : null, arm:r2((a.nose.y - a.wr.y)/e.bl), rot, jump:r2(jr),
     armT: tw ? r2((tw.nose.y - tw.wr.y)/e.bl) : null, shT: tw ? r2((tw.wsh.y - tw.wr.y)/e.bl) : null, hipT: tw ? r2((tw.hip.y - tw.wr.y)/e.bl) : null,
-    steps, peakDt,
+    steps, peakDt, flyAng,
     lean: Math.round(dir ? lean*dir : al), fps: Math.round(win.length/Math.max(0.1, t - (e.t0 - 1))), cam:settings.camPos};
 
   issues.sort((x,y) => PRIO.indexOf(x) - PRIO.indexOf(y));

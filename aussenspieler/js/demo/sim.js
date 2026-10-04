@@ -91,6 +91,8 @@ export const VAR_RR = [{dr:0.4, h:0.5, arm:1, steps:3}, {dr:0.4, h:0.5, arm:1, s
 // height: folgt der Ansage „Hoch“/„Hüfte“ (follow) oder macht absichtlich das Gegenteil. tired: Sprung wird ab Wurf 3 flacher.
 export const TASK_VAR = {line:[{dr:0.25, h:0.5, arm:1}, {dr:1.0, h:0.5, arm:1}, {dr:-0.15, h:0.45, arm:1}, {dr:0.35, h:0.45, arm:1}],
   height:[{dr:0.3, h:0.5, arm:1, follow:true}, {dr:0.3, h:0.5, arm:1, follow:true}, {dr:0.3, h:0.5, arm:1, follow:false}, {dr:0.3, h:0.5, arm:1, follow:true}],
+  // angle: Flug Richtung Tormitte (in), geradeaus, Richtung Tormitte, Übertritt.
+  angle:[{dr:0.3, h:0.5, arm:1, fly:'in'}, {dr:0.3, h:0.5, arm:1}, {dr:0.3, h:0.5, arm:1, fly:'in'}, {dr:-0.15, h:0.5, arm:1, fly:'in'}],
   tired:[{dr:0.3, h:0.5, arm:1}, {dr:0.3, h:0.5, arm:1}, {dr:0.3, h:0.32, arm:1}, {dr:0.3, h:0.3, arm:1}]};
 function startShot(){
   const vs = (app.task && TASK_VAR[app.task.id]) || (RR ? VAR_RR : VAR), v = {...vs[shotNo++ % vs.length]};
@@ -111,7 +113,8 @@ function shotStep(dt){
     // Letzter Schritt: Sprungbein (links bei Rechtshand) steht, Schwungbein-Knie kommt hoch.
     if(d < 0.8){ P.phi = R ? Math.PI : 0; const k = 0.3*(1 - d/0.8); if(R) P.rf = k; else P.lf = k;
     }
-    if(arrived){ s.stage = 'air'; s.t = 0; s.dir = P.a; s.T = 0.38 + s.h*0.5; P.s = 0; }
+    // fly 'in': im Sprung entlang der Linie nach innen (Richtung Tormitte), sonst geradeaus weiter.
+    if(arrived){ s.stage = 'air'; s.t = 0; s.dir = s.fly==='in' ? Math.atan2(-Math.cos(G.th*D2R), Math.sin(G.th*D2R)) : P.a; s.T = 0.38 + s.h*0.5; P.s = 0; }
     return;
   }
   if(s.stage==='air'){

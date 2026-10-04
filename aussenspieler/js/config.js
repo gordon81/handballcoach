@@ -45,6 +45,8 @@ export const TH = {jumpHigh:0.25, jumpMid:0.17, rot:25, rotWrongSide:35, leanUpr
   taskHighArm:0, taskHipShoulder:0, taskHipLow:-0.1,
   // Aufgabe „Serie unter Ermüdung“: Sprunghöhe der letzten 5 Würfe mindestens so viel vom Schnitt der ersten 5.
   taskTiredKeep:0.9,
+  // Aufgabe „Winkel vergrößern“: Flug im Bild mindestens so viel Grad gegen den Anlauf nach innen gedreht.
+  taskFlyAng:20,
   // Rückraum: Abwurf höchstens so weit (s) vom höchsten Punkt der Hüfte (im Demo: sauber ≤ 0,03 s, zu spät 0,18 s); Schritte vor dem Absprung (Bodenkontakte), die als Rhythmus gelten.
   peakDt:0.15, steps:3};
 // Abweichende Grenzen je Kameraposition (sonst TH). Position 2 sieht den Sprung von der Seite und misst ihn größer:

@@ -59,7 +59,7 @@ Heute bewertet die App jeden Wurf, stellt aber keine **Aufgabe** mit Ziel. Für 
 - **Prüfbar:** ●●○ – Handgelenk und Wurf-Frame (max. Handgelenk-Geschwindigkeit) gibt es schon; die Abgrenzung muss im Hallentest kalibriert werden.
 - **Baut auf:** Arm-Prüfung, Oberkörper-Frame. **Aufwand S.**
 
-### A4 · Winkel vergrößern (Flug Richtung Tormitte)
+### A4 · Winkel vergrößern (Flug Richtung Tormitte) ✅ gebaut (Aufgabe, nur Kameraposition 2)
 - **Ziel:** im Sprung Richtung Tormitte fliegen statt geradeaus, damit der Wurfwinkel größer wird.
 - **Aufbau:** Kameraposition 2 (Sprung von der Seite, Tor im Bild).
 - **Erfolg:** Landepunkt deutlich weiter innen als der Absprungpunkt (Weg entlang der Linie Richtung Tor, gemessen in Körperlängen).
@@ -165,7 +165,7 @@ Heute bewertet die App jeden Wurf, stellt aber keine **Aufgabe** mit Ziel. Für 
 7. [x] **B5 Abwehr-Beinarbeit** ✅ (ohne Ball, mit C5 Reaktionszeit). **M**
 8. [x] **B2 Rückraum-Sprungwurf** ✅ (großteils Außenwurf-Coach mit 9-m-Linie und Schrittzählung). **M**
 9. [x] **C2 Ballaufprall per Mikro** ✅, dann **B4 Pässe gegen die Wand** ✅. **M**
-10. [ ] **A4 Winkel vergrößern**, **A6 Gegenstoß auf Zeit**, **B3 Kreisläufer**, **B6 Sprungkraft**. **S–M**
+10. [ ] **A4 Winkel vergrößern** ✅, **A6 Gegenstoß auf Zeit**, **B3 Kreisläufer**, **B6 Sprungkraft**. **S–M**
 11. [ ] **C1 Treffererkennung** und **B7 Wurfgeschwindigkeit**. **L / M**, erst wenn der Rest in der Halle läuft.
 
 Jede neue Übung bekommt einen Demo-Ablauf in `demo/sim.js` und einen Test in `tests/browser.mjs`, wie der Außenwurf-Coach heute.

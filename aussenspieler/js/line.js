@@ -49,6 +49,19 @@ export function lineOffset(p){
   const c = curve(l.pts), n = nearest(c, p);
   return n.s===lineSide(c, l.inside) ? n.d : -n.d;
 }
+// Richtung entlang der Linie (Einheitsvektor in Pixeln) beim Punkt p (Pixel), in Reihenfolge der Punkte: beim Ablaufen von
+// außen nach innen, beim Antippen in der getippten Reihenfolge. null ohne Linie.
+export function lineTangent(p){
+  const l = settings.line; if(!l || !canvas.width) return null;
+  const c = curve(l.pts).map(q => ({x:q.x*canvas.width, y:q.y*canvas.height}));
+  let best = Infinity, dir = null;
+  for(let i = 0; i < c.length - 1; i++){
+    const a = c[i], b = c[i+1], dx = b.x - a.x, dy = b.y - a.y, L = Math.hypot(dx, dy) || 1;
+    const t = Math.max(0, Math.min(1, ((p.x - a.x)*dx + (p.y - a.y)*dy)/(L*L))), d = Math.hypot(a.x + t*dx - p.x, a.y + t*dy - p.y);
+    if(d < best){ best = d; dir = {x:dx/L, y:dy/L}; }
+  }
+  return dir;
+}
 export function lineCenter(l){ return {x:l.pts.reduce((a,p)=>a+p.x,0)/l.pts.length, y:l.pts.reduce((a,p)=>a+p.y,0)/l.pts.length}; }
 
 /* ---------- Antippen ---------- */

@@ -105,7 +105,7 @@ Ohne Linie kann das Training im Kamera-Modus nicht starten (der Übertritt brauc
 6. Ansage „Linie gespeichert.“ Prüfen, ob die rote Linie auf dem Strich liegt.
 
 **Linie antippen**
-1. „Linie antippen“, dann Punkte entlang der 6-m-Linie im Bild antippen (Bogen: 4–6 Punkte).
+1. „Linie antippen“, dann Punkte entlang der 6-m-Linie im Bild antippen (Bogen: 4–6 Punkte), **von außen nach innen**.
 2. „↶ Zurück“ nimmt den letzten Punkt zurück, „⇅“ schiebt die Leiste nach unten, falls sie die Linie verdeckt.
 3. „Fertig“, dann **einen Punkt im Torraum** antippen. Auch hier rastet die App auf den Strich am Boden ein, wenn sie ihn sicher findet.
 
@@ -138,6 +138,7 @@ Ganz oben in der Einrichtung steht **Übung**:
 - **Entscheidung in der Luft:** die App sagt nur **„Los“**. Der Spieler läuft ohne Ziel an, das Ziel kommt erst, **wenn er abspringt**. So lernt man, die Ecke erst in der Luft zu wählen (wie gegen einen Torwart). Geschafft ist ein Wurf mit richtigem Sprungbein, Wurfarm oben und ohne Übertritt; wer auf der Ergebnis-Karte „Daneben“ tippt, hat ihn nicht geschafft. 10 Würfe, Ziel **7 von 10**.
 
 - **Wurfhöhe auf Ansage:** vor dem Ziel sagt die App **„Hoch.“** (über dem Kopf abwerfen) oder **„Hüfte.“** (seitlich, Hand zwischen Hüfte und Schulter), z. B. *„Hüfte. Blau lang“*. Geprüft wird die Hand im Moment des Abwurfs. 10 Würfe, Ziel **7 von 10**.
+- **Winkel vergrößern:** nur mit **Kameraposition 2 · Feld mit Tor**. Im Sprung Richtung Tormitte fliegen statt geradeaus, damit der Wurfwinkel größer wird. Nach jedem Wurf *„Geschafft. Gut nach innen.“* oder *„Zu gerade. Mehr Richtung Tormitte.“* 10 Würfe, Ziel **7 von 10**. Mit Kameraposition 1 startet die Aufgabe nicht und die App sagt, dass Position 2 nötig ist. Beim Antippen der Linie von außen nach innen tippen.
 - **Serie unter Ermüdung:** 20 Würfe mit nur 2 s Pause. Ab dem 6. Wurf warnt die App *„Sprung wird flacher. Knie hoch.“*, wenn ein Sprung deutlich niedriger ist als am Anfang. Geschafft, wenn die letzten 5 Sprünge im Schnitt mindestens **90 %** so hoch sind wie die ersten 5 und kein Übertritt dabei war. Das Ergebnis steht in Prozent.
 
 Unter der Auswahl stehen kurz die Regeln und, sobald es sie gibt, **Bestwert** und **letztes Ergebnis**. Der Start-Button heißt dann „Aufgabe starten“.
@@ -324,8 +325,9 @@ Die Grenzwerte der Prüfungen sind bisher nur im Demo geprüft. Beim ersten Hall
 6. **Grenzen anpassen:** zwischen die Werte der guten und der bewusst schlechten Würfe legen (im Code `TH` bzw. `TH_POS.court` in `aussenspieler/js/config.js`, siehe `brain.md`). Beim Übertritt zuerst die Linie prüfen, wenn echte Übertritte nur knapp im Plus oder saubere Absprünge im Plus liegen.
 7. Beide Kamerapositionen getrennt testen (Spalte „Kamera“ im Bericht).
 8. **Aufgabe „Entscheidung in der Luft“:** 10 Würfe, dann im Bericht die Spalte „Ansage“ ansehen und notieren, ob man das Ziel in der Luft noch rechtzeitig gehört hat.
-9. **Aufgaben „Wurfhöhe“ und „Ermüdung“:** je 5 Würfe bewusst hoch und aus der Hüfte; prüfen, ob die Ansage stimmt. Bei der Ermüdung prüfen, ob 2 s Pause reichen, um zurück zum Anlauf zu kommen.
-10. **Aufgabe „Absprung an der Linie“:** Klebeband 10, 20, 30 und 40 cm vor die Linie kleben, an jedem ein paar Mal abspringen und notieren, was die App ansagt. Passen die cm nicht, wird die Grenze (heute ca. 30 cm) im Code angepasst.
+9. **Aufgabe „Winkel vergrößern“ (Position 2):** je 5 Würfe bewusst gerade und bewusst Richtung Tormitte; sagt die App das richtig an?
+10. **Aufgaben „Wurfhöhe“ und „Ermüdung“:** je 5 Würfe bewusst hoch und aus der Hüfte; prüfen, ob die Ansage stimmt. Bei der Ermüdung prüfen, ob 2 s Pause reichen, um zurück zum Anlauf zu kommen.
+11. **Aufgabe „Absprung an der Linie“:** Klebeband 10, 20, 30 und 40 cm vor die Linie kleben, an jedem ein paar Mal abspringen und notieren, was die App ansagt. Passen die cm nicht, wird die Grenze (heute ca. 30 cm) im Code angepasst.
 
 ---
 

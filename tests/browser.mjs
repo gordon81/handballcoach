@@ -398,6 +398,34 @@ test('Aufgaben „Wurfhöhe auf Ansage“ und „Serie unter Ermüdung“ (je 4 
   await page.close();
 });
 
+test('Aufgabe „Winkel vergrößern“ (Kameraposition 2): Flug nach innen gegen geraden Flug', {timeout:200000}, async t => {
+  const {page, errors} = await demoPage({pause:1, task:'angle'});
+  await page.evaluate(() => { M.tasks.TASKS.angle.reps = 4; M.tasks.TASKS.angle.goal = 2; });
+  await page.click('#btnStart');
+  await page.waitForSelector('#setup [data-a=wizard]');
+
+  await t.test('Kameraposition 1: Hinweis statt Start', async () => {
+    await walkLine(page);
+    await page.click('#setup [data-a=start]');
+    assert.match(await page.textContent('#hint'), /Kameraposition 2 · Feld mit Tor/);
+    assert.equal(await page.evaluate(() => M.app.state), 'off');
+  });
+
+  await t.test('Kameraposition 2: 4 Würfe nach innen / gerade / nach innen / Übertritt', async () => {
+    await page.click('#setup [data-a=camPos][data-v=court]');
+    await sleep(1000);
+    await walkLine(page);
+    await page.click('#setup [data-a=start]');
+    await until(page, () => M.store.log.length >= 4, null, 90000, '4 Würfe');
+    const log = await page.evaluate(() => M.store.log.map(e => ({ok:e.task?.ok, why:e.task?.why, a:e.m.flyAng})));
+    assert.deepEqual(log.map(e => e.ok), [true, false, true, false], JSON.stringify(log));
+    assert.equal(log[1].why, 'Zu gerade geflogen'); assert.equal(log[3].why, 'Übertritt');
+  });
+
+  assert.deepEqual(errors, [], 'Fehler in der Browser-Konsole');
+  await page.close();
+});
+
 test('Rückraum-Modus (?rr=1): 9-m-Linie, Dreischritt, Abwurf im höchsten Punkt, eigener Speicher', {timeout:200000}, async t => {
   const page = await browser.newPage({viewport:{width:1280, height:800}});
   const errors = []; page.on('pageerror', e => errors.push(e.message));
