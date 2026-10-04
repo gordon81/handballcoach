@@ -21,6 +21,9 @@ export const TASKS = {
   fastbreak: {id:'fastbreak', name:'Gegenstoß auf Zeit', short:'Weit weg starten (z. B. Mittellinie) und beim Loslaufen laut rufen. Gemessen wird die Zeit vom Ruf bis zum Absprung.',
     intro:'Aufgabe Gegenstoß auf Zeit. Stell dich weit weg, zum Beispiel an die Mittellinie. Ruf laut, wenn du losläufst, dann sage ich das Ziel. Ich messe die Zeit bis zum Absprung.',
     reps:5, goal:4, shout:true},
+  pivot: {id:'pivot', name:'Kreisläufer: Drehen auf Ansage', short:'Mit dem Rücken zum Tor an der Linie stehen. Auf „Links“ oder „Rechts“ in diese Richtung drehen und vor der Linie abspringen.',
+    intro:'Aufgabe Kreisläufer. Stell dich mit dem Rücken zum Tor an die Linie. Ich sage links oder rechts, dann drehst du dich in diese Richtung und wirfst. Nicht übertreten.',
+    reps:10, goal:7, calls:['Links', 'Rechts']},
   tired: {id:'tired', name:'Serie unter Ermüdung', short:'20 Würfe mit nur 2 s Pause. Die Sprunghöhe soll bis zum Ende halten, kein Übertritt.',
     intro:'Aufgabe Serie unter Ermüdung. Zwanzig Würfe mit kurzer Pause. Halte die Sprunghöhe bis zum Schluss und tritt nicht über.',
     reps:20, goal:null, pause:2}
@@ -77,6 +80,15 @@ export function judge(id, entry, th = TH, prev = []){
     if(is('leg')) return {ok:false, why:`Falsches Sprungbein (${s} s)`, say:`Falsches Bein. ${s} Sekunden.`};
     if(m.breakT > (th.taskBreakMax ?? TH.taskBreakMax)) return {ok:false, why:`${s} s, zu langsam`, say:`${s} Sekunden. Schneller.`};
     return {ok:true, why:`${s} s`, say:`Geschafft. ${s} Sekunden.`};
+  }
+  if(id==='pivot'){
+    const c = entry.call; if(!c) return null;
+    if(is('over') || m.line > 0) return {ok:false, why:'Übertritt', say:'Übertritt.'};
+    if(m.turn == null) return {ok:false, why:'Drehung nicht erkannt', say:'Drehung nicht erkannt.'};
+    const dir = m.turn > 0 ? 'Links' : 'Rechts', r = m.react != null ? ` Reaktion ${m.react.toFixed(1).replace('.', ',')} Sekunden.` : '';
+    if(Math.abs(m.turn) < (th.taskTurnMin ?? TH.taskTurnMin)) return {ok:false, why:'Kaum gedreht', say:'Mehr drehen.'};
+    if(dir !== c) return {ok:false, why:`Falsch herum gedreht (${dir.toLowerCase()})`, say:'Falsche Richtung.'};
+    return {ok:true, why:`Richtig gedreht${m.react != null ? `, ${m.react.toFixed(1).replace('.', ',')} s` : ''}`, say:`Richtig.${r}`};
   }
   if(id==='tired'){
     if(is('over') || m.line > 0) return {ok:false, why:'Übertritt', say:'Übertritt.'};

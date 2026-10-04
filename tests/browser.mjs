@@ -446,6 +446,23 @@ test('Aufgabe „Gegenstoß auf Zeit“: Ruf startet die Uhr, Ziel sofort, Zeit 
   await page.close();
 });
 
+test('Aufgabe „Kreisläufer: Drehen auf Ansage“: Richtung aus der Hüftdrehung, Reaktionszeit', {timeout:200000}, async t => {
+  const {page, errors} = await demoPage({pause:1, task:'pivot'});
+  await page.evaluate(() => { M.tasks.TASKS.pivot.reps = 4; M.tasks.TASKS.pivot.goal = 2; });
+  await page.click('#btnStart');
+  await walkLine(page);
+  await page.click('#setup [data-a=start]');
+  await until(page, () => M.store.log.length >= 4, null, 120000, '4 Würfe');
+  const log = await page.evaluate(() => M.store.log.map(e => ({call:e.call, ok:e.task?.ok, why:e.task?.why, turn:e.m.turn, react:e.m.react})));
+  // Die Person dreht in die angesagte Richtung, Wurf 3 absichtlich falsch herum, Wurf 4 tritt über.
+  assert.deepEqual(log.map(e => e.ok), [true, true, false, false], JSON.stringify(log));
+  log.forEach((e, i) => { assert.ok(Math.abs(e.turn) > 150, `Wurf ${i+1}: Drehung ${e.turn}°`); assert.ok(e.react > 0.3 && e.react < 0.6, `Wurf ${i+1}: Reaktion ${e.react} s`); });
+  assert.match(log[2].why, /Falsch herum/); assert.equal(log[3].why, 'Übertritt');
+  assert.ok(await page.evaluate(() => __said.some(x => /^(Links|Rechts)\. (Orange|Blau) (kurz|lang)$/.test(x))));
+  assert.deepEqual(errors, [], 'Fehler in der Browser-Konsole');
+  await page.close();
+});
+
 test('Rückraum-Modus (?rr=1): 9-m-Linie, Dreischritt, Abwurf im höchsten Punkt, eigener Speicher', {timeout:200000}, async t => {
   const page = await browser.newPage({viewport:{width:1280, height:800}});
   const errors = []; page.on('pageerror', e => errors.push(e.message));

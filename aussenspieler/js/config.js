@@ -49,6 +49,8 @@ export const TH = {jumpHigh:0.25, jumpMid:0.17, rot:25, rotWrongSide:35, leanUpr
   taskFlyAng:20,
   // Aufgabe „Gegenstoß auf Zeit“: höchstens so viele Sekunden vom Ruf bis zum Absprung (persönlich, nach dem Hallentest anpassen).
   taskBreakMax:4.0,
+  // Aufgabe „Kreisläufer“: mindestens so weit (°) gedreht, damit die Richtung zählt.
+  taskTurnMin:60,
   // Rückraum: Abwurf höchstens so weit (s) vom höchsten Punkt der Hüfte (im Demo: sauber ≤ 0,03 s, zu spät 0,18 s); Schritte vor dem Absprung (Bodenkontakte), die als Rhythmus gelten.
   peakDt:0.15, steps:3};
 // Abweichende Grenzen je Kameraposition (sonst TH). Position 2 sieht den Sprung von der Seite und misst ihn größer:
@@ -56,5 +58,8 @@ export const TH = {jumpHigh:0.25, jumpMid:0.17, rot:25, rotWrongSide:35, leanUpr
 export const TH_POS = {court:{jumpHigh:0.36, jumpMid:0.30}};
 // Rückraum: Kamera schräg von vorn, der Spieler springt auf sie zu, die Hüfte steigt im Bild weniger (im Demo 0,21 statt 0,32).
 export const TH_RR = {jumpHigh:0.19, jumpMid:0.13};
+// Vorzeichen der Hüft-Drehung aus den worldLandmarks, damit + = Drehung nach links (aus Sicht des Spielers). Im Demo
+// bestimmt; ob MediaPipe in der Halle dieselbe Richtung liefert, zeigt der Hallentest (Kreisläufer).
+export const TURN_SIGN = 1;
 // Für die cm-Angaben angenommene Körperlänge (Schulter–Knöchel eines Erwachsenen).
 export const KL_CM = 140;

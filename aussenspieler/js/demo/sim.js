@@ -72,9 +72,10 @@ function behave(dt){
   if(ph==='inside'){ const T = linePt(walkTh ?? w1, G.inside); if(moveTo(T, 0.8, dt, 0.6)) stand(dt); return; }
   if(app.state==='runup' && !app.marking){ called = false; startShot(); return; }
   // Gegenstoß: weit weg starten (11 m vor der Linie) und beim Loslaufen rufen.
-  const fb = app.task?.id==='fastbreak' && !app.task.done, home = fb ? onLine(G.th, 11) : S;
+  const fb = app.task?.id==='fastbreak' && !app.task.done, pv = app.task?.id==='pivot' && !app.task.done;
+  const home = fb ? onLine(G.th, 11) : pv ? onLine(G.th, 0.9) : S;
   if(moveTo(home, app.state==='cool' ? 3 : 1.4, dt)){
-    stand(dt, toward(faceTo));
+    stand(dt, toward(pv ? onLine(G.th, 4) : faceTo));   // Kreisläufer: Rücken zum Tor
     if(fb && app.state==='ready' && !called){ readyFor += dt; if(readyFor > 0.6){ called = true; demo.calls.push(performance.now()); shoutNow(); } }
     // Modus „Zuruf“: am Startpunkt kurz stehen, dann rufen (einmal pro Wurf).
     if(app.state==='ready' && settings.mode==='call' && !called && autoCall){ readyFor += dt; if(readyFor > 0.8){ called = true; demo.calls.push(performance.now()); shoutNow(); showHint('Demo: Spieler ruft „Hey!“', 1200); } }
@@ -96,13 +97,18 @@ export const TASK_VAR = {line:[{dr:0.25, h:0.5, arm:1}, {dr:1.0, h:0.5, arm:1}, 
   height:[{dr:0.3, h:0.5, arm:1, follow:true}, {dr:0.3, h:0.5, arm:1, follow:true}, {dr:0.3, h:0.5, arm:1, follow:false}, {dr:0.3, h:0.5, arm:1, follow:true}],
   // fastbreak: aus 11 m Entfernung, schnell (v m/s), langsam, schnell, Übertritt.
   fastbreak:[{dr:0.3, h:0.5, arm:1, v:5.5}, {dr:0.3, h:0.5, arm:1, v:2.0}, {dr:0.3, h:0.5, arm:1, v:5.5}, {dr:-0.15, h:0.45, arm:1, v:5.5}],
+  // pivot (Kreisläufer): richtig gedreht, richtig, falsch herum, richtig aber Übertritt.
+  pivot:[{dr:0.3, h:0.45, arm:1, follow:'turn'}, {dr:0.3, h:0.45, arm:1, follow:'turn'}, {dr:0.3, h:0.45, arm:1, wrongTurn:true}, {dr:-0.15, h:0.45, arm:1, follow:'turn'}],
   // angle: Flug Richtung Tormitte (in), geradeaus, Richtung Tormitte, Übertritt.
   angle:[{dr:0.3, h:0.5, arm:1, fly:'in'}, {dr:0.3, h:0.5, arm:1}, {dr:0.3, h:0.5, arm:1, fly:'in'}, {dr:-0.15, h:0.5, arm:1, fly:'in'}],
   tired:[{dr:0.3, h:0.5, arm:1}, {dr:0.3, h:0.5, arm:1}, {dr:0.3, h:0.32, arm:1}, {dr:0.3, h:0.3, arm:1}]};
 function startShot(){
   const vs = (app.task && TASK_VAR[app.task.id]) || (RR ? VAR_RR : VAR), v = {...vs[shotNo++ % vs.length]};
+  if(v.follow === 'turn' || v.wrongTurn){   // Kreisläufer: in die angesagte Richtung (oder absichtlich falsch) um 180° drehen
+    const left = (app.task?.call === 'Links') !== !!v.wrongTurn; v.turn = left ? 1 : -1; v.follow = undefined;
+  }
   if(v.follow !== undefined){ const hip = app.task?.call === 'Hüfte'; v.low = (hip === v.follow) ? 1 : 0; if(v.low) v.arm = 0.35; }
-  const s0 = v; shot = {...v, stage:'run', t:0, K:onLine(G.th, v.dr)};
+  const s0 = v; shot = {...v, stage:v.turn ? 'pivot' : 'run', t:0, K:onLine(G.th, v.dr)};
   demo.shots.push({from:[+P.x.toFixed(2), +P.y.toFixed(2)], v});
   if(RR && !app.task){ const nx = VAR_RR[shotNo % VAR_RR.length]; S = onLine(G.th, nx.dr + RUN_RR); faceTo = onLine(G.th, nx.dr); }
   if(RR && s0.steps){ const L = Math.hypot(shot.K[0]-P.x, shot.K[1]-P.y); Object.assign(shot, {from:[P.x, P.y], L, T:L/3.2, a:Math.atan2(shot.K[1]-P.y, shot.K[0]-P.x), ft:[0, 0]}); }
@@ -111,6 +117,11 @@ function shotStep(dt){
   const s = shot; s.t += dt;
   const R = settings.hand !== 'L';
   if(s.stage==='run' && s.T){ stepRun(s, dt, R); return; }
+  if(s.stage==='pivot'){   // nach 0,35 s Reaktion in 0,4 s um 180° drehen (+ = links herum), dann zum Absprung
+    if(s.t > 0.35){ const d = Math.min(Math.PI - (s.turned || 0), Math.PI*dt/0.4); s.turned = (s.turned || 0) + d; P.a += s.turn*d; }
+    if((s.turned || 0) >= Math.PI - 1e-6){ s.stage = 'run'; s.t = 0; }
+    return;
+  }
   if(s.stage==='run'){
     const d = Math.hypot(s.K[0]-P.x, s.K[1]-P.y);
     P.raise = Math.min(s.arm, Math.max(P.raise, 1.4 - d));   // Arm hoch in den letzten Schritten

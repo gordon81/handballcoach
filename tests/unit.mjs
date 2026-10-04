@@ -245,6 +245,16 @@ test('Gegenstoß auf Zeit: Zeit vom Ruf bis zum Absprung, Technik muss stimmen',
   assert.equal(TASKS.fastbreak.shout, true);
 });
 
+test('Kreisläufer: in die angesagte Richtung gedreht, genug gedreht, kein Übertritt', () => {
+  const at = (call, turn, issues = [], line = -0.1, react = 0.4) => judge('pivot', {call, issues, m:{turn, react, line}});
+  assert.equal(at('Links', 170).ok, true); assert.equal(at('Rechts', -170).ok, true);
+  assert.match(at('Links', -170).why, /Falsch herum gedreht \(rechts\)/);
+  assert.equal(at('Links', 30).ok, false, 'kaum gedreht');
+  assert.equal(at('Links', 170, ['over'], 0.05).why, 'Übertritt');
+  assert.equal(at(null, 170), null, 'ohne Ansage zählt nicht');
+  assert.equal(at('Links', 170).say, 'Richtig. Reaktion 0,4 Sekunden.');
+});
+
 test('Serie unter Ermüdung: Sprunghöhe Ende gegen Anfang, Übertritte', () => {
   const t = TASKS.tired, j = (jump, issues = []) => ({issues, m:{jump, line:-0.1}});
   const keep = Array.from({length:20}, (_, i) => j(i < 15 ? 0.3 : 0.28));

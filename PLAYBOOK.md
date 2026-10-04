@@ -99,7 +99,7 @@ Heute bewertet die App jeden Wurf, stellt aber keine **Aufgabe** mit Ziel. Für 
 - **Prüfbar:** ●●○ – fast alles wie beim Außenwurf; die gestrichelte Linie ist für die Strich-Erkennung schwerer, notfalls antippen. Schrittzählung aus Fußpunkten ist neu.
 - **Baut auf:** fast der ganze Außenwurf-Coach (Prüfungen 1–3, 5, 6 ohne Drehungs-Sonderfall). **Aufwand M.**
 
-### B3 · Kreisläufer: Drehung und Abschluss
+### B3 · Kreisläufer: Drehung und Abschluss ✅ gebaut (Aufgabe im Außenwurf-Coach)
 - **Ziel:** mit dem Rücken zum Tor starten, auf Ansage drehen („links“ / „rechts“) und abschließen, Absprung außerhalb des Torraums.
 - **Ablauf:** Spieler steht mit Ball rückwärts an der 6-m-Linie, App sagt Drehrichtung an.
 - **Erfolg:** Drehung in die angesagte Richtung (Hüft-Yaw aus `worldLandmarks`), Absprung vor der Linie, Reaktionszeit Ansage → erste Bewegung.
@@ -165,7 +165,7 @@ Heute bewertet die App jeden Wurf, stellt aber keine **Aufgabe** mit Ziel. Für 
 7. [x] **B5 Abwehr-Beinarbeit** ✅ (ohne Ball, mit C5 Reaktionszeit). **M**
 8. [x] **B2 Rückraum-Sprungwurf** ✅ (großteils Außenwurf-Coach mit 9-m-Linie und Schrittzählung). **M**
 9. [x] **C2 Ballaufprall per Mikro** ✅, dann **B4 Pässe gegen die Wand** ✅. **M**
-10. [ ] **A4 Winkel vergrößern** ✅, **A6 Gegenstoß auf Zeit** ✅, **B3 Kreisläufer**, **B6 Sprungkraft** ✅. **S–M**
+10. [x] **A4 Winkel vergrößern** ✅, **A6 Gegenstoß auf Zeit** ✅, **B3 Kreisläufer** ✅, **B6 Sprungkraft** ✅. **S–M**
 11. [ ] **C1 Treffererkennung** und **B7 Wurfgeschwindigkeit**. **L / M**, erst wenn der Rest in der Halle läuft.
 
 Jede neue Übung bekommt einen Demo-Ablauf in `demo/sim.js` und einen Test in `tests/browser.mjs`, wie der Außenwurf-Coach heute.

@@ -26,7 +26,8 @@ export const taskCallInAir = () => !!(app.task && !app.task.done && TASKS[app.ta
 // Vorsatz vor dem Ziel („Hoch“ / „Hüfte“) oder null. Der gewählte steht bis zum Wurf in app.task.call.
 export function taskCall(){
   const r = app.task; if(!r || r.done || !TASKS[r.id].calls) return null;
-  const c = TASKS[r.id].calls; return r.call = c[Math.floor(Math.random()*c.length)];
+  const c = TASKS[r.id].calls; r.callT = performance.now()/1000;   // Zeitpunkt der Ansage (Kreisläufer: Drehung ab hier)
+  return r.call = c[Math.floor(Math.random()*c.length)];
 }
 // Pause nach dem Wurf: die Aufgabe kann eine eigene haben (Serie unter Ermüdung: 2 s).
 export const taskPause = () => (app.task && !app.task.done && TASKS[app.task.id].pause) || settings.pause;

@@ -1,6 +1,6 @@
 // Zustandsautomat pro Wurf: off → ready → runup → air → cool → ready …
 // Erkennt Absprung und Landung aus den Pose-Frames und übergibt den Sprung an analysis.js.
-import { L } from './config.js';
+import { L, TURN_SIGN } from './config.js';
 import { app } from './state.js';
 import { settings, log, store, ensureSession } from './store.js';
 import { $, canvas, showHint } from './dom.js';
@@ -71,8 +71,8 @@ function makeFrame(lm, t, wl){
   f.valid = Math.min(p.lHip.v,p.rHip.v,p.lAnk.v,p.rAnk.v,p.lSh.v,p.rSh.v) > 0.35 && f.bodyLen > 20;
   if(wl){
     const yaw = (a,b) => Math.atan2(wl[b].z-wl[a].z, wl[b].x-wl[a].x) * 180/Math.PI;
-    f.shYaw = yaw(11,12); f.twist = angDiff(f.shYaw, yaw(23,24));
-  } else { f.shYaw = f.twist = null; }
+    f.hipYaw = yaw(23,24); f.shYaw = yaw(11,12); f.twist = angDiff(f.shYaw, f.hipYaw);
+  } else { f.shYaw = f.twist = f.hipYaw = null; }
   return f;
 }
 
@@ -166,6 +166,7 @@ function finish(t){
   settings.session.last = Date.now();
   const entry = {nr:(log.at(-1)?.nr || 0) + 1, sid:settings.session.id, target:e.target, res:r.res, issues:r.issues, good:r.good, praise:r.praise, main:r.main,
     tip:r.tip, rot:r.rot, noLine:r.noLine, m:r.m, hit:null, time:Date.now(), video:app.source==='file'};
+  if(app.task?.callT != null){ Object.assign(entry.m, turnSince(app.task.callT, e.t0)); app.task.callT = null; }   // Kreisläufer
   if(e.breakAt != null) entry.m.breakT = Math.round((e.t0 - e.breakAt)*100)/100;   // Gegenstoß: Ruf → Absprung
   if(e.late){ entry.m.callDet = e.late.det; entry.m.callLag = e.late.speak; e.late.entry = entry; }
   say(taskThrow(entry) ?? r.speech, {queue:!!e.late});   // spätes Ziel nicht abschneiden
@@ -175,6 +176,16 @@ function finish(t){
   app.target = null; hudTarget(null);
   setState('cool', t);
   if(taskDone()) setTimeout(onSeriesDone, 1200);   // Serie fertig: nach dem Speichern des letzten Clips stoppen
+}
+
+// Drehung der Hüfte (3D-Schätzung) zwischen Ansage und Absprung: Summe der Yaw-Änderungen (°, + = gegen den Uhrzeigersinn
+// von oben, also nach links für den Spieler) und Reaktionszeit bis 20° gedreht.
+export function turnSince(t0, t1){
+  const w = H.filter(h => h.t >= t0 && h.t <= t1 && h.hipYaw != null);
+  if(w.length < 3) return {turn:null, react:null};
+  let sum = 0, react = null;
+  for(let i = 1; i < w.length; i++){ sum += angDiff(w[i].hipYaw, w[i-1].hipYaw); if(react === null && Math.abs(sum) > 20) react = Math.round((w[i].t - t0)*100)/100; }
+  return {turn:Math.round(sum*TURN_SIGN), react};
 }
 
 // Zufälliges Ziel ansagen (nie zweimal dasselbe hintereinander).
