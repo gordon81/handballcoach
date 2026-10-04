@@ -1,0 +1,19 @@
+{
+  "name": "Handballcoach",
+  "short_name": "Handballcoach",
+  "description": "Einzeltraining Handball mit KI-Technik-Check und Sprach-Feedback",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#121a22",
+  "theme_color": "#1b2530",
+  "icons": [
+    {
+      "src": "shared/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

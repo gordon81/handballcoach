@@ -546,3 +546,39 @@ test('Sprache: natürliche deutsche Stimme bevorzugt, Einheiten ausgeschrieben',
   assert.equal(spokenText('ca. 62 km/h · 15 cm · 3,4 s · 80 %'), 'ca. 62 Stundenkilometer. 15 Zentimeter. 3,4 Sekunden. 80 Prozent');
   assert.equal(spokenText('Geschafft. 2,0 Sekunden.'), 'Geschafft. 2,0 Sekunden.', 'schon ausgeschrieben bleibt');
 });
+
+/* ---------- 7-m-Trainer: Pause mit Zuruf (siebenmeter/js/rest.js) ---------- */
+import { REST, restClock, nearLine, callAction, restLen, fmtLeft, restIntro } from '../siebenmeter/js/rest.js';
+
+test('Pause: Zähler läuft, hält an und läuft weiter', () => {
+  const r = restClock(30, 100);
+  assert.equal(r.left(110), 20); assert.equal(r.done(129), false);
+  r.hold(110); assert.equal(r.left(200), 20, 'angehalten'); assert.equal(r.done(500), false);
+  r.resume(200); assert.equal(r.left(215), 5); assert.equal(r.done(220), true);
+  const z = restClock(null, 0); assert.equal(z.left(99), null); assert.equal(z.done(1e6), false, 'nur Zuruf: läuft nie ab');
+  assert.equal(fmtLeft(27.2), '0:28'); assert.equal(fmtLeft(45), '0:45'); assert.equal(fmtLeft(0), '0:00');
+  assert.equal(restLen(0), undefined); assert.equal(restLen(-1), null); assert.equal(restLen(45), 45);
+  assert.equal(restIntro(0), ''); assert.match(restIntro(30), /30 Sekunden.*an die Linie.*unterwegs/);
+});
+
+test('Pause: Ruf an der Linie = bereit, Ruf unterwegs = anhalten / weiter, Antippen geht immer', () => {
+  assert.equal(callAction('shout', {atLine:true}), 'ready');
+  assert.equal(callAction('shout', {atLine:false}), 'hold');
+  assert.equal(callAction('shout', {atLine:false, held:true}), 'resume');
+  assert.equal(callAction('shout', {atLine:true, held:true}), 'ready', 'angehalten, an der Linie gerufen: Pfiff');
+  assert.equal(callAction('ready', {atLine:false}), 'ready', 'Antippen „Bereit“ braucht keinen Ort');
+  assert.equal(callAction('hold', {held:true}), 'resume');
+  assert.equal(callAction('shout', {armed:true, atLine:true}), null, 'Pfiff steht an, noch ein Ruf an der Linie ändert nichts');
+  assert.equal(callAction('shout', {armed:true, atLine:false}), 'pause', 'weggegangen und gerufen: Pfiff abbrechen');
+  assert.equal(callAction('hold', {armed:true, atLine:true}), 'pause');
+  // An der Linie: alle Fußpunkte hinter der Linie (negativ), der vordere höchstens 0,6 KL davor. KL = 200 px.
+  assert.equal(nearLine([-10, -40, -60, -90], 200), true);
+  assert.equal(nearLine([5, -40, -60, -90], 200), false, 'Fuß auf der Linie');
+  assert.equal(nearLine([-300, -320, -340, -360], 200), false, 'weit hinter der Linie (beim Ball)');
+  assert.equal(nearLine([], 200), false);
+});
+
+test('Pause: zwei Rufe kurz hintereinander verschmelzen im Nachhall (deshalb entscheidet der Ort)', () => {
+  const hits = run([...noise(2), ...shout(250), ...noise(0.35), ...shout(250), ...noise(2)]);
+  assert.ok(hits.length < 2 || hits[1] - hits[0] > REST.lead, `Treffer ${hits}: zweiter Ruf käme erst nach dem Pfiff`);
+});

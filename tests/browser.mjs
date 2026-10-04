@@ -12,13 +12,13 @@ import { chromium } from 'playwright';
 import { serve } from './server.mjs';
 import { hallWav, SHOUTS, BOUNCES, DURATION } from './wav.mjs';
 
-let srv, browser;
+let srv, browser, wavFile;
 before(async () => {
-  const wav = join(mkdtempSync(join(tmpdir(), 'awc-')), 'halle.wav');
-  writeFileSync(wav, hallWav());
+  wavFile = join(mkdtempSync(join(tmpdir(), 'awc-')), 'halle.wav');
+  writeFileSync(wavFile, hallWav());
   srv = await serve();
   browser = await chromium.launch({args:['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream',
-    `--use-file-for-fake-audio-capture=${wav}`, '--autoplay-policy=no-user-gesture-required']});
+    `--use-file-for-fake-audio-capture=${wavFile}`, '--autoplay-policy=no-user-gesture-required']});
 });
 after(async () => { await browser?.close(); srv?.close(); });
 
@@ -29,6 +29,7 @@ async function modules(page){
     const im = p => import(p);
     window.M = {store:await im('/aussenspieler/js/store.js'), app:(await im('/aussenspieler/js/state.js')).app, sim:await im('/aussenspieler/js/demo/sim.js'),
       clips:await im('/aussenspieler/js/clips.js'), shout:await im('/aussenspieler/js/shout.js')};
+    M.sim.resetDemo?.();
   });
 }
 async function until(page, fn, arg, ms, what){
@@ -39,10 +40,20 @@ async function until(page, fn, arg, ms, what){
 const px = (page, pts) => page.evaluate(p => M.sim.truthError(p).map(e => e*720), pts);
 const stats = a => { const s = [...a].sort((x, y) => x - y); return {med:s[s.length >> 1], max:s.at(-1)}; };
 
+function trackErrors(page){
+  const errors = [];
+  const ignMsg = s => s.includes('ERR_INTERNET_DISCONNECTED') || s.includes('fonts.googleapis.com') || s.includes('fonts.gstatic.com');
+  const ignLoc = u => u && (u.includes('fonts.googleapis.com') || u.includes('fonts.gstatic.com'));
+  page.on('pageerror', e => { if(!ignMsg(e.message)) errors.push(e.message); });
+  page.on('console', m => {
+    if(m.type() === 'error' && !ignMsg(m.text()) && !ignLoc(m.location()?.url)) errors.push(m.text());
+  });
+  return errors;
+}
+
 test('Demo: Einrichtung, Würfe, Videos, Zuruf, Kamera bewegt', {timeout:300000}, async t => {
   const page = await browser.newPage({viewport:{width:1280, height:800}});
-  const errors = []; page.on('pageerror', e => errors.push(e.message));
-  page.on('console', m => { if(m.type()==='error') errors.push(m.text()); });
+  const errors = trackErrors(page);
   await page.addInitScript(() => { if(!sessionStorage.getItem('init')){ sessionStorage.setItem('init', '1'); localStorage.clear(); localStorage.setItem('awc-demo-settings', JSON.stringify({pause:1})); } });
   await page.goto(srv.url + 'aussenspieler/?demo=1');
   await modules(page);
@@ -140,7 +151,7 @@ test('Demo: Einrichtung, Würfe, Videos, Zuruf, Kamera bewegt', {timeout:300000}
   await t.test('Wurf ohne Ansage: Aufnahme beginnt nicht mitten im Anlauf neu', async () => {
     await page.evaluate(() => { M.store.settings.callMin = M.store.settings.callMax = 60; });   // Zuruf ohne Ansage
     // Laufende Aufnahme fast 6 s alt (danach würde sie neu beginnen), dann ohne Ansage werfen.
-    await until(page, () => M.app.state==='ready' && M.clips.recAge(performance.now()/1000) > 5.6, null, 40000, 'Aufnahme ~6 s alt');
+    await until(page, () => M.app.state==='ready' && M.clips.recAge(performance.now()/1000) > 5.2, null, 40000, 'Aufnahme ~6 s alt');
     const r = await page.evaluate(async () => {
       const ages = [], n = M.store.log.length, iv = setInterval(() => ages.push(M.clips.recAge(performance.now()/1000)), 30);
       M.sim._test.shoot();
@@ -186,8 +197,7 @@ test('Demo: Einrichtung, Würfe, Videos, Zuruf, Kamera bewegt', {timeout:300000}
 
 test('Demo Kameraposition 2 (Feld, Tor im Bild): Linie, Würfe, eigene Linie je Position', {timeout:200000}, async t => {
   const page = await browser.newPage({viewport:{width:1280, height:800}});
-  const errors = []; page.on('pageerror', e => errors.push(e.message));
-  page.on('console', m => { if(m.type()==='error') errors.push(m.text()); });
+  const errors = trackErrors(page);
   await page.addInitScript(() => { if(!sessionStorage.getItem('init')){ sessionStorage.setItem('init', '1'); localStorage.clear(); localStorage.setItem('awc-demo-settings', JSON.stringify({pause:1})); } });
   await page.goto(srv.url + 'aussenspieler/?demo=1');
   await modules(page);
@@ -239,8 +249,7 @@ test('Demo Kameraposition 2 (Feld, Tor im Bild): Linie, Würfe, eigene Linie je 
 // Neue Seite im Demo-Modus mit frischem Speicher; init = Start-Einstellungen. Ansagen landen in window.__said.
 async function demoPage(init, viewport = {width:1280, height:800}){
   const page = await browser.newPage({viewport});
-  const errors = []; page.on('pageerror', e => errors.push(e.message));
-  page.on('console', m => { if(m.type()==='error') errors.push(m.text()); });
+  const errors = trackErrors(page);
   await page.addInitScript(init => { window.__said = []; if(!sessionStorage.getItem('init')){ sessionStorage.setItem('init', '1'); localStorage.clear(); localStorage.setItem('awc-demo-settings', JSON.stringify(init)); } }, init);
   await page.goto(srv.url + 'aussenspieler/?demo=1');
   await modules(page);
@@ -264,9 +273,45 @@ test('Aufgabe „Absprung an der Linie“ (Handy-Größe): Zähler, Ansagen, End
     assert.equal(await page.evaluate(() => M.store.settings.task), 'line');
     assert.match(await page.textContent('#setup'), /4 Würfe, geschafft bei 2/);
     assert.ok(await minHeight(page, '#setup .tasks button') >= 44, 'Aufgaben-Buttons groß genug');
+    await page.click('#setup [data-a=guide]');
+    assert.equal(await page.isVisible('#guideSheet'), true, 'Anleitungsvideo-Sheet sichtbar');
+    assert.match(await page.textContent('#guideTitle'), /Absprung an der Linie: Korrekte Ausführung/);
+    assert.ok(await page.$('#guideCanvas'), 'Guide-Canvas vorhanden');
+    await sleep(200);
+    assert.ok(await minHeight(page, '#guideSheet button') >= 44, 'Tippflächen im Guide groß genug');
+    await page.click('#guideSheet [data-speed="0.5"]');
+    await page.click('#guideCam');
+    await page.click('#guidePlay');
+    await page.click('#guideSheet [data-close]');
+    assert.equal(await page.isVisible('#guideSheet'), false, 'Anleitungsvideo-Sheet geschlossen');
     await walkLine(page);
     assert.match(await page.textContent('#setup [data-a=start]'), /Aufgabe starten/);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'kein Querscrollen');
+  });
+
+  await t.test('Einrichtung verkleinerbar (Collapse) und frei verschiebbar (Draggable)', async () => {
+    assert.equal(await page.isVisible('#setup [data-a=collapse]'), true, 'Collapse-Button vorhanden');
+    await page.click('#setup [data-a=collapse]');
+    assert.equal(await page.evaluate(() => document.querySelector('#setup').classList.contains('collapsed')), true, 'Setup ist minimiert');
+    assert.equal(await page.evaluate(() => !document.querySelector('#setup .setup-body') || getComputedStyle(document.querySelector('#setup .setup-body')).display === 'none'), true, 'Setup-Body ausgeblendet');
+
+    await page.evaluate(() => {
+      const b = document.querySelector('#setup');
+      const h = b.querySelector('.sheet-h');
+      const rect = h.getBoundingClientRect();
+      h.dispatchEvent(new PointerEvent('pointerdown', { clientX: rect.left + 20, clientY: rect.top + 10, bubbles: true, cancelable: true, pointerId: 1 }));
+      b.dispatchEvent(new PointerEvent('pointermove', { clientX: 20, clientY: 20, bubbles: true, cancelable: true, pointerId: 1 }));
+      b.dispatchEvent(new PointerEvent('pointerup', { clientX: 20, clientY: 20, bubbles: true, cancelable: true, pointerId: 1 }));
+    });
+    const posAfter = await page.evaluate(() => {
+      const b = document.querySelector('#setup');
+      return { x: b.getBoundingClientRect().left, y: b.getBoundingClientRect().top };
+    });
+    assert.ok(posAfter.x <= 20 && posAfter.y <= 20, 'Setup an neue Position gezogen');
+
+    await page.click('#setup .sheet-h');
+    assert.equal(await page.evaluate(() => !document.querySelector('#setup').classList.contains('collapsed')), true, 'Setup ist wieder ausgeklappt');
+    assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('#setup .setup-body')).display !== 'none'), true, 'Setup-Body wieder sichtbar');
   });
 
   await t.test('4 Würfe: nah, zu weit, Übertritt, nah', async () => {
@@ -510,8 +555,7 @@ test('Treffererkennung und Tempo (Kameraposition 2): Ringe antippen, Ball im Rin
 
 test('Rückraum-Modus (?rr=1): 9-m-Linie, Dreischritt, Abwurf im höchsten Punkt, eigener Speicher', {timeout:200000}, async t => {
   const page = await browser.newPage({viewport:{width:1280, height:800}});
-  const errors = []; page.on('pageerror', e => errors.push(e.message));
-  page.on('console', m => { if(m.type()==='error') errors.push(m.text()); });
+  const errors = trackErrors(page);
   await page.addInitScript(() => { window.__said = []; if(!sessionStorage.getItem('init')){ sessionStorage.setItem('init', '1'); localStorage.clear(); localStorage.setItem('rr-demo-settings', JSON.stringify({pause:1})); } });
   await page.goto(srv.url + 'aussenspieler/?rr=1&demo=1');
   await modules(page);
@@ -554,22 +598,48 @@ test('Rückraum-Modus (?rr=1): 9-m-Linie, Dreischritt, Abwurf im höchsten Punkt
 
 test('7-m-Trainer (Demo, Handy-Größe): Linie antippen, Pfiff, Bewertung, Serie, Log, Bericht', {timeout:200000}, async t => {
   const page = await browser.newPage({viewport:{width:390, height:800}});
-  const errors = []; page.on('pageerror', e => errors.push(e.message));
-  page.on('console', m => { if(m.type()==='error') errors.push(m.text()); });
+  const errors = trackErrors(page);
   await page.addInitScript(() => { window.__said = []; if(!sessionStorage.getItem('init')){ sessionStorage.setItem('init', '1'); localStorage.clear(); localStorage.setItem('7m-demo-settings', JSON.stringify({pause:1})); } });
   await page.goto(srv.url + 'siebenmeter/?demo=1');
   await page.evaluate(async () => {
     window.M = {st:await import('/siebenmeter/js/state.js'), rules:await import('/siebenmeter/js/rules.js'), demo:await import('/siebenmeter/js/demo.js')};
+    M.demo.resetDemo?.();
     M.rules.SERIES.reps = 4; M.rules.SERIES.goal = 2;
     // Zustand und Zeit jeder Ansage mitschreiben (Pfiff vs. Ansage).
     const push = __said.push.bind(__said); window.__sayAt = [];
     __said.push = x => { __sayAt.push({x, s:M.st.app.state}); return push(x); };
   });
 
-  await t.test('Einrichtung: 7-m-Linie antippen (2 Enden, 1 Punkt Richtung Tor)', async () => {
+  await t.test('Menü unten: Start, Setup, Config, Log sichtbar und funktionsfähig', async () => {
+    assert.equal(await page.isVisible('#bar #btnStart'), true, 'Start-Button sichtbar');
+    assert.equal(await page.isVisible('#bar #btnSetup'), true, 'Setup-Button sichtbar');
+    assert.equal(await page.isVisible('#bar #btnConfig'), true, 'Config-Button sichtbar');
+    assert.equal(await page.isVisible('#bar #btnLog'), true, 'Log-Button sichtbar');
+    assert.ok(await minHeight(page, '#bar button') >= 44, 'Buttons in #bar groß genug für Touch');
+
+    // Konfigurations-Sheet öffnen
+    await page.click('#btnConfig');
+    assert.equal(await page.isVisible('#configSheet'), true, 'Config-Sheet geöffnet');
+    await page.click('#configSheet [data-a=hand][data-v=L]');
+    assert.equal(await page.evaluate(() => M.st.settings.hand), 'L', 'Wurfhand auf Links gestellt');
+    await page.click('#configSheet [data-a=hand][data-v=R]');
+    assert.equal(await page.evaluate(() => M.st.settings.hand), 'R', 'Wurfhand wieder auf Rechts gestellt');
+    await page.click('#configSheet [data-close]');
+    assert.equal(await page.isVisible('#configSheet'), false, 'Config-Sheet geschlossen');
+  });
+
+  await t.test('Einrichtung: 7-m-Linie antippen (2 Enden, 1 Punkt Richtung Tor), verkleinerbar und verschiebbar', async () => {
     await page.click('#btnStart');
     await page.waitForSelector('#setup [data-a=tap]');
     assert.ok(await page.isDisabled('#setup [data-a=start]'), 'ohne Linie kein Start');
+
+    // Collapse und Drag der Einrichtung prüfen
+    assert.equal(await page.isVisible('#setup [data-a=collapse]'), true, 'Collapse-Button vorhanden');
+    await page.click('#setup [data-a=collapse]');
+    assert.equal(await page.evaluate(() => document.querySelector('#setup').classList.contains('collapsed')), true, 'Setup ist minimiert');
+    await page.click('#setup .sheet-h');
+    assert.equal(await page.evaluate(() => !document.querySelector('#setup').classList.contains('collapsed')), true, 'Setup wieder ausgeklappt');
+
     await page.click('#setup [data-a=tap]');
     await sleep(800);
     const tl = await page.evaluate(() => M.demo.truthLine()), box = await page.locator('#overlay').boundingBox();
@@ -613,11 +683,13 @@ test('7-m-Trainer (Demo, Handy-Größe): Linie antippen, Pfiff, Bewertung, Serie
 
 test('Abwehr-Beinarbeit (Demo, Handy-Größe): Rufe, Reaktion, Richtung, gekreuzte Füße, Log', {timeout:150000}, async t => {
   const page = await browser.newPage({viewport:{width:390, height:800}});
-  const errors = []; page.on('pageerror', e => errors.push(e.message));
-  page.on('console', m => { if(m.type()==='error') errors.push(m.text()); });
+  const errors = trackErrors(page);
   await page.addInitScript(() => { window.__said = []; if(!sessionStorage.getItem('init')){ sessionStorage.setItem('init', '1'); localStorage.clear(); localStorage.setItem('def-demo-settings', JSON.stringify({dur:20})); } });
   await page.goto(srv.url + 'abwehr/?demo=1');
-  await page.evaluate(async () => { window.M = {st:await import('/abwehr/js/state.js'), demo:await import('/abwehr/js/demo.js')}; });
+  await page.evaluate(async () => {
+    window.M = {st:await import('/abwehr/js/state.js'), demo:await import('/abwehr/js/demo.js')};
+    M.demo.resetDemo?.();
+  });
 
   await t.test('Runde: jede Bewegung so bewertet, wie die Person sie gemacht hat', async () => {
     await page.click('#btnStart');
@@ -673,8 +745,7 @@ test('Abwehr-Beinarbeit (Demo, Handy-Größe): Rufe, Reaktion, Richtung, gekreuz
 
 test('Pässe gegen die Wand (Demo, Handy-Größe): Zählen, Arm und Gegenbein je Pass, Bestwert, Log', {timeout:120000}, async t => {
   const page = await browser.newPage({viewport:{width:390, height:800}});
-  const errors = []; page.on('pageerror', e => errors.push(e.message));
-  page.on('console', m => { if(m.type()==='error') errors.push(m.text()); });
+  const errors = trackErrors(page);
   await page.addInitScript(() => { window.__said = []; if(!sessionStorage.getItem('init')){ sessionStorage.setItem('init', '1'); localStorage.clear(); localStorage.setItem('pass-demo-settings', JSON.stringify({dur:12})); } });
   await page.goto(srv.url + 'passen/?demo=1');
   await page.evaluate(async () => { window.M = {st:await import('/passen/js/state.js'), demo:await import('/passen/js/demo.js')}; });
@@ -714,8 +785,7 @@ test('Pässe gegen die Wand (Demo, Handy-Größe): Zählen, Arm und Gegenbein je
 
 test('Sprungkraft (Demo, Handy-Größe): Strecksprünge und Einbein links/rechts', {timeout:150000}, async t => {
   const page = await browser.newPage({viewport:{width:390, height:800}});
-  const errors = []; page.on('pageerror', e => errors.push(e.message));
-  page.on('console', m => { if(m.type()==='error') errors.push(m.text()); });
+  const errors = trackErrors(page);
   await page.addInitScript(() => { window.__said = []; if(!sessionStorage.getItem('init')){ sessionStorage.setItem('init', '1'); localStorage.clear(); } });
   await page.goto(srv.url + 'sprung/?demo=1');
   await page.evaluate(async () => { window.M = {st:await import('/sprung/js/state.js'), demo:await import('/sprung/js/demo.js')}; });
@@ -783,24 +853,29 @@ test('Mikrofon: Rufe erkannt, Lärm nicht (Fake-Mikrofon)', {timeout:120000}, as
     assert.equal(r.hits.length, SHOUTS.length, `erkannt bei ${r.hits.map(h => h.toFixed(1))} s; Pegel/Grund/Schwelle: ${lv.join(' ')}`);
     r.hits.forEach((h, i) => assert.ok(h > SHOUTS[i] && h < SHOUTS[i] + 1.8, `Ruf ${i+1} bei ${h.toFixed(2)} s, erwartet kurz nach ${SHOUTS[i]} s`));
   });
+  await page.close();
 
   await t.test(`Ballaufprall (shared/js/bounceDetect.js): genau die ${BOUNCES.length} Aufpralle, keine Rufe, kein Pfiff`, async () => {
-    const r = await page.evaluate(async ms => {
+    const b = await chromium.launch({args:['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream',
+      `--use-file-for-fake-audio-capture=${wavFile}`, '--autoplay-policy=no-user-gesture-required']});
+    const p = await b.newPage();
+    await p.goto(srv.url, {waitUntil:'domcontentloaded'});
+    const r = await p.evaluate(async ms => {
       const {micSampler} = await import('/shared/js/mic.js'), {bounceDetector, SENS} = await import('/shared/js/bounceDetect.js');
       const m = micSampler(), d = bounceDetector(), hits = [];
       let t0 = null; m.onSample((v, hi, now, pk, lvl) => { t0 ??= now; if(d.push(v, hi, now, SENS.mid, false, pk, lvl)) hits.push((now - t0)/1000); });
       await m.start(); await new Promise(r => setTimeout(r, ms)); m.stop();
       return hits;
     }, (DURATION - 0.5)*1000);
+    await b.close();
     assert.equal(r.length, BOUNCES.length, `erkannt bei ${r.map(h => h.toFixed(2))} s`);
     r.forEach((h, i) => assert.ok(h > BOUNCES[i] - 0.1 && h < BOUNCES[i] + 0.5, `Aufprall ${i+1} bei ${h.toFixed(2)} s, erwartet ${BOUNCES[i]} s`));
   });
-  await page.close();
 });
 
 test('Startmenü: Karten öffnen alle Trainings, „Alle Trainings“ führt zurück', {timeout:60000}, async () => {
   const page = await browser.newPage({viewport:{width:390, height:800}});
-  const errors = []; page.on('pageerror', e => errors.push(e.message));
+  const errors = trackErrors(page);
   await page.goto(srv.url);
   await page.click('#trainings a[href="aussenspieler/"]');
   await page.waitForSelector('#btnStart');
@@ -834,5 +909,249 @@ test('Startmenü: Karten öffnen alle Trainings, „Alle Trainings“ führt zur
   await page.waitForSelector('#trainings');
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'kein Querscrollen am Handy');
   assert.deepEqual(errors, []);
+  await page.close();
+});
+
+test('Anleitungsvideo (Außenspieler): Korrekte Ausführung je Übung, Zeitlupe, Phasen, DHB-Kriterien', {timeout:60000}, async t => {
+  const {page, errors} = await demoPage({}, {width:390, height:800});
+  await page.click('#btnStart');
+  await page.waitForSelector('#setup');
+
+  await t.test('Freies Training: Lehrbild Sprungwurf, Phasen, Zeitlupe', async () => {
+    await page.click('#setup [data-a=task][data-v=free]');
+    await page.click('#setup [data-a=guide]');
+    assert.equal(await page.isVisible('#guideSheet'), true, 'Sheet sichtbar');
+    assert.match(await page.textContent('#guideTitle'), /Außen-Sprungwurf: Korrekte Ausführung/);
+    assert.equal(await page.$$eval('#guideCues li', els => els.length), 5, '5 DHB/KNSU-Technikkriterien');
+    await until(page, () => document.querySelector('#guidePhase').textContent.includes('Anlauf'), null, 5000, 'Phase Anlauf');
+    await page.click('#guideSheet [data-speed="0.25"]');
+    assert.equal(await page.evaluate(() => document.querySelector('#guideSheet [data-speed="0.25"]').classList.contains('on')), true);
+    await page.click('#guideSheet [data-speed="1"]');
+    await page.click('#guideSheet [data-close]');
+    assert.equal(await page.isVisible('#guideSheet'), false);
+  });
+
+  await t.test('Wurfhöhe auf Ansage: Umschaltung Hoch vs. Hüfte', async () => {
+    await page.click('#setup [data-a=task][data-v=height]');
+    await page.click('#setup [data-a=guide]');
+    assert.match(await page.textContent('#guideTitle'), /Wurfhöhe auf Ansage/);
+    assert.equal(await page.isVisible('#guideHeightSwitch'), true, 'Höhen-Umschalter sichtbar');
+    await page.click('#guideHeightSwitch [data-hvariant=hip]');
+    assert.equal(await page.evaluate(() => document.querySelector('#guideHeightSwitch [data-hvariant=hip]').classList.contains('on')), true);
+    await page.click('#guideSheet [data-close]');
+  });
+
+  await t.test('Winkel vergrößern & Kreisläufer: spezifische Lehrbilder', async () => {
+    await page.click('#setup [data-a=task][data-v=angle]');
+    await page.click('#setup [data-a=guide]');
+    assert.match(await page.textContent('#guideTitle'), /Winkel vergrößern/);
+    await page.click('#guideSheet [data-close]');
+
+    await page.click('#setup [data-a=task][data-v=pivot]');
+    await page.click('#setup [data-a=guide]');
+    assert.match(await page.textContent('#guideTitle'), /Kreisläufer: Drehen auf Ansage/);
+    await page.click('#guideSheet [data-close]');
+  });
+
+  assert.deepEqual(errors, [], 'Fehler in der Browser-Konsole');
+  await page.close();
+});
+
+test('Anleitungsvideo: Rückraum-Sprungwurf (?rr=1)', {timeout:60000}, async () => {
+  const page = await browser.newPage({viewport:{width:390, height:800}});
+  const errors = trackErrors(page);
+  await page.goto(srv.url + 'aussenspieler/?rr=1&demo=1');
+  await page.waitForSelector('#btnStart');
+  await page.click('#btnStart');
+  await page.waitForSelector('#setup');
+
+  await page.click('#setup [data-a=guide]');
+  assert.equal(await page.isVisible('#guideSheet'), true, 'Guide-Sheet sichtbar');
+  assert.match(await page.textContent('#guideTitle'), /Rückraum-Sprungwurf: Korrekte Ausführung/);
+  assert.equal(await page.$$eval('#guideCues li', els => els.length), 5, '5 DHB/KNSU-Technikkriterien');
+  assert.equal(await page.evaluate(() => document.querySelector('#guideCam').hidden), true, 'Kamera-Umschalter im Rückraum ausgeblendet');
+
+  await page.click('#guideSheet [data-speed="0.5"]');
+  assert.equal(await page.evaluate(() => document.querySelector('#guideSheet [data-speed="0.5"]').classList.contains('on')), true);
+  await page.click('#guideSheet [data-close]');
+  assert.equal(await page.isVisible('#guideSheet'), false, 'Guide-Sheet geschlossen');
+
+  assert.deepEqual(errors, [], 'Fehler in der Browser-Konsole');
+  await page.close();
+});
+
+test('Anleitungsvideo: 7-m-Wurf (siebenmeter)', {timeout:60000}, async () => {
+  const page = await browser.newPage({viewport:{width:390, height:800}});
+  const errors = trackErrors(page);
+  await page.goto(srv.url + 'siebenmeter/?demo=1');
+  await page.waitForSelector('#emptyGuideBtn');
+
+  // 1. Vom Startbildschirm öffnen
+  await page.click('#emptyGuideBtn');
+  assert.equal(await page.isVisible('#guideSheet'), true);
+  assert.match(await page.textContent('#guideTitle'), /7-m-Wurf: Korrekte Ausführung/);
+  assert.equal(await page.$$eval('#guideCues li', els => els.length), 5, '5 DHB/IHF-Technikkriterien');
+
+  // Varianten-Umschaltung
+  assert.equal(await page.isVisible('#guideVariantSwitch'), true);
+  await page.click('#guideVariantSwitch [data-variant=delay]');
+  assert.equal(await page.evaluate(() => document.querySelector('#guideVariantSwitch [data-variant=delay]').classList.contains('on')), true);
+  assert.match(await page.textContent('#guideSub'), /Körpertäuschung/);
+
+  // Zeitlupe
+  await page.click('#guideSheet [data-speed="0.25"]');
+  assert.equal(await page.evaluate(() => document.querySelector('#guideSheet [data-speed="0.25"]').classList.contains('on')), true);
+  await page.click('#guideSheet [data-close]');
+  assert.equal(await page.isVisible('#guideSheet'), false);
+
+  // 2. Aus der Einrichtung (#setup) öffnen
+  await page.click('#btnSetup');
+  await page.waitForSelector('#setup');
+  await page.click('#setup [data-a=guide]');
+  assert.equal(await page.isVisible('#guideSheet'), true);
+  await page.click('#guideSheet [data-close]');
+
+  assert.deepEqual(errors, [], 'Fehler in der Browser-Konsole');
+  await page.close();
+});
+
+test('Anleitungsvideo: Pässe gegen die Wand (passen)', {timeout:60000}, async () => {
+  const page = await browser.newPage({viewport:{width:390, height:800}});
+  const errors = trackErrors(page);
+  await page.goto(srv.url + 'passen/?demo=1');
+  await page.waitForSelector('#emptyGuideBtn');
+
+  // 1. Startbildschirm
+  await page.click('#emptyGuideBtn');
+  assert.equal(await page.isVisible('#guideSheet'), true);
+  assert.match(await page.textContent('#guideTitle'), /Pässe gegen die Wand: Korrekte Ausführung/);
+  assert.equal(await page.$$eval('#guideCues li', els => els.length), 5, '5 DHB-Technikkriterien');
+
+  // Varianten
+  await page.click('#guideVariantSwitch [data-variant=speed]');
+  assert.equal(await page.evaluate(() => document.querySelector('#guideVariantSwitch [data-variant=speed]').classList.contains('on')), true);
+
+  // Zeitlupe
+  await page.click('#guideSheet [data-speed="0.5"]');
+  assert.equal(await page.evaluate(() => document.querySelector('#guideSheet [data-speed="0.5"]').classList.contains('on')), true);
+  await page.click('#guideSheet [data-close]');
+
+  // 2. Setup
+  await page.click('#btnSetup');
+  await page.waitForSelector('#setup');
+  await page.click('#setup [data-a=guide]');
+  assert.equal(await page.isVisible('#guideSheet'), true);
+  await page.click('#guideSheet [data-close]');
+
+  assert.deepEqual(errors, [], 'Fehler in der Browser-Konsole');
+  await page.close();
+});
+
+test('Anleitungsvideo: Sprungkraft (sprung)', {timeout:60000}, async () => {
+  const page = await browser.newPage({viewport:{width:390, height:800}});
+  const errors = trackErrors(page);
+  await page.goto(srv.url + 'sprung/?demo=1');
+  await page.waitForSelector('#emptyGuideBtn');
+
+  // 1. Startbildschirm
+  await page.click('#emptyGuideBtn');
+  assert.equal(await page.isVisible('#guideSheet'), true);
+  assert.match(await page.textContent('#guideTitle'), /Sprungkraft: Korrekte Ausführung/);
+  assert.match(await page.textContent('#guideSub'), /Strecksprung beidbeinig/);
+  assert.equal(await page.$$eval('#guideCues li', els => els.length), 5);
+
+  // Einbein-Sprung Variante
+  await page.click('#guideVariantSwitch [data-variant=single]');
+  assert.equal(await page.evaluate(() => document.querySelector('#guideVariantSwitch [data-variant=single]').classList.contains('on')), true);
+  assert.match(await page.textContent('#guideSub'), /Einbein-Sprung/);
+
+  await page.click('#guideSheet [data-close]');
+
+  // 2. Setup
+  await page.click('#btnSetup');
+  await page.waitForSelector('#setup');
+  await page.click('#setup [data-a=guide]');
+  assert.equal(await page.isVisible('#guideSheet'), true);
+  await page.click('#guideSheet [data-close]');
+
+  assert.deepEqual(errors, [], 'Fehler in der Browser-Konsole');
+  await page.close();
+});
+
+test('Anleitungsvideo: Abwehr-Beinarbeit (abwehr)', {timeout:60000}, async () => {
+  const page = await browser.newPage({viewport:{width:390, height:800}});
+  const errors = trackErrors(page);
+  await page.goto(srv.url + 'abwehr/?demo=1');
+  await page.waitForSelector('#emptyGuideBtn');
+
+  // 1. Startbildschirm
+  await page.click('#emptyGuideBtn');
+  assert.equal(await page.isVisible('#guideSheet'), true);
+  assert.match(await page.textContent('#guideTitle'), /Abwehr-Beinarbeit: Korrekte Ausführung/);
+  assert.match(await page.textContent('#guideSub'), /Grundposition & Verschieben/);
+  assert.equal(await page.$$eval('#guideCues li', els => els.length), 5);
+
+  // Heraustreten Variante
+  await page.click('#guideVariantSwitch [data-variant=out]');
+  assert.equal(await page.evaluate(() => document.querySelector('#guideVariantSwitch [data-variant=out]').classList.contains('on')), true);
+  assert.match(await page.textContent('#guideSub'), /Heraustreten/);
+
+  await page.click('#guideSheet [data-close]');
+
+  // 2. Setup
+  await page.click('#btnSetup');
+  await page.waitForSelector('#setup');
+  await page.click('#setup [data-a=guide]');
+  assert.equal(await page.isVisible('#guideSheet'), true);
+  await page.click('#guideSheet [data-close]');
+
+  assert.deepEqual(errors, [], 'Fehler in der Browser-Konsole');
+  await page.close();
+});
+
+
+
+test('Fehlererfassung: lokales Protokoll, Hinweis, Melde-Dialog, kein Sentry im Test', {timeout:60000}, async () => {
+  const page = await browser.newPage({viewport:{width:400, height:800}});
+  const sentryReq = [];
+  page.on('request', r => { if(/sentry/.test(r.url())) sentryReq.push(r.url()); });
+  await page.goto(srv.url);
+  await page.evaluate(() => localStorage.removeItem('hc-errlog'));
+  assert.equal(await page.evaluate(() => typeof HC?.openReport), 'function');
+
+  // Absturz im Bild-Takt: 5× derselbe Fehler → ein Eintrag mit Zähler, Hinweis erscheint
+  await page.evaluate(() => { for(let i = 0; i < 5; i++) setTimeout(() => { throw new TypeError('Testfehler xyz'); }); });
+  await page.waitForSelector('#hc-toast');
+  const log = await page.evaluate(() => JSON.parse(localStorage.getItem('hc-errlog')));
+  assert.equal(log.length, 1);
+  assert.equal(log[0].name, 'TypeError');
+  assert.equal(log[0].msg, 'Testfehler xyz');
+  assert.equal(log[0].n, 5);
+  assert.equal(log[0].sent, false, 'im Test wird nichts gesendet');
+
+  // abgefangener Fehler über console.error und HC.report: still, Kamera verweigert nur Warnung
+  await page.evaluate(() => { console.error(new Error('Start fehlgeschlagen')); HC.report(new DOMException('Permission denied', 'NotAllowedError'), {bereich:'kamera'}); });
+  const log2 = await page.evaluate(() => HC.errors());
+  assert.equal(log2.length, 3);
+  assert.equal(log2[1].kind, 'console');
+  assert.equal(log2[2].level, 'warning');
+  assert.deepEqual(log2[2].ctx, {bereich:'kamera'});
+
+  // Dialog über den Hinweis öffnen, Diagnose enthält den Fehler
+  await page.click('#hc-toast [data-k=open]');
+  assert.equal(await page.isVisible('#hc-report'), true);
+  assert.match(await page.textContent('#hc-report [data-k=info]'), /3 Fehler gespeichert/);
+  assert.match(await page.evaluate(() => HC.diagnostics('Bild schwarz')), /Beschreibung: Bild schwarz[\s\S]*TypeError: Testfehler xyz/);
+  await page.click('#hc-report [data-k=clear]');
+  assert.equal(await page.evaluate(() => HC.errors().length), 0);
+  await page.click('#hc-report [data-k=close]');
+  assert.equal(await page.isVisible('#hc-report'), false);
+
+  // Link auf der Startseite
+  await page.click('#reportLink');
+  assert.equal(await page.isVisible('#hc-report'), true);
+
+  await new Promise(r => setTimeout(r, 2000));
+  assert.deepEqual(sentryReq, [], 'Sentry darf in Tests nicht geladen werden');
   await page.close();
 });

@@ -1,12 +1,134 @@
-// Abwehr-Beinarbeit: Kamera frontal (das Handy ist der Gegenspieler), Rufe „links / rechts / raus / zurück“, Reaktionszeit
-// und Richtung, gekreuzte Füße, Grundposition und Stellung beim Heraustreten nach den DHB-Technikkriterien (rules.js);
-// Runde mit fester Dauer, Log und Bericht.
 import { app, settings, log, store, ensureSession, sessionEntries, DEMO } from './state.js';
 import { judgeMove, judgeOut, baseFrame, nextCmd, summary, TH_D, fmtS, leadSide, SIDE } from './rules.js';
 import { say, beep, unlockBeep } from '../../shared/js/speech.js';
 import { keepAwake, releaseWake } from '../../shared/js/wakelock.js';
 import { esc, fmtDate } from '../../shared/js/utils.js';
 import { $, video, canvas, ctx, now, hint, big, startSource as startStage, bodyPoints, drawSkeleton, initSheets } from '../../shared/js/stage.js';
+import { createGuide } from '../../shared/js/demoGuide.js';
+import { proj } from '../../shared/js/demo/scene.js';
+
+const CAM_ABW = { pos: [-5, 12.6, 1.4], look: [-5, 7, 0.8] };
+const HOME_ABW = { x: -5, y: 7 };
+
+const CUES_BASE = [
+  '1. Grundstellung: Beine mehr als schulterbreit auseinander, Knie und Hüfte gebeugt (tiefer Schwerpunkt), Fersen leicht gelöst.',
+  '2. Seitlich zur Wurfhand: Der Fuß auf der Wurfarmseite des Gegenspielers steht eine halbe Schuhlänge vorn.',
+  '3. Armhaltung (Vorhalte): Arme angewinkelt vor der Brust; führungsbereit auf Schulterhöhe.',
+  '4. Verschieben (Side-Steps): Schnelle, flache Gleitschritte seitlich. Die Füße dürfen sich NIEMALS kreuzen!',
+  '5. Schwerpunkt tief halten: Bei Richtungswechseln nicht aufrichten, sondern im tiefen Stand weiterarbeiten.'
+];
+
+const CUES_OUT = [
+  '1. Diagonalschritt nach vorn: Explosives Heraustreten im richtigen Timing auf den anlaufenden Gegenspieler.',
+  '2. Fußstellung beim Raus: Der Fuß auf der gegnerischen Wurfarmseite steht stabil vorn (stemmt gegen den Durchbruch).',
+  '3. Führarm auf Schulterhöhe: Ballseitiger Arm stoppt/blockt den Wurfarm des Gegners ohne Festhalten.',
+  '4. Sicherungsarm am Körper: Der zweite Arm kontrolliert die gegnerische Hüfte und sichert ab.',
+  '5. Schnelles Absinken: Nach Ballabgabe oder Stopp sofort rückwärts-diagonal in die Grundstellung absinken.'
+];
+
+const GUIDE_ABWEHR_CFG = {
+  id: 'abwehr',
+  title: () => 'Abwehr-Beinarbeit: Korrekte Ausführung',
+  sub: v => v === 'out' ? 'Heraustreten (1-gegen-1 mit Führarm)' : 'Grundposition & Verschieben (Side-Steps)',
+  cues: v => v === 'out' ? CUES_OUT : CUES_BASE,
+  cam: CAM_ABW,
+  variants: [
+    { id: 'base', label: 'Grundposition & Verschieben' },
+    { id: 'out', label: 'Heraustreten (1 gegen 1)' }
+  ],
+  duration: 3.4,
+  step(loopT, variant){
+    const P = {
+      x: HOME_ABW.x, y: HOME_ABW.y, a: Math.PI / 2, phi: 0, s: 0,
+      lift: -0.13, lf: 0, rf: 0, lfx: 0, rfx: 0, lfy: 0, rfy: 0,
+      raise: 0, swing: 0, twist: 0, lean: 0.1, ball: false, guard: null
+    };
+    let phase = '1. Grundstellung (tief & stabil)';
+
+    if(variant === 'out'){
+      if(loopT < 0.8){
+        phase = '1. Grundstellung vor dem Angreifer';
+        P.lfy = -0.14; P.rfy = 0.14;
+        P.lfx = 0.2; P.rfx = -0.1;
+        P.guard = { l: -0.12, r: -0.3 };
+      } else if(loopT < 1.8){
+        phase = '2. Heraustreten: Führarm an Wurfarm, Schritt vor';
+        const u = (loopT - 0.8) / 1.0;
+        P.y = HOME_ABW.y + 0.6 * u;
+        P.lfx = 0.3; P.rfx = -0.1;
+        P.lfy = -0.04; P.rfy = 0.04;
+        P.lf = 0.06 * Math.sin(u * Math.PI * 2);
+        P.rf = 0.06 * -Math.sin(u * Math.PI * 2);
+        P.guard = { l: 0.0, r: -0.3 };
+      } else if(loopT < 2.6){
+        phase = '3. Schnelles Absinken in die Lücke';
+        const u = (loopT - 1.8) / 0.8;
+        P.y = HOME_ABW.y + 0.6 * (1 - u);
+        P.lfx = 0.2; P.rfx = -0.1;
+        P.lfy = -0.14; P.rfy = 0.14;
+        P.lf = 0.06 * -Math.sin(u * Math.PI * 2);
+        P.rf = 0.06 * Math.sin(u * Math.PI * 2);
+        P.guard = { l: -0.15, r: -0.3 };
+      } else {
+        phase = '✓ Grundstellung wieder eingenommen';
+        P.lfy = -0.14; P.rfy = 0.14;
+        P.lfx = 0.22; P.rfx = -0.1;
+        P.guard = { l: -0.12, r: -0.3 };
+      }
+    } else {
+      P.lfy = -0.14; P.rfy = 0.14;
+      P.guard = { l: -0.15, r: -0.25 };
+      if(loopT < 0.8){
+        phase = '1. Grundstellung: Beine breit, Arme in Vorhalte';
+        P.lfx = 0.2; P.rfx = -0.1;
+      } else if(loopT < 1.8){
+        phase = '2. Side-Steps nach links (Füße NIE kreuzen!)';
+        const u = (loopT - 0.8) / 1.0;
+        P.x = HOME_ABW.x - 0.7 * u;
+        P.lf = 0.06 * Math.max(0, Math.sin(u * Math.PI * 4));
+        P.rf = 0.06 * Math.max(0, -Math.sin(u * Math.PI * 4));
+      } else if(loopT < 2.8){
+        phase = '3. Side-Steps nach rechts zurück';
+        const u = (loopT - 1.8) / 1.0;
+        P.x = (HOME_ABW.x - 0.7) + 0.7 * u;
+        P.lf = 0.06 * Math.max(0, -Math.sin(u * Math.PI * 4));
+        P.rf = 0.06 * Math.max(0, Math.sin(u * Math.PI * 4));
+      } else {
+        phase = '✓ Fester Stand in Grundposition';
+        P.x = HOME_ABW.x;
+      }
+    }
+
+    return { P, ballFly: null, phase };
+  },
+  drawOverlays(ctx, variant){
+    ctx.save();
+    if(variant === 'out'){
+      const p1 = proj([HOME_ABW.x, HOME_ABW.y, 0]);
+      const p2 = proj([HOME_ABW.x, HOME_ABW.y + 0.6, 0]);
+      ctx.strokeStyle = 'rgba(52, 152, 219, 0.85)';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.stroke();
+    } else {
+      const p1 = proj([HOME_ABW.x, HOME_ABW.y, 0]);
+      const p2 = proj([HOME_ABW.x - 0.7, HOME_ABW.y, 0]);
+      ctx.strokeStyle = 'rgba(46, 204, 113, 0.85)';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+};
+
+const guideAbwehr = createGuide(GUIDE_ABWEHR_CFG);
+export const openGuide = guideAbwehr.openGuide;
+export const closeGuide = guideAbwehr.closeGuide;
 
 let pose = null, setupOpen = false, F = [], lowN = 0, drillN = 0, lag = null, baseN = {n:0, wide:0, arms:0, upright:0, side:0};
 const OPP_SAY = {R:'Rechtshänder', L:'Linkshänder'};
@@ -116,6 +238,7 @@ function renderSetup(){
   const box = $('#setup'); box.hidden = !setupOpen; if(box.hidden) return;
   box.innerHTML = `<div class="sheet-h"><h3>Einrichtung</h3><button class="x" data-a="close" aria-label="Schließen">✕</button></div>
     <p class="muted">Handy frontal vor dir, 4–5 m weg, Hüfthöhe: das Handy ist dein Gegenspieler. Ganzer Körper im Bild und Platz für einen großen Schritt in jede Richtung. Die Richtungen gelten aus deiner Sicht.</p>
+    <button class="guideBtn" data-a="guide">▶ Video: Korrekte Ausführung</button>
     <p class="muted">Gegenspieler wirft mit:</p>${choice('opp', [['R', 'Rechts'], ['L', 'Links'], ['mix', 'Wechselnd']], settings.opp)}
     <p class="muted">${esc(settings.opp === 'mix' ? 'Ich sage am Anfang und bei jedem „Raus“, ob er Rechts- oder Linkshänder ist. Du stehst immer seitlich zu seiner Wurfhand.' : `Du stehst immer seitlich zu seiner Wurfhand: ${SIDE[leadSide(settings.opp)]} Fuß vorn, ${SIDE[leadSide(settings.opp)]} Hand vorn als Führarm. Beim Heraustreten geht diese Hand an seinen Wurfarm, die andere an seinen Oberkörper.`)}</p>
     <p class="muted">Dauer einer Runde:</p>${choice('dur', [[30, '30 s'], [40, '40 s'], [60, '60 s']], settings.dur)}
@@ -124,6 +247,7 @@ function renderSetup(){
 }
 const ACT = {
   close: closeSetup, start,
+  guide(){ openGuide(); },
   dur(el){ settings.dur = +el.dataset.v; store(); renderSetup(); },
   opp(el){ settings.opp = el.dataset.v; store(); renderSetup(); },
   async facing(el){ settings.facing = el.dataset.v; store(); renderSetup(); if(!DEMO && app.source==='cam'){ try{ await startSource(); }catch(e){ hint('Kamera-Fehler: ' + (e.message || e), 5000); } } }
@@ -186,5 +310,6 @@ $('#repShare').onclick = share;
 $('#newSession').onclick = () => { if(confirm('Neues Training starten? Das aktuelle bleibt im Speicher.')){ ensureSession(true); renderLog(); } };
 $('#logClear').onclick = () => { if(confirm('Alle Abwehr-Runden löschen?')){ log.length = 0; store(); renderLog(); } };
 initSheets();
+$('#emptyGuideBtn')?.addEventListener('click', () => openGuide());
 if(DEMO){ const a = $('#demoLink'); a.textContent = 'Demo-Modus aktiv: „Start“ drücken. Hier zurück zur echten Kamera.'; a.href = './'; }
 document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible' && app.state!=='off') keepAwake(); });

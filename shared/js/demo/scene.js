@@ -54,7 +54,7 @@ export function setView(pos0, look, [mx, my, yaw] = [0, 0, 0]){
 }
 export function proj(P){ const d = sub(P, cam.pos), z = dot(d, cam.f); return {x:W/2 + F*dot(d, cam.r)/z, y:H/2 - F*dot(d, cam.u)/z, z}; }
 // Hallenboden ins Bild (vor Person und Ball).
-export function drawFloor(){ g.drawImage(bg, 0, 0); }
+export function drawFloor(ctx = g){ if(bg) ctx.drawImage(bg, 0, 0); }
 
 /* ---------- Person ---------- */
 // Person P: {x, y, a (Blickrichtung, rad), phi (Schrittphase), s (Gehen 0–1), lift (Sprung, m), lf/rf (Fuß links/rechts hoch, m),
@@ -176,11 +176,11 @@ export function landmarks(j){
 }
 
 /* ---------- Zeichnen ---------- */
-export function drawPerson(j, P, R){
+export function drawPerson(j, P, R, ctx = g){
   const shadow = proj([P.x, P.y, 0]);
-  g.fillStyle = 'rgba(0,0,0,.22)'; g.beginPath(); g.ellipse(shadow.x, shadow.y, F*0.35/shadow.z, F*0.12/shadow.z, 0, 0, 7); g.fill();
+  ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(shadow.x, shadow.y, F*0.35/shadow.z, F*0.12/shadow.z, 0, 0, 7); ctx.fill();
   const items = [];
-  const limb = (a, b, r, col) => items.push({z:(proj(a).z + proj(b).z)/2, draw(){ const p = proj(a), q = proj(b); g.strokeStyle = col; g.lineWidth = F*r*2/p.z; g.lineCap = 'round'; g.beginPath(); g.moveTo(p.x, p.y); g.lineTo(q.x, q.y); g.stroke(); }});
+  const limb = (a, b, r, col) => items.push({z:(proj(a).z + proj(b).z)/2, draw(){ const p = proj(a), q = proj(b); ctx.strokeStyle = col; ctx.lineWidth = F*r*2/p.z; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke(); }});
   const SKIN = '#e0b089', SHIRT = '#1f5fbf', SHORTS = '#1a1f2a', SHOE = '#f2f2f2';
   for(const s of ['l', 'r']){
     limb(j[s+'Hip'], j[s+'Knee'], 0.075, SKIN); limb(j[s+'Knee'], j[s+'Ank'], 0.06, SKIN); limb(j[s+'Heel'], j[s+'Toe'], 0.05, SHOE);
@@ -188,13 +188,13 @@ export function drawPerson(j, P, R){
   }
   items.push({z:proj(add(j.lHip, sub(j.rSh, j.lHip), 0.5)).z, draw(){
     const q = [j.lSh, j.rSh, j.rHip, j.lHip].map(proj);
-    g.fillStyle = SHIRT; g.strokeStyle = SHIRT; g.lineWidth = F*0.08/q[0].z; g.lineJoin = 'round';
-    g.beginPath(); q.forEach((p, i) => i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y)); g.closePath(); g.fill(); g.stroke();
-    const h = [j.lHip, j.rHip].map(proj); g.strokeStyle = SHORTS; g.lineWidth = F*0.17/h[0].z; g.beginPath(); g.moveTo(h[0].x, h[0].y); g.lineTo(h[1].x, h[1].y); g.stroke();
+    ctx.fillStyle = SHIRT; ctx.strokeStyle = SHIRT; ctx.lineWidth = F*0.08/q[0].z; ctx.lineJoin = 'round';
+    ctx.beginPath(); q.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.closePath(); ctx.fill(); ctx.stroke();
+    const h = [j.lHip, j.rHip].map(proj); ctx.strokeStyle = SHORTS; ctx.lineWidth = F*0.17/h[0].z; ctx.beginPath(); ctx.moveTo(h[0].x, h[0].y); ctx.lineTo(h[1].x, h[1].y); ctx.stroke();
   }});
-  items.push({z:proj(j.head).z, draw(){ const p = proj(j.head); g.fillStyle = SKIN; g.beginPath(); g.arc(p.x, p.y, F*0.11/p.z, 0, 7); g.fill(); g.fillStyle = '#3a2a1c'; g.beginPath(); g.arc(p.x, p.y - F*0.03/p.z, F*0.1/p.z, Math.PI, 2*Math.PI); g.fill(); }});
-  if(P.ball){ const h = hand(R); items.push({z:proj(h).z - 0.05, draw(){ ball(h); }}); }
+  items.push({z:proj(j.head).z, draw(){ const p = proj(j.head); ctx.fillStyle = SKIN; ctx.beginPath(); ctx.arc(p.x, p.y, F*0.11/p.z, 0, 7); ctx.fill(); ctx.fillStyle = '#3a2a1c'; ctx.beginPath(); ctx.arc(p.x, p.y - F*0.03/p.z, F*0.1/p.z, Math.PI, 2*Math.PI); ctx.fill(); }});
+  if(P.ball){ const h = hand(R); items.push({z:proj(h).z - 0.05, draw(){ ball(h, ctx); }}); }
   items.sort((a, b) => b.z - a.z).forEach(it => it.draw());
 }
-export function ball(P3){ const p = proj(P3); if(p.z < 0.3) return; g.fillStyle = '#f2d23a'; g.strokeStyle = '#2a4fd0'; g.lineWidth = F*0.015/p.z; g.beginPath(); g.arc(p.x, p.y, F*0.095/p.z, 0, 7); g.fill(); g.stroke(); }
+export function ball(P3, ctx = g){ const p = proj(P3); if(p.z < 0.3) return; ctx.fillStyle = '#f2d23a'; ctx.strokeStyle = '#2a4fd0'; ctx.lineWidth = F*0.015/p.z; ctx.beginPath(); ctx.arc(p.x, p.y, F*0.095/p.z, 0, 7); ctx.fill(); ctx.stroke(); }
 

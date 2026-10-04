@@ -8,3 +8,13 @@ export const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt
 export const pick = a => a[Math.floor(Math.random()*a.length)];
 export const angDiff = (a,b) => ((a-b+540)%360)-180;
 export const fmtDate = d => d.toLocaleString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+
+if(typeof window !== 'undefined' && typeof navigator !== 'undefined' && 'serviceWorker' in navigator && location.protocol.startsWith('http')){
+  window.addEventListener('load', () => {
+    try {
+      const swUrl = new URL('../../sw.js', import.meta.url).href;
+      const scope = new URL('../../', import.meta.url).pathname;
+      navigator.serviceWorker.register(swUrl, {scope}).catch(() => {});
+    } catch(_){}
+  });
+}

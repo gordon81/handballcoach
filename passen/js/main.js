@@ -8,6 +8,118 @@ import { micSampler } from '../../shared/js/mic.js';
 import { bounceDetector, SENS } from '../../shared/js/bounceDetect.js';
 import { esc, fmtDate } from '../../shared/js/utils.js';
 import { $, video, canvas, ctx, now, hint, big, startSource as startStage, bodyPoints, drawSkeleton, initSheets } from '../../shared/js/stage.js';
+import { createGuide } from '../../shared/js/demoGuide.js';
+import { proj, add, sub, hand } from '../../shared/js/demo/scene.js';
+
+const CAM_P = { pos: [-11.6, -0.5, 1.5], look: [-11.9, 6, 0.9] };
+const HOME_P = { x: -10.2, y: 6 };
+const WALL_X = -14;
+
+const GUIDE_PASS_CFG = {
+  id: 'passen',
+  title: () => 'Pässe gegen die Wand: Korrekte Ausführung',
+  sub: v => v === 'speed' ? 'Hohe Passfrequenz & Direktes Nachfassen' : 'Grundtechnik Schlagwurf-Pass & Beidhändiges Fangen',
+  cues: () => [
+    '1. Gegenbein vorn: Das dem Wurfarm gegenüberliegende Bein (links bei Rechtshändern) steht vorn in stabiler Schrittstellung.',
+    '2. Ellbogen auf Schulterhöhe: Ball über Kopfhöhe führen, Ellbogen mindestens auf Schulterhöhe (ca. 90°-Winkel im Ellbogengelenk).',
+    '3. Rumpfverwringung: Schulterachse dreht zur Ausholbewegung auf; Schwung kommt aus Beinen, Hüfte und Rumpf.',
+    '4. Peitschenartiger Wurf & Abklappen: Handgelenk klappt aktiv in Passrichtung nach für präzisen Ballflug.',
+    '5. Beidhändiges Fangen: Arme dem Ball entgegenstrecken, mit beiden Händen fangen ("Trichter") und sofort in neue Wurfauslage federn.'
+  ],
+  cam: CAM_P,
+  variants: [
+    { id: 'std', label: 'Schlagpass (Standard)' },
+    { id: 'speed', label: 'Schnelle Passfolge' }
+  ],
+  duration: v => v === 'speed' ? 1.8 : 2.5,
+  isRightHand: () => settings.hand !== 'L',
+  step(loopT, variant, R){
+    const cycle = variant === 'speed' ? 1.8 : 2.5;
+    const tThrow = variant === 'speed' ? 0.35 : 0.6;
+    const tFly = variant === 'speed' ? 0.25 : 0.35;
+    const tCatch = tThrow + tFly * 2;
+
+    const frontFoot = R ? 'lfx' : 'rfx';
+    const backFoot = R ? 'rfx' : 'lfx';
+
+    const P = {
+      x: HOME_P.x, y: HOME_P.y, a: Math.PI, phi: 0, s: 0,
+      lift: 0, lf: 0, rf: 0,
+      [frontFoot]: 0.25, [backFoot]: -0.2,
+      raise: 0, swing: 0, twist: 0, lean: 0.05, ball: true, low: 0
+    };
+    let ballFly = null;
+    let phase = '1. Ausholbewegung (Ellbogen hoch)';
+
+    if(loopT < tThrow){
+      phase = '1. Ausholen: Ellbogen auf Schulterhöhe & Gegenbein vorn';
+      const u = loopT / tThrow;
+      P.raise = Math.min(1, u * 1.5);
+      P.swing = 0;
+      P.twist = (R ? 1 : -1) * 0.4 * u;
+      P.ball = true;
+    } else if(loopT < tThrow + 0.12){
+      phase = '2. Peitschenartiger Pass & Handgelenkseinsatz';
+      const u = (loopT - tThrow) / 0.12;
+      P.raise = 1;
+      P.swing = u;
+      P.twist = (R ? 1 : -1) * (0.4 - 0.8 * u);
+      P.ball = true;
+    } else if(loopT < tThrow + tFly){
+      phase = '3. Ballflug zur Wand';
+      P.raise = Math.max(0, 1 - (loopT - tThrow) * 2);
+      P.swing = 1;
+      P.twist = (R ? 1 : -1) * -0.4;
+      P.ball = false;
+      const u = (loopT - tThrow) / tFly;
+      const wallPoint = [WALL_X, HOME_P.y - 0.3, 1.6];
+      const startHand = hand(R);
+      ballFly = { cur: add(startHand, sub(wallPoint, startHand), u) };
+    } else if(loopT < tCatch){
+      phase = '4. Ball prallt ab – Hände zum Fangen bereit';
+      P.raise = 0.2;
+      P.swing = 0;
+      P.twist = 0;
+      P.ball = false;
+      const u = (loopT - (tThrow + tFly)) / tFly;
+      const wallPoint = [WALL_X, HOME_P.y - 0.3, 1.6];
+      const catchPoint = [HOME_P.x - 0.4, HOME_P.y, 1.25];
+      ballFly = { cur: add(wallPoint, sub(catchPoint, wallPoint), u) };
+    } else {
+      phase = '✓ Beidhändiges Fangen & direkte Übergabe';
+      P.raise = Math.min(1, (loopT - tCatch) / (cycle - tCatch));
+      P.swing = 0;
+      P.twist = 0.1;
+      P.ball = true;
+    }
+
+    return { P, ballFly, phase };
+  },
+  drawOverlays(ctx, variant, R){
+    ctx.save();
+    const pWall = proj([WALL_X, HOME_P.y - 0.3, 1.6]);
+    ctx.strokeStyle = '#ff8a1f';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(pWall.x - 14, pWall.y);
+    ctx.lineTo(pWall.x + 14, pWall.y);
+    ctx.moveTo(pWall.x, pWall.y - 14);
+    ctx.lineTo(pWall.x, pWall.y + 14);
+    ctx.stroke();
+
+    const pFront = proj([HOME_P.x + (R ? 0.25 : -0.2), HOME_P.y + 0.15, 0]);
+    ctx.strokeStyle = 'rgba(46, 204, 113, 0.8)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(pFront.x, pFront.y, 14, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+};
+
+const guidePass = createGuide(GUIDE_PASS_CFG);
+export const openGuide = guidePass.openGuide;
+export const closeGuide = guidePass.closeGuide;
 
 let pose = null, setupOpen = false, F = [], demoMod = null, det = null, quietUntil = 0;
 const mic = micSampler();
@@ -122,6 +234,7 @@ function renderSetup(){
       <p class="muted">Empfindlichkeit:</p>${choice('sens', [['low', 'Laute Halle'], ['mid', 'Mittel'], ['high', 'Leise Halle']], settings.sens)}</div>` : '';
   box.innerHTML = `<div class="sheet-h"><h3>Einrichtung</h3><button class="x" data-a="close" aria-label="Schließen">✕</button></div>
     <p class="muted">Ziel an die Wand kleben, 4–6 m davor stellen. Handy seitlich, ganzer Körper im Bild.${settings.best ? ` Bestwert: ${settings.best} Pässe.` : ''}</p>
+    <button class="guideBtn" data-a="guide">▶ Video: Korrekte Ausführung</button>
     <p class="muted">Wand im Bild:</p>${choice('wall', [['left', '← Links'], ['right', 'Rechts →']], settings.wall)}
     <p class="muted">Wurfhand:</p>${choice('hand', [['R', 'Rechts'], ['L', 'Links']], settings.hand)}
     <p class="muted">Dauer:</p>${choice('dur', [[30, '30 s'], [60, '60 s']], settings.dur)}
@@ -131,6 +244,7 @@ function renderSetup(){
 }
 const ACT = {
   close: closeSetup, start,
+  guide(){ openGuide(); },
   wall(el){ settings.wall = el.dataset.v; store(); renderSetup(); },
   hand(el){ settings.hand = el.dataset.v; store(); renderSetup(); },
   dur(el){ settings.dur = +el.dataset.v; store(); renderSetup(); },
@@ -188,5 +302,6 @@ $('#repShare').onclick = share;
 $('#newSession').onclick = () => { if(confirm('Neues Training starten? Das aktuelle bleibt im Speicher.')){ ensureSession(true); renderLog(); } };
 $('#logClear').onclick = () => { if(confirm('Alle Pass-Runden löschen?')){ log.length = 0; settings.best = 0; store(); renderLog(); } };
 initSheets();
+$('#emptyGuideBtn')?.addEventListener('click', () => openGuide());
 if(DEMO){ const a = $('#demoLink'); a.textContent = 'Demo-Modus aktiv: „Start“ drücken. Hier zurück zur echten Kamera.'; a.href = './'; }
 document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible' && app.state!=='off') keepAwake(); });

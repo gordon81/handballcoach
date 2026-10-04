@@ -92,7 +92,7 @@ function behave(dt){
 // Sprungwurf: Anlauf, Absprung links (Rechtshänder), Ausholen, Drehung, Wurf, Landung.
 // Ab und zu ein Fehler: Übertritt, flacher Sprung, Arm unten.
 // dr: Absprung so weit außerhalb der Linie (m, − = innerhalb), h: Sprunghöhe, arm: Wurfarm oben (0–1).
-const VAR = [{dr:0.3, h:0.5, arm:1}, {dr:0.25, h:0.45, arm:1}, {dr:-0.15, h:0.45, arm:1}, {dr:0.3, h:0.28, arm:0.45}];
+const VAR = [{dr:0.3, h:0.5, arm:1}, {dr:0.25, h:0.5, arm:1}, {dr:-0.15, h:0.5, arm:1}, {dr:0.3, h:0.28, arm:0.45}];
 // Rückraum: gut, vier statt drei Schritte (kürzere Schritte), innerhalb der 9 m, Abwurf zu spät (schon im Fallen).
 // steps: Schritte im Anlauf (der letzte setzt das Sprungbein auf).
 export const VAR_RR = [{dr:0.4, h:0.5, arm:1, steps:3}, {dr:0.4, h:0.5, arm:1, steps:4}, {dr:-0.35, h:0.5, arm:1, steps:3}, {dr:0.4, h:0.5, arm:1, steps:3, swingAt:0.72}];
@@ -233,3 +233,7 @@ export function truthError(pts){
 // Für Tests: wahre Lage der Ringe im aktuellen Kamerabild (normiert).
 export function ringTruth(){ return Object.entries(RINGS).map(([name, p]) => { const q = proj(p); return {name, x:q.x/W, y:q.y/H}; }); }
 export const _test = {proj:(...a) => proj(...a), linePt, shoot(){ if(!shot) startShot(); }, autoCall(on){ autoCall = on; }};
+export function resetDemo(){
+  walkTh = null; shot = null; shotNo = 0; ballFly = null; called = false; readyFor = 0;
+  P.x = S[0]; P.y = S[1]; P.s = 0; P.lift = 0; P.lf = 0; P.rf = 0; P.raise = 0; P.swing = 0; P.twist = 0; P.ball = true;
+}

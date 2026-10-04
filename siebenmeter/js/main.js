@@ -5,8 +5,117 @@ import { say, beep, unlockBeep } from '../../shared/js/speech.js';
 import { keepAwake, releaseWake } from '../../shared/js/wakelock.js';
 import { esc, pick, fmtDate } from '../../shared/js/utils.js';
 import { $, video, canvas, ctx, now, hint, big, startSource as startStage, bodyPoints, drawSkeleton, initSheets } from '../../shared/js/stage.js';
+import { createGuide } from '../../shared/js/demoGuide.js';
+import { REST, REST_MODES, restLen, restClock, nearLine, callAction, restIntro } from './rest.js';
+import { onCall, quietCall, startCall, stopCall, renderRest, callMic } from './restCtl.js';
+import { proj, add, sub, hand } from '../../shared/js/demo/scene.js';
+
+const CAM7 = { pos: [4.2, 10.6, 1.7], look: [-0.3, 7.0, 0.5] };
+const HOME7 = { x: 0.1, y: 7.75 };
+
+const GUIDE7_CFG = {
+  id: 'siebenmeter',
+  title: () => '7-m-Wurf: Korrekte Ausführung',
+  sub: v => v === 'delay' ? 'Körpertäuschung / Verzögerung (IHF 15:1)' : 'Regelgerechter Schlagwurf (IHF 15:1 & DHB)',
+  cues: () => [
+    '1. Standposition: Standfuß (links bei Rechtshand) ruhig bis zu 10 cm hinter der 7-m-Linie. Kein Berühren oder Übertreten.',
+    '2. Standfuß am Boden (IHF 15:1): Ein Fuß muss ab dem Pfiff bis zum Abwurf ununterbrochen Bodenkontakt halten (Rutschen erlaubt, Abheben verboten).',
+    '3. 3-Sekunden-Regel: Ballabgabe muss innerhalb von maximal 3 Sekunden nach dem Pfiff erfolgen.',
+    '4. Hohe Wurfauslage: Ball über Schulterhöhe führen, Rumpf gegen die Hüfte aufdrehen und mit Peitschenschlag abschließen.',
+    '5. Wurfvarianten & Finten: Wurffinte oder Verzögerung gegen den Torwart möglich, solange der Standfuß nicht abhebt.'
+  ],
+  cam: CAM7,
+  variants: [
+    { id: 'clean', label: 'Standard-Wurf (1,2 s)' },
+    { id: 'delay', label: 'Verzögert / Finte (2,0 s)' }
+  ],
+  duration: 3.4,
+  isRightHand: () => settings.hand !== 'L',
+  step(loopT, variant, R){
+    const P = {
+      x: HOME7.x, y: HOME7.y, a: -Math.PI / 2, phi: 0, s: 0,
+      lift: 0, lf: 0, rf: 0,
+      lfx: R ? 0.3 : -0.25, rfx: R ? -0.25 : 0.3,
+      raise: 0, swing: 0, twist: 0, lean: 0.05, ball: true
+    };
+    let ballFly = null;
+    let phase = '1. Grundstellung hinter der 7-m-Linie';
+
+    const tWhistle = 0.8;
+    const tShot = variant === 'delay' ? 2.6 : 2.0;
+
+    if(loopT < tWhistle){
+      phase = '1. Grundstellung ruhig hinter der Linie';
+      P.raise = 0; P.swing = 0; P.twist = 0; P.ball = true;
+    } else if(loopT < tShot){
+      const u = (loopT - tWhistle) / (tShot - tWhistle);
+      if(variant === 'delay'){
+        phase = u < 0.5 ? '2. Pfiff – Körpertäuschung / Finte' : '3. Wurfauslage im Stand';
+        P.raise = Math.min(1, u * 1.5);
+        P.twist = (R ? 1 : -1) * (0.35 * Math.sin(u * Math.PI * 2));
+      } else {
+        phase = '2. Pfiff & Wurfauslage (Ellbogen hoch)';
+        P.raise = Math.min(1, u * 1.8);
+        P.twist = (R ? 1 : -1) * 0.4 * u;
+      }
+      P.ball = true;
+    } else if(loopT < tShot + 0.3){
+      phase = '3. Wurfzug (Standfuß fest am Boden)';
+      const u = (loopT - tShot) / 0.3;
+      P.raise = 1;
+      P.swing = Math.min(1, u * 1.4);
+      P.twist = (R ? 1 : -1) * (0.4 - 0.9 * u);
+      if(P.swing > 0.7){
+        P.ball = false;
+        const hPos = hand(R);
+        const targetGoal = [0.6, 0.0, 1.6];
+        const flyU = Math.min(1, (u - 0.5) / 0.5);
+        ballFly = { cur: add(hPos, sub(targetGoal, hPos), flyU) };
+      }
+    } else if(loopT < tShot + 0.8){
+      phase = '4. Ball im Toreck (Präziser Treffer)';
+      P.raise = Math.max(0, 1 - (loopT - tShot - 0.3) * 2);
+      P.swing = Math.max(0, 1 - (loopT - tShot - 0.3) * 2);
+      P.twist = 0;
+      P.ball = false;
+      const hPos = hand(R);
+      const targetGoal = [0.6, 0.0, 1.6];
+      const flyProgress = Math.min(1, (loopT - tShot) / 0.45);
+      ballFly = { cur: add(hPos, sub(targetGoal, hPos), flyProgress) };
+    } else {
+      phase = '✓ Regelgerecht: Zeit < 3 s, kein Übertritt';
+      P.ball = true;
+    }
+
+    return { P, ballFly, phase };
+  },
+  drawOverlays(ctx, variant, R){
+    ctx.save();
+    const p1 = proj([-0.5, 7.0, 0]);
+    const p2 = proj([0.5, 7.0, 0]);
+    ctx.strokeStyle = '#ff5a5a';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.stroke();
+
+    const pStand = proj([R ? 0.3 : -0.25, 7.45, 0]);
+    ctx.strokeStyle = 'rgba(46, 204, 113, 0.85)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(pStand.x, pStand.y, 16, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+};
+
+const guide7 = createGuide(GUIDE7_CFG);
+export const openGuide = guide7.openGuide;
+export const closeGuide = guide7.closeGuide;
 
 let pose = null, cardTimer = null, setupOpen = false;
+let collapsed = false, customPos = null, moved = false;
 let F = [];   // Frames der letzten Sekunden (Pixel)
 
 /* ---------- Kamera und KI ---------- */
@@ -35,18 +144,48 @@ function step(t){
   const s = app.state, last = F.at(-1), seen = last && t - last.t < 0.5;
   if(s==='ready'){
     if(seen && readyPose(t)){
-      app.target = settings.call ? pick(settings.targets) : null;
-      if(app.target){ say(app.target); big(app.target, 'target'); }
-      app.tw = t + (app.target ? 1.6 : 1.0) + Math.random()*1.4;   // Pfiff nach einer kurzen, zufälligen Pause
+      if(app.quick) app.tw = t + REST.lead - Math.min(REST.lead, t - (app.armT ?? t));   // bereit gemeldet: Pfiff 1 s nach dem Zuruf
+      else {
+        app.target = settings.call ? pick(settings.targets) : null;
+        if(app.target){ say(app.target); big(app.target, 'target'); }
+        app.tw = t + (app.target ? 1.6 : 1.0) + Math.random()*1.4;   // Pfiff nach einer kurzen, zufälligen Pause
+      }
       setState('set', t);
     }
   } else if(s==='set'){
     if(!seen || !readyPose(t)){ hint('Zu früh bewegt. Ruhig hinter der Linie stehen, dann kommt der Pfiff.', 2500); big(''); setState('ready', t); return; }
-    if(t >= app.tw){ beep(2800, 450); app.whistleAt = t; big('Pfiff!', 'whistle', 700); setState('go', t); }
+    if(t >= app.tw){ beep(2800, 450); quietCall(0.8); app.whistleAt = t; app.rest = null; app.quick = false; app.armT = null; big('Pfiff!', 'whistle', 700); setState('go', t); }
   } else if(s==='go'){
     if(throwDone(F, app.whistleAt) || t - app.whistleAt > TH7.waitThrow) finish(t);
+  } else if(s==='cool' && app.rest){
+    // Pause mit Zähler: abgelaufen → Pfiff, sobald der Spieler ruhig hinter der Linie steht. Vorher einmal warnen.
+    const left = app.rest.left(t);
+    if(app.rest.done(t)){ app.quick = true; app.armT = null; setState('ready', t); }
+    else if(left != null && app.rest.len >= 2*REST.warn && left <= REST.warn && !app.rest.warned){ app.rest.warned = true; say('Noch zehn Sekunden.'); }
   } else if(s==='cool' && t - app.stateT >= settings.pause && !app.series?.done) setState('ready', t);
+  renderRest(app.state==='cool' ? app.rest : null, t, {armed:app.quick && (s==='ready' || s==='set'), target:app.target, mic:callMic.on});
 }
+
+// Zuruf oder Antippen während der Pause (restCtl.js, Regeln in rest.js). kind: 'shout' | 'ready' | 'hold'.
+// Ein Ruf heißt „bereit“, wenn der Spieler an der Linie steht, sonst „Pause“ bzw. „weiter“.
+function atLine(t){
+  const f = F.at(-1), L = linePx();
+  if(!f || t - f.t > 0.5) return false;
+  return !L || nearLine(['lToe','lHeel','rToe','rHeel'].map(k => lineDist(L, f[k])), f.bl);
+}
+onCall((kind, t) => {
+  if(restLen(settings.rest) === undefined || app.state==='off') return;
+  const s = app.state, armed = app.quick && (s==='ready' || s==='set');
+  if(!armed && !(s==='cool' && app.rest)) return;
+  const a = callAction(kind, {armed, atLine:atLine(t), held:!!app.rest?.held});
+  if(a==='ready'){ app.rest.hold(t); app.quick = true; app.armT = t; setState('ready', t); }   // Pfiff nach REST.lead s
+  else if(a==='hold'){ app.rest.hold(t); say('Pause.'); }
+  else if(a==='resume'){ app.rest.resume(t); say('Weiter.'); }
+  else if(a==='pause'){   // Pfiff abbrechen, Zähler hält an
+    app.rest ??= restClock(restLen(settings.rest), t); app.rest.hold(t);
+    app.quick = false; app.armT = null; big(''); setState('cool', t); say('Pause.');
+  }
+});
 
 function finish(t){
   const r = judge7(F.filter(f => f.t >= app.whistleAt - 0.6), app.whistleAt, linePx());
@@ -60,7 +199,11 @@ function finish(t){
     speech = seriesSpeech(r, S.n, S.hits, SERIES);
     if(S.n >= SERIES.reps){ S.done = true; settings.seriesHist = [...(settings.seriesHist || []), {at:Date.now(), run:S.run, sid:e.sid, hits:S.hits, n:S.n, goal:SERIES.goal}].slice(-30); }
   }
-  store(); say(speech); app.whistleAt = null; app.target = null; big(r.ok ? fmtS(r.m.time) + ' s' : '', r.ok ? 'ok' : '', 2500);
+  // Pause mit Zuruf: Zähler starten, nächstes Ziel gleich mit ansagen (vor dem Pfiff stört keine Ansage den Zuruf).
+  const len = restLen(settings.rest);
+  app.rest = len !== undefined && !S?.done ? restClock(len, t) : null;
+  if(app.rest && settings.call){ app.nextTarget = pick(settings.targets); speech += ` Nächstes Ziel: ${app.nextTarget}.`; }
+  store(); say(speech); app.whistleAt = null; app.target = app.rest ? app.nextTarget ?? null : null; big(r.ok ? fmtS(r.m.time) + ' s' : '', r.ok ? 'ok' : '', 2500);
   showCard(e); renderSeries(); renderLog();
   setState('cool', t);
   if(S?.done){ stop(); setTimeout(() => showEnd(S), 400); }
@@ -70,12 +213,15 @@ function start(){
   if(!settings.line){ openSetup(); hint('Erst die 7-m-Linie antippen', 2500); return; }
   closeSetup(); $('#endCard').hidden = true; unlockBeep(); ensureSession();
   app.series = settings.series ? {run:Date.now(), n:0, hits:0, done:false} : null;
-  say(settings.series ? `Serie mit ${SERIES.reps} Siebenmetern. Stell dich ruhig hinter die Linie. Nach dem Pfiff hast du drei Sekunden.` : 'Stell dich ruhig hinter die Linie. Nach dem Pfiff hast du drei Sekunden.');
-  setState('ready'); app.stateT = now() + 3;   // Ansage ausreden lassen
+  const intro = restIntro(settings.rest);
+  say((settings.series ? `Serie mit ${SERIES.reps} Siebenmetern. Stell dich ruhig hinter die Linie. Nach dem Pfiff hast du drei Sekunden.` : 'Stell dich ruhig hinter die Linie. Nach dem Pfiff hast du drei Sekunden.') + (intro ? ' ' + intro : ''));
+  app.rest = null; app.quick = false; app.armT = null;
+  if(intro) startCall().then(err => { if(err) hint(err, 5000); });
+  setState('ready'); app.stateT = now() + 3 + intro.length/14;   // Ansage ausreden lassen
   F = []; $('#btnStart').textContent = 'Stopp'; $('#btnStart').classList.add('running'); keepAwake(); renderSeries();
 }
 function stop(){
-  setState('off'); big(''); app.whistleAt = null;
+  setState('off'); big(''); app.whistleAt = null; app.rest = null; app.quick = false; app.armT = null; stopCall(); renderRest(null, 0);
   if(app.series && !app.series.done) app.series = null;
   $('#btnStart').textContent = 'Start'; $('#btnStart').classList.remove('running'); releaseWake(); renderSeries();
 }
@@ -124,39 +270,176 @@ canvas.addEventListener('pointerdown', e => {
 /* ---------- Einrichtung ---------- */
 const btn = (a, label, cls = '', v = '', on = true) => `<button data-a="${a}" ${v !== '' ? `data-v="${v}"` : ''} class="${cls}" ${on ? '' : 'disabled'}>${label}</button>`;
 const choice = (a, opts, cur) => `<div class="btnrow">${opts.map(([v, l]) => btn(a, l, String(cur)===String(v) ? 'on' : '', v)).join('')}</div>`;
-function openSetup(){ setupOpen = true; renderSetup(); }
+function clampPosition(box = $('#setup')){
+  if(!box || box.hidden || !customPos) return;
+  const stageRect = $('#stage').getBoundingClientRect();
+  const boxRect = box.getBoundingClientRect();
+  const maxL = Math.max(8, stageRect.width - boxRect.width - 8);
+  const maxT = Math.max(8, stageRect.height - boxRect.height - 8);
+  customPos.left = Math.max(8, Math.min(customPos.left, maxL));
+  customPos.top = Math.max(8, Math.min(customPos.top, maxT));
+  box.style.left = `${customPos.left}px`;
+  box.style.top = `${customPos.top}px`;
+}
+
+function initDraggable(box){
+  let startX = 0, startY = 0, origLeft = 0, origTop = 0, dragging = false;
+
+  function onPointerDown(e){
+    if(e.target.closest('button, input, select, a')) return;
+    const handle = e.target.closest('.sheet-h');
+    if(!handle && !box.classList.contains('collapsed')) return;
+
+    dragging = true;
+    moved = false;
+    startX = e.clientX;
+    startY = e.clientY;
+
+    const boxRect = box.getBoundingClientRect();
+    const stageRect = $('#stage').getBoundingClientRect();
+    origLeft = boxRect.left - stageRect.left;
+    origTop = boxRect.top - stageRect.top;
+
+    box.classList.add('dragging');
+    try { e.target.setPointerCapture(e.pointerId); } catch(_) {}
+    e.preventDefault();
+  }
+
+  function onPointerMove(e){
+    if(!dragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    if(Math.hypot(dx, dy) > 4) moved = true;
+
+    const stageRect = $('#stage').getBoundingClientRect();
+    const boxRect = box.getBoundingClientRect();
+    let l = origLeft + dx;
+    let t = origTop + dy;
+
+    const maxL = Math.max(8, stageRect.width - boxRect.width - 8);
+    const maxT = Math.max(8, stageRect.height - boxRect.height - 8);
+    l = Math.max(8, Math.min(l, maxL));
+    t = Math.max(8, Math.min(t, maxT));
+
+    customPos = { left: l, top: t };
+    box.style.left = `${l}px`;
+    box.style.top = `${t}px`;
+    box.style.right = 'auto';
+    box.style.bottom = 'auto';
+    box.style.margin = '0';
+  }
+
+  function onPointerUp(e){
+    if(!dragging) return;
+    dragging = false;
+    box.classList.remove('dragging');
+    try { e.target.releasePointerCapture(e.pointerId); } catch(_) {}
+    if(moved) setTimeout(() => { moved = false; }, 60);
+  }
+
+  box.addEventListener('pointerdown', onPointerDown);
+  box.addEventListener('pointermove', onPointerMove);
+  box.addEventListener('pointerup', onPointerUp);
+  box.addEventListener('pointercancel', onPointerUp);
+
+  box.addEventListener('dblclick', e => {
+    if(e.target.closest('.sheet-h')){
+      customPos = null;
+      box.style.left = '';
+      box.style.top = '';
+      box.style.right = '';
+      box.style.bottom = '';
+      box.style.margin = '';
+    }
+  });
+
+  window.addEventListener('resize', () => clampPosition(box));
+}
+
+function openSetup(){ setupOpen = true; collapsed = false; renderSetup(); }
 function closeSetup(){ setupOpen = false; app.marking = null; renderSetup(); }
 function renderSetup(){
   const box = $('#setup'); box.hidden = !setupOpen && !app.marking;
   $('#stage').classList.toggle('marking', !!app.marking);
   if(box.hidden) return;
+  box.classList.toggle('collapsed', collapsed && !app.marking);
   const mk = app.marking;
   if(mk){
     const n = mk.pts.length;
     box.innerHTML = `<p class="step"><b>${n < 2 ? `Tippe auf ${n ? 'das andere' : 'ein'} Ende der 7-m-Linie.` : 'Tippe jetzt auf einen Punkt Richtung Tor.'}</b> (${n}/3)</p>
       <div class="btnrow">${btn('undo', '↶ Zurück', '', '', n > 0)}${btn('cancel', 'Abbrechen')}</div>`;
+    if(customPos) clampPosition(box);
     return;
   }
   const l = settings.line;
-  box.innerHTML = `<div class="sheet-h"><h3>Einrichtung</h3><button class="x" data-a="close" aria-label="Schließen">✕</button></div>
-    <p class="muted">Handy auf dem Stativ seitlich hinter der 7-m-Linie, erhöht (1–1,5 m). Linie, Füße und Wurfarm müssen im Bild sein.</p>
-    <ul class="checks"><li><span class="ic ${l ? 'ok' : 'mid'}">${l ? '✓' : '•'}</span><span>${l ? `7-m-Linie gesetzt (${fmtDate(new Date(l.at))})` : '7-m-Linie fehlt'}</span></li></ul>
-    <div class="btnrow">${btn('tap', l ? 'Linie neu antippen' : 'Linie antippen', l ? '' : 'primaryBtn')}</div>
-    <p class="muted">Wurfhand:</p>${choice('hand', [['R', 'Rechts'], ['L', 'Links']], settings.hand)}
-    <p class="muted">Ziel vor dem Pfiff ansagen:</p>${choice('call', [[1, 'Ja'], [0, 'Nein']], settings.call ? 1 : 0)}
-    <p class="muted">Übung:</p>${choice('series', [[1, `Serie ${SERIES.reps} Würfe, Ziel ${SERIES.goal}`], [0, 'Frei']], settings.series ? 1 : 0)}
-    ${app.state==='off' ? `<button class="wide primaryBtn" data-a="start" ${l ? '' : 'disabled'}>Training starten</button>` : ''}`;
+  box.innerHTML = `
+    <div class="sheet-h">
+      <div class="sheet-title"><span class="drag-handle">⠿</span><h3>Einrichtung</h3></div>
+      <div class="sheet-actions">
+        <button class="collapse-btn" data-a="collapse" aria-label="${collapsed ? 'Aufklappen' : 'Minimieren'}">${collapsed ? '+' : '−'}</button>
+        <button class="x" data-a="close" aria-label="Schließen">✕</button>
+      </div>
+    </div>
+    <div class="setup-body collapse-hide">
+      <p class="muted">Handy auf dem Stativ seitlich hinter der 7-m-Linie, erhöht (1–1,5 m). Linie, Füße und Wurfarm müssen im Bild sein.</p>
+      <button class="guideBtn" data-a="guide">▶ Video: Korrekte Ausführung</button>
+      <ul class="checks"><li><span class="ic ${l ? 'ok' : 'mid'}">${l ? '✓' : '•'}</span><span>${l ? `7-m-Linie gesetzt (${fmtDate(new Date(l.at))})` : '7-m-Linie fehlt'}</span></li></ul>
+      <div class="btnrow">${btn('tap', l ? 'Linie neu antippen' : 'Linie antippen', l ? '' : 'primaryBtn')}</div>
+      <p class="muted">Wurfhand:</p>${choice('hand', [['R', 'Rechts'], ['L', 'Links']], settings.hand)}
+      <p class="muted">Ziel vor dem Pfiff ansagen:</p>${choice('call', [[1, 'Ja'], [0, 'Nein']], settings.call ? 1 : 0)}
+      <p class="muted">Übung:</p>${choice('series', [[1, `Serie ${SERIES.reps} Würfe, Ziel ${SERIES.goal}`], [0, 'Frei']], settings.series ? 1 : 0)}
+      <p class="muted">Pause zwischen den Würfen (alleine: Ball holen, dann rufen):</p>${choice('rest', REST_MODES, settings.rest || 0)}
+      <button class="wide" data-a="config">⚙︎ Konfiguration & Pause</button>
+      ${app.state==='off' ? `<button class="wide primaryBtn" data-a="start" ${l ? '' : 'disabled'}>Training starten</button>` : ''}
+    </div>`;
+  if(customPos) clampPosition(box);
 }
+
+function renderConfig(){
+  const box = $('#configBody');
+  if(!box) return;
+  const l = settings.line;
+  box.innerHTML = `
+    <p class="muted">Wurfhand:</p>
+    ${choice('hand', [['R', 'Rechtshänder'], ['L', 'Linkshänder']], settings.hand)}
+    <p class="muted">Ziel vor dem Pfiff ansagen:</p>
+    ${choice('call', [[1, 'Ja'], [0, 'Nein']], settings.call ? 1 : 0)}
+    <p class="muted">Übung:</p>
+    ${choice('series', [[1, `Serie ${SERIES.reps} Würfe (Ziel ${SERIES.goal})`], [0, 'Freies Training']], settings.series ? 1 : 0)}
+    <p class="muted">Pause zwischen den Würfen:</p>
+    ${choice('pause', [[2, '2 s'], [3, '3 s'], [4, '4 s'], [6, '6 s']], settings.pause || 4)}
+    <p class="muted">7-m-Linie:</p>
+    <div class="btnrow">
+      <button class="wide ${l ? '' : 'primaryBtn'}" data-c="lineTap">${l ? `Linie neu antippen (gesetzt ${fmtDate(new Date(l.at))})` : '7-m-Linie antippen'}</button>
+    </div>
+    <p class="muted">Anleitung:</p>
+    <button class="guideBtn wide" data-c="guide">▶ Video: Korrekte Ausführung</button>
+  `;
+}
+
 const ACT = {
-  close: closeSetup, start,
+  close: closeSetup,
+  collapse(){ collapsed = !collapsed; renderSetup(); },
+  start,
+  guide(){ openGuide(); },
   tap(){ if(app.state!=='off') stop(); app.marking = {pts:[]}; $('#card').hidden = true; renderSetup(); },
   undo(){ app.marking.pts.pop(); renderSetup(); },
   cancel(){ app.marking = null; renderSetup(); },
-  hand(el){ settings.hand = el.dataset.v; store(); renderSetup(); },
-  call(el){ settings.call = el.dataset.v === '1'; store(); renderSetup(); },
-  series(el){ settings.series = el.dataset.v === '1'; store(); renderSetup(); }
+  hand(el){ settings.hand = el.dataset.v; store(); renderSetup(); renderConfig(); },
+  call(el){ settings.call = el.dataset.v === '1'; store(); renderSetup(); renderConfig(); },
+  series(el){ settings.series = el.dataset.v === '1'; store(); renderSetup(); renderConfig(); },
+  rest(el){ settings.rest = Number(el.dataset.v); store(); renderSetup(); },
+  config(){ closeSetup(); renderConfig(); $('#configSheet').hidden = false; }
 };
-$('#setup').addEventListener('click', e => { const el = e.target.closest('[data-a]'); if(el && ACT[el.dataset.a]) ACT[el.dataset.a](el); });
+$('#setup').addEventListener('click', e => {
+  if(moved){ moved = false; return; }
+  const el = e.target.closest('[data-a]');
+  if(el && ACT[el.dataset.a]){ ACT[el.dataset.a](el); return; }
+  if(collapsed && !e.target.closest('[data-a=close]')){
+    collapsed = false;
+    renderSetup();
+  }
+});
 
 /* ---------- Karte nach dem Wurf, Serie, Ende ---------- */
 function showCard(e){
@@ -229,10 +512,35 @@ $('#btnStart').onclick = async () => {
   start();
 };
 $('#btnSetup').onclick = async () => { if(app.source==='none'){ $('#btnStart').click(); return; } setupOpen ? closeSetup() : openSetup(); };
+$('#btnConfig').onclick = () => { renderConfig(); $('#configSheet').hidden = false; };
 $('#btnLog').onclick = () => { renderLog(); $('#logSheet').hidden = false; };
 $('#repShare').onclick = share;
 $('#newSession').onclick = () => { if(confirm('Neues Training starten? Das aktuelle bleibt im Speicher.')){ ensureSession(true); renderLog(); } };
 $('#logClear').onclick = () => { if(confirm('Alle 7-m-Würfe löschen?')){ log.length = 0; store(); renderLog(); } };
+$('#configSheet').addEventListener('click', e => {
+  const btnEl = e.target.closest('[data-a]');
+  if(btnEl){
+    const a = btnEl.dataset.a, v = btnEl.dataset.v;
+    if(a === 'hand'){ settings.hand = v; store(); renderConfig(); renderSetup(); }
+    else if(a === 'call'){ settings.call = v === '1'; store(); renderConfig(); renderSetup(); }
+    else if(a === 'series'){ settings.series = v === '1'; store(); renderConfig(); renderSetup(); }
+    else if(a === 'pause'){ settings.pause = Number(v); store(); renderConfig(); renderSetup(); }
+    return;
+  }
+  const actEl = e.target.closest('[data-c]');
+  if(actEl){
+    const c = actEl.dataset.c;
+    if(c === 'guide'){ $('#configSheet').hidden = true; openGuide(); }
+    else if(c === 'lineTap'){
+      $('#configSheet').hidden = true;
+      if(app.source === 'none'){ $('#btnStart').click(); return; }
+      openSetup();
+      ACT.tap();
+    }
+  }
+});
+initDraggable($('#setup'));
 initSheets();
+$('#emptyGuideBtn')?.addEventListener('click', () => openGuide());
 if(DEMO){ const a = $('#demoLink'); a.textContent = 'Demo-Modus aktiv: „Start“ drücken. Hier zurück zur echten Kamera.'; a.href = './'; }
 document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible' && app.state!=='off') keepAwake(); });

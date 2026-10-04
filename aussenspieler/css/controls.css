@@ -4,7 +4,7 @@
 #filebar input[type=range]{flex:1;min-width:60px;accent-color:var(--orange)}
 #filebar button,#filebar select{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 9px}
 
-#bar{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr 1fr .7fr;gap:6px;padding:8px;background:var(--panel);border-top:1px solid var(--line)}
+#bar{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr 1fr .7fr;gap:6px;padding:8px calc(8px + env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) calc(8px + env(safe-area-inset-left,0px));background:var(--panel);border-top:1px solid var(--line);flex-shrink:0;position:relative;z-index:25}
 #bar button{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px 4px;font-size:.92rem;font-weight:600;min-height:48px}
 #bar button.primary{background:var(--orange);color:#1a1000;border-color:transparent;font-family:var(--head);font-size:1.25rem;font-weight:800}
 #bar button.primary.running{background:var(--bad);color:#fff}

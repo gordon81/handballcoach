@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#121a22">
 <title>Außenwurf-Coach</title>
+<script src="../shared/js/errorlog.js"></script>
+<link rel="icon" type="image/svg+xml" href="../shared/icon.svg">
+<link rel="manifest" href="../manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
@@ -78,6 +81,32 @@
     <h3>So prüft die App</h3>
     <p class="muted" id="howTo">Übertritt: Fußspitze oder Ferse des Sprungbeins beim letzten Bodenkontakt auf der Torraum-Seite der markierten (gebogenen) 6-m-Linie. Sprungbein: Rechtshänder links, Linkshänder rechts. Wurfarm: Handgelenk beim Absprung über dem Kopf. Körperdrehung: wie weit Schultern gegenüber der Hüfte in der Luft aufdrehen (3D-Schätzung der KI). Oberkörper, Sprunghöhe und Drehung sind Schätzungen aus einer Kamera.</p>
     <p class="muted">Tipp: Kamera erhöht (1,5–2 m). Position 1: auf der Grundlinie zwischen 6-m-Linie und Tor, schräg auf die Absprungzone. Position 2: im Feld hinter dem 7-m-Punkt, zur anderen Seite versetzt, Tor und Absprungzone im Bild. Die Position wählst du in der Einrichtung, jede hat ihre eigene 6-m-Linie. Gutes Licht und 60 fps verbessern die Erkennung.</p>
+  </div>
+</div>
+
+<div class="sheet" id="guideSheet" hidden>
+  <div class="sheet-in">
+    <div class="sheet-h"><h2 id="guideTitle">Korrekte Ausführung</h2><button class="x" data-close aria-label="Schließen">✕</button></div>
+    <div class="guide-player">
+      <canvas id="guideCanvas" width="1280" height="720"></canvas>
+      <div id="guidePhase" class="guide-phase">Anlauf</div>
+    </div>
+    <div class="btnrow guidebar">
+      <button id="guidePlay" aria-label="Abspielen/Pause">❚❚</button>
+      <button class="on" data-speed="1">1×</button>
+      <button data-speed="0.5">0,5×</button>
+      <button data-speed="0.25">0,25×</button>
+      <button id="guideCam">Kamera 2</button>
+      <button id="guideSave" title="Video als Datei speichern">Speichern</button>
+    </div>
+    <div id="guideHeightSwitch" class="btnrow" hidden>
+      <button class="on" data-hvariant="high">Wurf über Kopf (Hoch)</button>
+      <button data-hvariant="hip">Wurf aus der Hüfte (Hüfte)</button>
+    </div>
+    <div class="guide-info">
+      <h3 id="guideSub">Technik-Merkmale (DHB / KNSU)</h3>
+      <ul id="guideCues" class="guide-cues"></ul>
+    </div>
   </div>
 </div>
 

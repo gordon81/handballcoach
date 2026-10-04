@@ -5,7 +5,8 @@ const KS = DEMO ? '7m-demo-settings' : '7m-settings', KL = DEMO ? '7m-demo-log' 
 function load(k, d){ try{ const v = JSON.parse(localStorage.getItem(k)); return v ?? d; }catch(e){ return d; } }
 
 // line: 7-m-Linie normiert (0–1) {a, b, goal}; call: Ziel vor dem Pfiff ansagen; series: Serie mit 10 Würfen.
-export const DEF = {hand:'R', line:null, call:true, series:true, pause:4, model:'lite', session:null,
+// rest: Pause zwischen den Würfen, 0 = kurz (pause s), 30/45 = Zähler mit Zuruf, -1 = nur Zuruf (rest.js).
+export const DEF = {hand:'R', line:null, call:true, series:true, pause:4, rest:0, model:'lite', session:null,
   targets:['Oben links', 'Oben rechts', 'Unten links', 'Unten rechts']};
 export const settings = {...DEF, ...load(KS, {})};
 export const log = load(KL, []);
@@ -19,4 +20,5 @@ export function ensureSession(force){
 export const sessionEntries = () => log.filter(e => e.sid === settings.session?.id);
 
 // off | ready (wartet: Spieler steht hinter der Linie) | set (Ziel angesagt, Pfiff kommt) | go (nach dem Pfiff) | cool
-export const app = {state:'off', stateT:0, source:'none', marking:null, tw:null, whistleAt:null, target:null, series:null, latest:null};
+// rest: Zähler der Pause (rest.js), quick: bereit gemeldet → Pfiff nach REST.lead s, armT: Zeit dieses Zurufs.
+export const app = {state:'off', stateT:0, source:'none', marking:null, tw:null, whistleAt:null, target:null, series:null, latest:null, rest:null, quick:false, armT:null};

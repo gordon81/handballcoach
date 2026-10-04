@@ -1,11 +1,117 @@
-// Sprungkraft: Strecksprünge oder Einbein-Sprünge links/rechts zählen, Höhe und Bodenkontakt je Sprung (rules.js),
-// Unterschied links/rechts, Vergleich mit dem letzten Mal, Log und Bericht.
 import { app, settings, log, store, ensureSession, sessionEntries, DEMO } from './state.js';
 import { jumpTracker, summary, cm } from './rules.js';
 import { say, beep, unlockBeep } from '../../shared/js/speech.js';
 import { keepAwake, releaseWake } from '../../shared/js/wakelock.js';
 import { esc, fmtDate } from '../../shared/js/utils.js';
 import { $, video, canvas, ctx, now, hint, big, startSource as startStage, bodyPoints, drawSkeleton, initSheets } from '../../shared/js/stage.js';
+import { createGuide } from '../../shared/js/demoGuide.js';
+import { proj } from '../../shared/js/demo/scene.js';
+
+const CAM_SP = { pos: [-5, 12.6, 1.3], look: [-5, 7, 0.8] };
+const HOME_SP = { x: -5, y: 7 };
+
+const CUES_BOTH = [
+  '1. Ausgangsstellung: Schulterbreiter Stand, Blick aufrecht zur Kamera, Arme locker neben dem Körper.',
+  '2. Ausholbewegung (Counter-Movement): Zügige Kniebeugung (ca. 90° Knieinnenwinkel), Arme schwingen schwungvoll nach hinten-unten.',
+  '3. Explosiver Abdruck: Kraftvolle Streckung in Sprung-, Knie- und Hüftgelenken bei synchronem Armschwung nach oben.',
+  '4. Maximale Streckung im Flug: Rumpf voll aufrichten, Zehenspitzen nach unten strecken, maximale Sprunghöhe im Zenit.',
+  '5. Elastische Landung: Weich auf den Fußballen landen und elastisch über die Knie abfedern; sofort stabil stehen.'
+];
+
+const CUES_SINGLE = [
+  '1. Einbeiniger Stand: Standbein steht mittig und leicht gebeugt, das freie Bein ist angewinkelt angehoben.',
+  '2. Kniebeugung zur Vorspannung: Kurzes elastisches Absenken des Standbeins zur optimalen Kraftaufnahme.',
+  '3. Explosiver Kniehub: Schwungbein-Knie reißt explosiv nach vorn-oben zur Unterstützung der maximalen Sprunghöhe.',
+  '4. Körperachse & Balance: Rumpf gerade und stabil halten, Becken nicht seitlich abkippen lassen.',
+  '5. Sichere Landung: Stabiles Landen auf dem Standbein, weich über Sprunggelenk und Knie abfedern.'
+];
+
+const GUIDE_SPRUNG_CFG = {
+  id: 'sprung',
+  title: () => 'Sprungkraft: Korrekte Ausführung',
+  sub: v => v === 'single' ? 'Einbein-Sprung (Kniehub & Balance)' : 'Strecksprung beidbeinig (Dreifachstreckung)',
+  cues: v => v === 'single' ? CUES_SINGLE : CUES_BOTH,
+  cam: CAM_SP,
+  variants: [
+    { id: 'both', label: 'Strecksprung (beidbeinig)' },
+    { id: 'single', label: 'Einbein-Sprung' }
+  ],
+  duration: 2.8,
+  step(loopT, variant, R){
+    const isSingle = variant === 'single';
+    const P = {
+      x: HOME_SP.x, y: HOME_SP.y, a: Math.PI / 2, phi: 0, s: 0,
+      lift: 0, lf: 0, rf: 0, raise: 0, swing: 0, twist: 0, lean: 0.05, ball: false
+    };
+    let phase = '1. Ausgangsstellung';
+
+    if(loopT < 0.6){
+      phase = isSingle ? '1. Auftakt: Standbein beugen' : '1. Auftakt: Kniebeugung & Armschwung nach hinten';
+      const u = loopT / 0.6;
+      const squat = Math.sin(u * Math.PI) * 0.14;
+      P.lift = -squat;
+      P.lf = -squat;
+      P.rf = isSingle ? 0.25 : -squat;
+      P.lean = 0.05 + squat * 0.8;
+      P.raise = -squat * 2;
+    } else if(loopT < 0.9){
+      phase = isSingle ? '2. Explosiver Abdruck & Kniehub' : '2. Explosiver Abdruck (Dreifachstreckung)';
+      const u = (loopT - 0.6) / 0.3;
+      const jumpH = isSingle ? 0.3 : 0.45;
+      P.lift = jumpH * Math.sin(u * Math.PI * 0.5);
+      P.lf = P.lift;
+      P.rf = isSingle ? P.lift + 0.32 : P.lift;
+      P.lean = 0.04;
+      P.raise = Math.min(1, u * 1.5);
+    } else if(loopT < 1.4){
+      phase = '3. Maximale Streckung im Zenit';
+      const u = (loopT - 0.9) / 0.5;
+      const jumpH = isSingle ? 0.3 : 0.45;
+      const curve = Math.cos(u * Math.PI * 0.5);
+      P.lift = jumpH * curve;
+      P.lf = P.lift;
+      P.rf = isSingle ? P.lift + 0.32 * curve : P.lift;
+      P.lean = 0.02;
+      P.raise = 1;
+    } else if(loopT < 1.8){
+      phase = '4. Weiche Landung & elastisches Abfedern';
+      const u = (loopT - 1.4) / 0.4;
+      const cushion = Math.sin(u * Math.PI) * 0.12;
+      P.lift = -cushion;
+      P.lf = -cushion;
+      P.rf = isSingle ? 0.2 : -cushion;
+      P.lean = 0.06;
+      P.raise = Math.max(0, 1 - u * 2);
+    } else {
+      phase = '✓ Bereit für Folgesprung';
+      P.lift = 0;
+      P.lf = 0;
+      P.rf = isSingle ? 0.25 : 0;
+      P.lean = 0.05;
+      P.raise = 0;
+    }
+
+    return { P, ballFly: null, phase };
+  },
+  drawOverlays(ctx, variant){
+    ctx.save();
+    const maxH = variant === 'single' ? 0.3 : 0.45;
+    const pCenter = proj([HOME_SP.x, HOME_SP.y, 1.85 + maxH]);
+    ctx.strokeStyle = 'rgba(46, 204, 113, 0.75)';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([8, 6]);
+    ctx.beginPath();
+    ctx.moveTo(pCenter.x - 60, pCenter.y);
+    ctx.lineTo(pCenter.x + 60, pCenter.y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+};
+
+const guideSprung = createGuide(GUIDE_SPRUNG_CFG);
+export const openGuide = guideSprung.openGuide;
+export const closeGuide = guideSprung.closeGuide;
 
 let pose = null, setupOpen = false, F = [];
 const median = a => { const s = [...a].sort((x, y) => x - y); return s[s.length >> 1]; };
@@ -103,6 +209,7 @@ function renderSetup(){
   const prev = [...log].reverse().find(e => e.ex === settings.ex);
   box.innerHTML = `<div class="sheet-h"><h3>Einrichtung</h3><button class="x" data-a="close" aria-label="Schließen">✕</button></div>
     <p class="muted">Handy frontal vor dir, 3–4 m weg, Hüfthöhe. Ganzer Körper im Bild, auch beim Springen. Auf der Stelle springen.</p>
+    <button class="guideBtn" data-a="guide">▶ Video: Korrekte Ausführung</button>
     <p class="muted">Übung:</p>${choice('ex', [['both', `${settings.nBoth} Strecksprünge`], ['single', `Einbein ${settings.nSingle}+${settings.nSingle}`]], settings.ex)}
     ${prev ? `<p class="muted">Letztes Mal: im Schnitt ${cm(prev.avg)} cm${prev.left != null ? ` (links ${cm(prev.left)}, rechts ${cm(prev.right)})` : ''}.</p>` : ''}
     <p class="muted">Kamera:</p>${choice('facing', [['environment', 'Rückkamera'], ['user', 'Frontkamera']], settings.facing)}
@@ -110,6 +217,7 @@ function renderSetup(){
 }
 const ACT = {
   close: closeSetup, start,
+  guide(){ openGuide(settings.ex); },
   ex(el){ settings.ex = el.dataset.v; store(); renderSetup(); },
   async facing(el){ settings.facing = el.dataset.v; store(); renderSetup(); if(!DEMO && app.source==='cam'){ try{ await startSource(); }catch(e){ hint('Kamera-Fehler: ' + (e.message || e), 5000); } } }
 };
@@ -166,5 +274,6 @@ $('#repShare').onclick = share;
 $('#newSession').onclick = () => { if(confirm('Neues Training starten? Das aktuelle bleibt im Speicher.')){ ensureSession(true); renderLog(); } };
 $('#logClear').onclick = () => { if(confirm('Alle Sprung-Übungen löschen?')){ log.length = 0; store(); renderLog(); } };
 initSheets();
+$('#emptyGuideBtn')?.addEventListener('click', () => openGuide(settings.ex));
 if(DEMO){ const a = $('#demoLink'); a.textContent = 'Demo-Modus aktiv: „Start“ drücken. Hier zurück zur echten Kamera.'; a.href = './'; }
 document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible' && app.state!=='off') keepAwake(); });

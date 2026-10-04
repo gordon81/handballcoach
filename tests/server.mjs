@@ -5,7 +5,7 @@ import { join, normalize, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const TYPES = {'.html':'text/html', '.js':'text/javascript', '.mjs':'text/javascript', '.css':'text/css', '.json':'application/json', '.wav':'audio/wav'};
+const TYPES = {'.html':'text/html', '.js':'text/javascript', '.mjs':'text/javascript', '.css':'text/css', '.json':'application/json', '.wav':'audio/wav', '.svg':'image/svg+xml', '.webmanifest':'application/manifest+json'};
 
 // → {url, close()}; Port wird frei gewählt.
 export function serve(){

@@ -32,3 +32,10 @@ https://gordon81.github.io/handballcoach/aussenspieler/?demo=1 (oder lokal http:
 
 ## Automatische Tests
 `cd tests && npm install && npm test` (Node + Playwright, headless Chromium): Demo-Modus von der Linie bis zu den Würfen, Wurf-Videos, Zuruf-Modus und Ruf-Erkennung mit Fake-Mikrofon. Details in `brain.md`.
+
+## Fehler erfassen und melden
+`shared/js/errorlog.js` steht in jeder Seite ganz oben im `<head>` und erfasst alle Fehler. Abgefangene Fehler kommen über `console.error(e)` oder `HC.report(e, {...})` dazu.
+- **Lokal:** die letzten 30 Fehler liegen im `localStorage` (`hc-errlog`), auch offline. Gleiche Fehler im Bild-Takt werden nur hochgezählt.
+- **Sentry (EU):** das SDK (11.4.0, nur Fehler, SRI-gesichert) wird erst nach dem Laden der Seite geholt. Offline passierte Fehler werden nachgeschickt. Lokal und in Tests wird nichts gesendet (`?sentry=1` erzwingt das Senden, `?sentry=0` schaltet es aus).
+- **Melden:** nach einem Absturz erscheint unten ein Hinweis „Melden“. Außerdem gibt es den Link auf der Startseite und `#fehler-melden`. Der Dialog schickt Beschreibung und Diagnose an Sentry (User Feedback) oder teilt sie als Text.
+- **Release:** `VERSION` in `errorlog.js` bei jedem Release hochsetzen.

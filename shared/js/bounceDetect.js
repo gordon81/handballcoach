@@ -7,7 +7,7 @@
 //  - klingt nicht hoch: hi nicht deutlich über v (Pfiff, Schuhquietschen),
 //  - und kommt frühestens GAP ms nach dem letzten.
 // Derselbe Knall liegt in 2–3 Messungen (das Zeitfenster ist länger als STEP); gezählt wird einmal, wenn er vorbei ist.
-export const STEP = 30, CREST = 9.5, GAP = 250, LEARN = 500, FLOOR_MIN = -80, SILENT = -150;
+export const STEP = 30, CREST = 10.5, GAP = 250, LEARN = 500, FLOOR_MIN = -80, SILENT = -150;
 export const SENS = {low:24, mid:18, high:12};
 
 export function bounceDetector(){
@@ -18,11 +18,12 @@ export function bounceDetector(){
     d.level = pk;
     if(d.n < LEARN/STEP){ d.floor = d.n ? (d.floor*d.n + lvl)/(d.n+1) : lvl; d.n++; d.thr = d.floor + sens; return false; }
     const thr = d.thr = Math.max(d.floor + sens, FLOOR_MIN);
-    const knall = pk > thr && pk - lvl >= CREST && !(hi > v + 6);
+    const isHigh = hi > v + 4;
+    const knall = pk > thr && pk - lvl >= CREST && !isHigh;
     let hit = false;
     if(mute) d.ev = null;
     else if(knall){ d.ev ??= {n:0}; d.ev.n++; }
-    else if(d.ev){ if(d.ev.n >= 2 && now - d.lastHit > GAP){ d.lastHit = now; hit = true; } d.ev = null; }
+    else if(d.ev){ if(!isHigh && d.ev.n >= 2 && now - d.lastHit > GAP){ d.lastHit = now; hit = true; } d.ev = null; }
     // Grundpegel (Mittelpegel): nach unten schnell, nach oben langsam.
     if(lvl < d.floor) d.floor += (lvl - d.floor)*0.05; else d.floor += (lvl - d.floor)*(lvl < thr ? 0.01 : 0.002);
     return hit;

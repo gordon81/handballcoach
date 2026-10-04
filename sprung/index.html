@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#121a22">
 <title>Sprungkraft</title>
+<script src="../shared/js/errorlog.js"></script>
+<link rel="icon" type="image/svg+xml" href="../shared/icon.svg">
+<link rel="manifest" href="../manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
@@ -23,6 +26,7 @@
       <li>Ruhig hinstellen, bis die App „Los“ sagt, dann auf der Stelle springen.</li>
       <li>Nach jedem Sprung steht die Höhe im Bild, am Ende kommt die Auswertung mit dem Vergleich zum letzten Mal.</li>
     </ol>
+    <button class="guideBtn" id="emptyGuideBtn">▶ Video: Korrekte Ausführung</button>
     <a class="demoLink" id="demoLink" href="?demo=1">Demo ohne Kamera: gezeichnete Halle mit simulierter Person</a>
     <a class="demoLink" href="../">← Alle Trainings</a>
   </div>
@@ -47,6 +51,28 @@
     <button class="wide primaryBtn" id="repShare">Bericht teilen</button>
     <button class="wide" id="newSession">Neues Training starten</button>
     <button class="wide" id="logClear">Alle Sprung-Übungen löschen</button>
+  </div>
+</div>
+
+<div class="sheet" id="guideSheet" hidden>
+  <div class="sheet-in">
+    <div class="sheet-h"><h2 id="guideTitle">Sprungkraft: Korrekte Ausführung</h2><button class="x" data-close aria-label="Schließen">✕</button></div>
+    <div class="guide-player">
+      <canvas id="guideCanvas" width="1280" height="720"></canvas>
+      <div id="guidePhase" class="guide-phase">Strecksprung</div>
+    </div>
+    <div class="btnrow guidebar">
+      <button id="guidePlay" aria-label="Abspielen/Pause">❚❚</button>
+      <button data-speed="1" class="on">1×</button>
+      <button data-speed="0.5">0,5×</button>
+      <button data-speed="0.25">0,25×</button>
+      <button id="guideSave" title="Video als Datei speichern">Speichern</button>
+    </div>
+    <div id="guideVariantSwitch" class="btnrow" hidden></div>
+    <div class="guide-info">
+      <h3 id="guideSub">Strecksprung & Einbein-Sprung (DHB / KNSU)</h3>
+      <ul id="guideCues" class="guide-cues"></ul>
+    </div>
   </div>
 </div>
 

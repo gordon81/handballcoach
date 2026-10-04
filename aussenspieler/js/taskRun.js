@@ -107,7 +107,7 @@ export function taskBlock(btn){
   const info = !cur ? 'Würfe mit Zielansage und Technik-Feedback, ohne feste Anzahl.'
     : `${cur.short} ${cur.reps} Würfe` + (cur.goal != null ? `, geschafft bei ${cur.goal}.` : '.') + (b ? ` Bestwert ${label(b)}, zuletzt ${label(last)}.` : '');
   return `<p class="muted">Übung:</p><div class="btnrow tasks">${keys.map(k => btn('task', name(k), (settings.task || 'free')===k ? 'on' : '', true, k)).join('')}</div>
-    <p class="muted">${esc(info)}</p>`;
+    <div class="task-info-row"><p class="muted">${esc(info)}</p><button class="guideBtn" data-a="guide">▶ Video: Korrekte Ausführung</button></div>`;
 }
 
 // Abschnitt für Bericht und Log: Serien dieses Trainings.
