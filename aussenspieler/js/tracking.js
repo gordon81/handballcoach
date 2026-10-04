@@ -16,7 +16,7 @@ import { taskThrow, taskDone, taskCallInAir, taskCall, taskPause, onSeriesDone }
 const LABELS = {off:'Gestoppt', ready:'Bereit', runup:'Anlauf', air:'Sprung', cool:'Pause'};
 let H=[], visSince=null, lastSeen=-1, lastTarget=null;
 let callAt=null;   // Modus „Zuruf“: Zeitpunkt der Zielansage nach dem Ruf
-let groundY=null, groundAt=null, baseHip=null, bodyRef=null, ev=null;
+let groundY=null, groundAt=null, baseHip=null, baseMed=null, bodyRef=null, ev=null;
 
 export function setState(s, t){
   app.state = s; app.stateT = t;
@@ -43,7 +43,7 @@ export function heardCall(){
   callAt = now + lo + Math.random()*(hi - lo);
   quiet(0.3); beep(); stateText();
 }
-export function resetTracking(t){ H=[]; app.latest=null; visSince=null; ev=null; groundY=groundAt=baseHip=bodyRef=null; app.target=null; app.pending=null; hudTarget(null); if(app.state!=='off') setState('ready', t); }
+export function resetTracking(t){ H=[]; app.latest=null; visSince=null; ev=null; groundY=groundAt=baseHip=baseMed=bodyRef=null; app.target=null; app.pending=null; hudTarget(null); if(app.state!=='off') setState('ready', t); }
 export function hudTarget(name){ const el=$('#target'); el.textContent = name || ''; el.style.color = name ? colorOf(name) : ''; }
 
 // Ein Ergebnis der KI pro Videobild verarbeiten (aus der Hauptschleife).
@@ -87,7 +87,9 @@ function step(f, t){
   const w = H.filter(h => !h.air && h.t >= t-0.8 && h.t <= t-0.15);
   if(w.length >= 4){
     groundAt = groundFit(w); groundY = groundAt(t);
-    baseHip = pct(w.map(h=>h.hip.y), 0.5);
+    // Hüfte für die Sprung-Erkennung als Gerade über die Zeit: wer von der Kamera weggeht, dessen Hüfte steigt im Bild,
+    // ohne zu springen. Für die gemessene Sprunghöhe bleibt der Median (so sind die Grenzen in TH eingestellt).
+    baseHip = lineFit(w, h => h.hip.y)(t); baseMed = pct(w.map(h=>h.hip.y), 0.5);
     bodyRef = pct(w.map(h=>h.bodyLen), 0.5);
   }
   if(groundY===null || app.state==='cool') return;
@@ -98,6 +100,13 @@ function step(f, t){
 
 // Boden als Gerade über die Zeit: läuft der Spieler auf die Kamera zu (oder weg), wandert der Fußpunkt
 // im Bild nach unten (oben). Ein fester Boden würde den Absprung dann zu spät (zu früh) ansetzen.
+// Gerade durch val(h) über die Zeit (kleinste Quadrate) → Funktion t → Wert.
+function lineFit(w, val){
+  const n = w.length, mt = w.reduce((a,h)=>a+h.t,0)/n, mv = w.reduce((a,h)=>a+val(h),0)/n;
+  let sxy = 0, sxx = 0; for(const h of w){ sxy += (h.t-mt)*(val(h)-mv); sxx += (h.t-mt)**2; }
+  const b = sxx > 1e-6 ? sxy/sxx : 0;
+  return t => mv + b*(t-mt);
+}
 function groundFit(w){
   const n = w.length, mt = w.reduce((a,h)=>a+h.t,0)/n, ml = w.reduce((a,h)=>a+h.low,0)/n;
   let sxy = 0, sxx = 0; for(const h of w){ sxy += (h.t-mt)*(h.low-ml); sxx += (h.t-mt)**2; }
@@ -114,7 +123,7 @@ function startAir(t){
   const win = H.filter(h => h.t >= tf.t-0.04 && h.t <= tf.t+0.08);
   const armF = win.reduce((b,h) => (h.wr.y-h.nose.y) < (b.wr.y-b.nose.y) ? h : b, tf);
   const late = app.pending ? callLate(t, tf.t) : null;
-  ev = {late, t0:tf.t, target:app.target, gy, base:baseHip, bl, foot, tf, armF, peak:Infinity, peakF:null, throwF:null, vmax:0, prevWr:null};
+  ev = {late, ga, runT:app.state==='runup' ? app.stateT : null, t0:tf.t, target:app.target, gy, base:baseMed, bl, foot, tf, armF, peak:Infinity, peakF:null, throwF:null, vmax:0, prevWr:null};
   for(let k=j; k<H.length; k++) airFrame(H[k], H[k].t, true);
   setState('air', t);
 }
@@ -133,8 +142,10 @@ function callLate(t, t0){
 function airFrame(f, t, replay){
   f.air = true;
   if(f.hip.y < ev.peak){ ev.peak = f.hip.y; ev.peakF = f; }
-  if(ev.prevWr){ const dt = t-ev.prevWr.t; if(dt>0){ const v = dist(f.wr, ev.prevWr.p)/dt/ev.bl; if(v>ev.vmax){ ev.vmax=v; ev.throwF=f; } } }
-  ev.prevWr = {p:f.wr, t};
+  // Wurf = schnellstes Handgelenk relativ zur Hüfte (Körperbewegung beim Absprung zählt nicht mit).
+  const rw = {x:f.wr.x - f.hip.x, y:f.wr.y - f.hip.y};
+  if(ev.prevWr){ const dt = t-ev.prevWr.t; if(dt>0){ const v = dist(rw, ev.prevWr.p)/dt/ev.bl; if(v>ev.vmax){ ev.vmax=v; ev.throwF=f; } } }
+  ev.prevWr = {p:rw, t};
   if(replay) return;
   const landed = t-ev.t0 > 0.25 && (f.low >= ev.gy - 0.03*ev.bl || ev.base - f.hip.y < 0.04*ev.bl);
   if(landed || t-ev.t0 > 1.8) finish(t);
@@ -181,8 +192,9 @@ export function announce(t){
 function standing(t){
   const w = H.filter(h => h.t >= t - 0.6);
   if(w.length < 4 || w[0].t > t - 0.5) return false;
-  const xs = w.map(h => h.hip.x), ys = w.map(h => h.hip.y), bl = pct(w.map(h => h.bodyLen), 0.5);
-  return Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) < 0.15*bl;
+  const xs = w.map(h => h.hip.x), ys = w.map(h => h.hip.y), ls = w.map(h => h.bodyLen), bl = pct(ls, 0.5);
+  // Auch die Größe im Bild: wer direkt auf die Kamera zu oder von ihr weg geht, bewegt sich im Bild kaum, wird aber größer/kleiner.
+  return Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) < 0.15*bl && (Math.max(...ls) - Math.min(...ls)) < 0.06*bl;
 }
 
 function tick(t){

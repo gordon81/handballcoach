@@ -92,7 +92,7 @@ Heute bewertet die App jeden Wurf, stellt aber keine **Aufgabe** mit Ziel. Für 
 - **Prüfbar:** ●●● für Zeit und Linie, ●●○ für „Fuß bewegt“ (kleine Bewegungen gegen Rauschen der Erkennung abgrenzen).
 - **Baut auf:** Linie (gerade statt Bogen), `lineSide()`, Ansage, Clips. Neu: Wurf **ohne** Sprung erkennen (Handgelenk-Geschwindigkeit statt Absprung). **Aufwand M.** Eigene Karte im Startmenü.
 
-### B2 · Rückraum-Sprungwurf (9 m)
+### B2 · Rückraum-Sprungwurf (9 m) ✅ gebaut (`aussenspieler/?rr=1`)
 - **Ziel:** Sprungwurf aus dem Rückraum mit Stemmschritt-Rhythmus und hohem Abwurf über den Block.
 - **Aufbau:** Kameraposition schräg von vorn auf den 9-m-Bereich, 9-m-Linie (gestrichelt) ablaufen.
 - **Erfolg:** Absprung vor der 9-m-Linie (Aufgabe: Wurf aus 9–10 m), Sprungbein richtig, Arm über Kopf, Sprunghöhe, Abwurf im oberen Punkt (Wurf-Frame nahe Hüft-Höchstpunkt). Dazu Drei-Schritt-Rhythmus: Bodenkontakte vor dem Absprung zählen.
@@ -149,7 +149,7 @@ Heute bewertet die App jeden Wurf, stellt aber keine **Aufgabe** mit Ziel. Für 
 | **C1 Treffererkennung** (Ball im Ring per Farbe oder Bildänderung im Zielbereich, Kameraposition 2 hat das Tor im Bild) | A2, A3, B1, B4, alle Trefferquoten | ●○○ heute, Ziel ●●○ | **L** |
 | **C2 Ballaufprall per Mikro** (Muster aus `shoutDetect.js` umgekehrt: kurzer Knall + Nachhall zählt) | B4, B7, Prellen | ●●○ in ruhiger Halle | **M** |
 | **C3 Wurf ohne Sprung** ✅ (`findThrow` im 7-m-Trainer) (Abwurf an Handgelenk-Geschwindigkeit erkennen) | B1, B4, B7 | ●●○ | **M** |
-| **C4 Gerade Linien** (7 m, 9 m gestrichelt) für Einrichtung und Übertritt | B1, B2 | ●●● | **S** |
+| **C4 Gerade Linien** (7 m, 9 m gestrichelt) für Einrichtung und Übertritt ✅ (7 m: antippen; 9 m: ablaufen/einrasten wie 6 m) | B1, B2 | ●●● | **S** |
 | **C5 Reaktionszeit** ✅ (`judgeMove` in `abwehr/`) (Ansage-Zeitpunkt → erste deutliche Hüftbewegung, Sprachausgabe-Verzögerung abziehen) | A2, B3, B5 | ●●○ | **S** |
 
 ---
@@ -163,7 +163,7 @@ Heute bewertet die App jeden Wurf, stellt aber keine **Aufgabe** mit Ziel. Für 
 5. [x] Gemeinsamen Code nach `shared/` ziehen (Kamera, Pose, Sprache, Zuruf, Clips, Demo), zweite Karte im Startmenü vorbereiten. **M**
 6. [x] **B1 7-m-Trainer** ✅ als zweites Training (mit C3 Wurf ohne Sprung, C4 gerade Linie). **M**
 7. [x] **B5 Abwehr-Beinarbeit** ✅ (ohne Ball, mit C5 Reaktionszeit). **M**
-8. [ ] **B2 Rückraum-Sprungwurf** (großteils Außenwurf-Coach mit 9-m-Linie und Schrittzählung). **M**
+8. [x] **B2 Rückraum-Sprungwurf** ✅ (großteils Außenwurf-Coach mit 9-m-Linie und Schrittzählung). **M**
 9. [ ] **C2 Ballaufprall per Mikro**, dann **B4 Pässe gegen die Wand**. **M**
 10. [ ] **A4 Winkel vergrößern**, **A6 Gegenstoß auf Zeit**, **B3 Kreisläufer**, **B6 Sprungkraft**. **S–M**
 11. [ ] **C1 Treffererkennung** und **B7 Wurfgeschwindigkeit**. **L / M**, erst wenn der Rest in der Halle läuft.

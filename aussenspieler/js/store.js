@@ -1,8 +1,8 @@
 // Einstellungen und Wurf-Log im localStorage, Trainings-Sitzungen.
-import { DEF, DEMO, TH, TH_POS } from './config.js';
+import { DEF, DEMO, RR, TH, TH_POS, TH_RR } from './config.js';
 
 // Im Demo-Modus eigene Schlüssel, damit Demo-Linie und Demo-Würfe nicht ins echte Training gehen.
-const KS = DEMO ? 'awc-demo-settings' : 'awc-settings', KL = DEMO ? 'awc-demo-log' : 'awc-log';
+const P = RR ? 'rr-' : 'awc-', KS = P + (DEMO ? 'demo-settings' : 'settings'), KL = P + (DEMO ? 'demo-log' : 'log');   // Rückraum: eigener Speicher
 
 function load(k, d){ try{ const v = JSON.parse(localStorage.getItem(k)); return v ?? d; }catch(e){ return d; } }
 
@@ -10,7 +10,7 @@ export const settings = {...DEF, ...load(KS, {})};
 export const log = load(KL, []);
 
 // Grenzwerte für die gewählte Kameraposition.
-export const th = () => ({...TH, ...TH_POS[settings.camPos]});
+export const th = () => ({...TH, ...(RR ? TH_RR : TH_POS[settings.camPos])});
 
 export function store(){ try{ localStorage.setItem(KS, JSON.stringify(settings)); localStorage.setItem(KL, JSON.stringify(log)); }catch(e){} }
 export function clearLog(){ log.length = 0; store(); }

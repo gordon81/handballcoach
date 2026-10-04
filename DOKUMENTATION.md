@@ -402,3 +402,29 @@ Richtig ist eine Bewegung in die gerufene Richtung, die innerhalb von 1 Sekunde 
 
 ### Hallentest Abwehr
 Eine Runde machen und prüfen: stimmen links und rechts (auch mit der Frontkamera)? Sind die Reaktionszeiten plausibel? Kommt „gekreuzt“ nur, wenn du wirklich kreuzt? Danach werden die Grenzen eingestellt.
+
+---
+
+## 14. Rückraum-Coach (Sprungwurf aus 9 m)
+
+**App:** https://gordon81.github.io/handballcoach/aussenspieler/?rr=1 (Karte „Rückraum: Sprungwurf“ im Startmenü) · **Demo:** `aussenspieler/?rr=1&demo=1`
+
+Das ist der Außenwurf-Coach im Rückraum-Modus: gleiche Bedienung (Start, Einrichtung, Ziele, Videos, Log, Bericht, Aufgaben), aber für den Sprungwurf aus dem Rückraum und mit eigenem Speicher (die Außenwurf-Daten bleiben getrennt).
+
+### Aufbau
+Handy erhöht (1,5–2 m) **schräg von vorn** auf den Rückraum, z. B. am Torraum zur Seite versetzt, so dass der Spieler beim Anlauf **auf das Handy zu** läuft. 9-m-Linie, Anlauf und Absprung müssen im Bild sein. In der Einrichtung die **9-m-Linie ablaufen** (wie beim Außenwurf, am Ende zwei Schritte Richtung Tor) oder antippen: bei der gestrichelten Linie auf die Striche tippen.
+
+### Was geprüft wird
+| Prüfung | Gut, wenn … |
+|---|---|
+| **Absprung** | vor (außerhalb) der 9-m-Linie abgesprungen |
+| **Sprungbein** | Rechtshänder links, Linkshänder rechts |
+| **Schritte** | drei Bodenkontakte vom Anlauf bis zum Absprung (Dreischritt); mehr oder weniger gibt den Tipp „Drei Schritte, dann hoch.“ |
+| **Wurfarm** | beim Absprung über dem Kopf |
+| **Abwurf** | im höchsten Punkt (höchstens 0,1 s davor oder danach); sonst „zu früh“ oder „zu spät“ |
+| **Sprunghöhe, Oberkörper** | wie beim Außenwurf |
+
+Die Körperdrehung wird nur angezeigt, sie zählt im Rückraum nicht. Die Schritte zählt die App ab der Zielansage; wer vorher noch geht, sollte nach der Ansage stehen und dann anlaufen.
+
+### Hallentest Rückraum
+Je 5 Würfe mit drei Schritten, mit zwei und vier Schritten, bewusst früh und spät abwerfen, knapp innerhalb der 9 m abspringen. Danach im Bericht die Spalten „Schritte“ und „Abwurf“ ansehen; daraus werden die Grenzen eingestellt.

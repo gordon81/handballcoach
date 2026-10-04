@@ -7,6 +7,7 @@ import { say } from '../../shared/js/speech.js';
 import { curve, saveLine } from './line.js';
 import { grabFrame, medianFrame, snapLine, simplify } from './lineDetect.js';
 import { makeRef } from './camCheck.js';
+import { TXT } from './config.js';
 
 // phase: null | 'wait' (an den Anfang stellen) | 'walk' (Linie entlang) | 'inside' (in den Torraum)
 // snapped: Linie am Boden erkannt (true) oder nur aus Fußpunkten (false)
@@ -22,8 +23,8 @@ function setPhase(phase, msg, speak){
 }
 export function startWizard(){
   wizard.path = []; wizard.pts = null; wizard.snapped = false; moved = false; frames = []; bgImg = null;
-  setPhase('wait', 'Stell dich ans äußere Ende der 6-m-Linie, Füße auf der Linie, und warte kurz.',
-    'Stell dich ans äußere Ende der Sechs-Meter-Linie und warte kurz.');
+  setPhase('wait', `Stell dich ans äußere Ende der ${TXT.line}, Füße auf der Linie, und warte kurz.`,
+    `Stell dich ans äußere Ende der ${TXT.lineSay} und warte kurz.`);
 }
 export function stopWizard(msg){ wizard.phase = null; wizard.path = []; wizard.pts = null; wizard.msg = msg || ''; frames = []; listener(); }
 // Lauf vorzeitig beenden (Button „Fertig“).
@@ -67,7 +68,7 @@ export function wizardFrame(f, t){
         say('Linie gespeichert.');
       }
     } else if(t-phaseT > 20){
-      stopWizard('Torraum nicht erkannt. Tippe den Punkt im Torraum bitte an.');
+      stopWizard(`${TXT.insideLabel}-Seite nicht erkannt. Tippe bitte ${TXT.insideTap.replace(' antippen', '')} an.`);
     }
   }
 }
@@ -80,6 +81,6 @@ function finishWalk(){
   const sn = snapLine(pts, 0.3*bodyLen/canvas.height, bgImg), sp = sn ? simplify(sn.pts, ar) : [];
   wizard.snapped = sp.length >= 2;
   wizard.pts = wizard.snapped ? sp : pts; start = null; moved = false;
-  setPhase('inside', (wizard.snapped ? 'Linie am Boden erkannt (gelb). ' : 'Linie aus den Fußpunkten (gelb). ') + 'Jetzt zwei Schritte in den Torraum gehen und stehen bleiben.',
-    'Gut. Jetzt zwei Schritte in den Torraum gehen und stehen bleiben.');
+  setPhase('inside', (wizard.snapped ? 'Linie am Boden erkannt (gelb). ' : 'Linie aus den Fußpunkten (gelb). ') + `Jetzt ${TXT.insideSay} und stehen bleiben.`,
+    `Gut. Jetzt ${TXT.insideSay} und stehen bleiben.`);
 }

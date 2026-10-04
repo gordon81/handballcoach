@@ -6,6 +6,8 @@ Web-App fürs Handy: Zielansage per Sprache, KI-Technik-Check (Übertritt, Sprun
 
 **Außenwurf-Coach öffnen:** https://gordon81.github.io/handballcoach/aussenspieler/
 
+**Rückraum-Coach öffnen:** https://gordon81.github.io/handballcoach/aussenspieler/?rr=1 (Demo: `aussenspieler/?rr=1&demo=1`)
+
 **Abwehr-Beinarbeit öffnen:** https://gordon81.github.io/handballcoach/abwehr/ (Demo: `abwehr/?demo=1`)
 
 **7-m-Trainer öffnen:** https://gordon81.github.io/handballcoach/siebenmeter/ (Demo: `siebenmeter/?demo=1`)

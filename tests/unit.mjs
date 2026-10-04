@@ -282,3 +282,32 @@ test('Abwehr: gekreuzte Füße, nächster Ruf, Zusammenfassung', () => {
   assert.match(s.say, /^Fertig\. 2 von 3 richtig\. Reaktion im Schnitt 0,50 Sekunden\. Füße einmal gekreuzt\..*Tiefer in die Grundstellung/);
   assert.doesNotMatch(defSummary([{ok:true, react:0.4}], 0.9).say, /Tiefer/);
 });
+
+/* ---------- Rückraum: Schritte zählen (aussenspieler/js/steps.js) ---------- */
+import { countSteps } from '../aussenspieler/js/steps.js';
+
+// Anlauf mit n Schritten wie beim Laufen: Körper beschleunigt im ersten Schritt, die Füße stehen abwechselnd fest,
+// der schwingende ist schneller als der Körper; danach 0,15 s Stand auf dem Sprungbein (Absprung bei t0 = n·T + 0,15).
+const ST = 0.3, SV = 450;   // s je Schritt, px/s Körper (KL 150 px → 3 KL/s)
+function runFrames(n, {noise = 1} = {}){
+  const out = [], sl = SV*ST, feet = [0, 0], from = [0, 0], hipX = t => t <= 0 ? 0 : t < ST ? SV*t*t/(2*ST) : SV*(t - ST/2);
+  let lastK = -1;
+  for(let t = -0.6; t <= n*ST + 0.15 + 1e-9; t += 1/30){
+    const j = () => Math.sin(t*97 + out.length)*noise;
+    if(t >= 0 && t <= n*ST){
+      const k = Math.min(n - 1, Math.floor(t/ST)), f = Math.min(1, (t - k*ST)/ST), sw = (n - 1 - k) % 2;
+      if(k !== lastK){ from[sw] = feet[sw]; lastK = k; }
+      feet[sw] = from[sw] + ((k + 0.5)*sl - from[sw])*f;
+    }
+    out.push({t, hip:{x:hipX(t) + j(), y:400}, foot:feet.map(x => ({toe:{x:x + 10 + j(), y:500}, heel:{x:x - 10, y:500 + j()}}))});
+  }
+  return out;
+}
+test('Rückraum: Bodenkontakte im Anlauf zählen', () => {
+  for(const n of [2, 3, 4]){
+    const H = runFrames(n), e = {t0:n*ST + 0.15, runT:-0.3, bl:150};
+    assert.equal(countSteps(H, e), n, `${n} Schritte`);
+  }
+  assert.equal(countSteps(runFrames(3, {noise:3}), {t0:3*ST + 0.15, runT:-0.3, bl:150}), 3, 'Rauschen beim Stehen zählt nicht');
+  assert.equal(countSteps(runFrames(3).slice(0, 4), {t0:3*ST + 0.15, runT:-0.3, bl:150}), null, 'zu wenig Bilder');
+});

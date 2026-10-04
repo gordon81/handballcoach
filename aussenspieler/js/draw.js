@@ -1,5 +1,5 @@
 // Overlay zeichnen: 6-m-Linie, Markierungspunkte und Skelett.
-import { BONES } from './config.js';
+import { BONES, TXT } from './config.js';
 import { app } from './state.js';
 import { settings } from './store.js';
 import { canvas, ctx } from './dom.js';
@@ -19,7 +19,7 @@ export function draw(){
     const s1 = ext(c[n-1], c[n-2]); ctx.lineTo(s1.x, s1.y); ctx.stroke();
     ctx.setLineDash([]);
     ctx.fillStyle = 'rgba(255,90,90,.9)'; ctx.font = `600 ${lw*7}px Barlow, sans-serif`;
-    ctx.fillText('Torraum', l.inside.x*W + lw*3, l.inside.y*Hh);
+    ctx.fillText(TXT.insideLabel, l.inside.x*W + lw*3, l.inside.y*Hh);
   }
   if(marking && marking.length > 1){
     ctx.strokeStyle = 'rgba(255,90,90,.7)'; ctx.lineWidth = lw;

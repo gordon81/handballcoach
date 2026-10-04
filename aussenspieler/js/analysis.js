@@ -4,6 +4,9 @@ import { canvas } from './dom.js';
 import { pick, angDiff } from '../../shared/js/utils.js';
 import { inTorraum, lineOffset, lineCenter } from './line.js';
 import { LABEL_GOOD, PRIO, wrongSide, tips } from './feedback.js';
+import { RR } from './config.js';
+import { countSteps } from './steps.js';
+
 
 // e = Sprung-Ereignis aus tracking.js, t = Landezeit, H = Frame-Verlauf.
 export function evaluate(e, t, H){
@@ -13,9 +16,9 @@ export function evaluate(e, t, H){
   // Übertritt
   let over = null;
   if(settings.line){ const ft = e.tf.foot[e.foot]; over = [ft.toe, ft.heel].some(p => inTorraum({x:p.x/W, y:p.y/Hh})); }
-  if(over===null) res.push({ok:null, txt:'Übertritt nicht geprüft (Linie fehlt)'});
-  else if(over){ res.push({ok:false, txt:'Übertritt beim Absprung'}); issues.push('over'); }
-  else { res.push({ok:true, txt:'Kein Übertritt'}); good.push('over'); }
+  if(over===null) res.push({ok:null, txt:RR ? 'Abstand nicht geprüft (Linie fehlt)' : 'Übertritt nicht geprüft (Linie fehlt)'});
+  else if(over){ res.push({ok:false, txt:RR ? 'Absprung innerhalb der 9 m' : 'Übertritt beim Absprung'}); issues.push('over'); }
+  else { res.push({ok:true, txt:RR ? 'Absprung vor der 9-m-Linie' : 'Kein Übertritt'}); good.push('over'); }
 
   // Sprungbein
   const want = R ? 0 : 1, legOk = e.foot === want;
@@ -37,10 +40,25 @@ export function evaluate(e, t, H){
     rot = Math.round(Math.max(Math.max(...tw) - Math.min(...tw), Math.abs(angDiff(fr.at(-1).shYaw, fr[0].shYaw))));
   }
   const need = wrongSide() ? TH.rotWrongSide : TH.rot;
-  if(rot===null) res.push({ok:null, txt:'Körperdrehung nicht messbar'});
+  if(RR){ if(rot!==null) res.push({ok:null, txt:`Körperdrehung ca. ${rot}° (zählt im Rückraum nicht)`}); }   // nur zur Info
+  else if(rot===null) res.push({ok:null, txt:'Körperdrehung nicht messbar'});
   else if(rot >= need){ res.push({ok:true, txt:`Körperdrehung ca. ${rot}°`}); good.push('rot'); }
   else if(rot >= need*0.5){ res.push({ok:null, txt:`Körperdrehung ca. ${rot}°, etwas wenig`}); issues.push('rot'); }
   else { res.push({ok:false, txt:`Kaum Körperdrehung (ca. ${rot}°)`}); issues.push('rot'); }
+
+  // Rückraum: Schritte vor dem Absprung und Abwurf im höchsten Punkt.
+  let steps = null, peakDt = null;
+  if(RR){
+    steps = countSteps(H, e);
+    if(steps===null) res.push({ok:null, txt:'Schritte nicht gezählt'});
+    else if(steps===TH.steps){ res.push({ok:true, txt:`${steps} Schritte vor dem Absprung`}); good.push('steps'); }
+    else { res.push({ok:null, txt:`${steps} Schritte vor dem Absprung (Dreischritt: ${TH.steps})`}); issues.push('steps'); }
+    if(e.throwF && e.peakF){
+      peakDt = Math.round((e.throwF.t - e.peakF.t)*100)/100;
+      if(Math.abs(peakDt) <= TH.peakDt){ res.push({ok:true, txt:'Abwurf im höchsten Punkt'}); good.push('peak'); }
+      else { res.push({ok:false, txt:peakDt < 0 ? 'Abwurf zu früh (noch im Steigen)' : 'Abwurf zu spät (schon im Fallen)'}); issues.push('peak'); }
+    }
+  }
 
   // Sprunghöhe (grob)
   const jr = (e.base - e.peak)/e.bl, jump = jr >= TH.jumpHigh ? 'hoch' : jr >= TH.jumpMid ? 'mittel' : 'flach';
@@ -66,6 +84,7 @@ export function evaluate(e, t, H){
   const tw = e.throwF;
   const m = {line: offs ? r2(Math.max(...offs)*Hh/e.bl) : null, arm:r2((a.nose.y - a.wr.y)/e.bl), rot, jump:r2(jr),
     armT: tw ? r2((tw.nose.y - tw.wr.y)/e.bl) : null, shT: tw ? r2((tw.wsh.y - tw.wr.y)/e.bl) : null, hipT: tw ? r2((tw.hip.y - tw.wr.y)/e.bl) : null,
+    steps, peakDt,
     lean: Math.round(dir ? lean*dir : al), fps: Math.round(win.length/Math.max(0.1, t - (e.t0 - 1))), cam:settings.camPos};
 
   issues.sort((x,y) => PRIO.indexOf(x) - PRIO.indexOf(y));

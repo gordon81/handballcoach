@@ -15,7 +15,7 @@ import { initSheets } from './ui/sheets.js';
 import { initControls } from './ui/controls.js';
 import { initSettings } from './ui/settingsView.js';
 import { initSetup } from './ui/setupView.js';
-import { DEMO } from './config.js';
+import { DEMO, RR, TXT } from './config.js';
 
 initLineMarking();
 initSheets();
@@ -25,7 +25,20 @@ initSetup();
 initClipView();
 initMicMeter();
 onShout(heardCall);
-if(DEMO){ const a = $('#demoLink'); a.textContent = 'Demo-Modus aktiv: „Start“ drücken. Hier zurück zur echten Kamera.'; a.href = './'; }
+// Rückraum-Modus: Startseite und Einstellungen umbeschriften (gleiche App, eigener Speicher).
+if(RR){
+  document.title = TXT.app; document.body.classList.add('rr');
+  $('#empty h1').innerHTML = `${TXT.app}<span>${TXT.sub}</span>`;
+  const li = document.querySelectorAll('#empty li');
+  li[0].innerHTML = '<b>Handy aufs Stativ</b>, seitlich vor dem Rückraum, erhöht. 9-m-Linie, Anlauf und Absprung im Bild.';
+  li[2].innerHTML = '<b>9-m-Linie einrichten:</b> eine Person läuft sie auf Ansage ab, oder du tippst Punkte auf die Striche.';
+  li[3].innerHTML = '<b>Training starten:</b> Ziel hören, drei Schritte, vor der 9-m-Linie abspringen, im höchsten Punkt werfen.';
+  $('#demoLink').href = '?rr=1&demo=1';
+  $('#sPos').closest('label').hidden = true;
+  $('#sClearLine').textContent = '9-m-Linie löschen';
+  $('#howTo').textContent = 'Absprung: Fußspitze oder Ferse des Sprungbeins beim letzten Bodenkontakt vor (außerhalb) der markierten 9-m-Linie. Sprungbein: Rechtshänder links, Linkshänder rechts. Schritte: Bodenkontakte vom Anlauf bis zum Absprung, Ziel drei. Wurfarm beim Absprung über dem Kopf. Abwurf höchstens 0,1 s vom höchsten Punkt der Hüfte. Sprunghöhe und Oberkörper sind Schätzungen aus einer Kamera.';
+}
+if(DEMO){ const a = $('#demoLink'); a.textContent = 'Demo-Modus aktiv: „Start“ drücken. Hier zurück zur echten Kamera.'; a.href = RR ? './?rr=1' : './'; }
 document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible' && app.state!=='off') keepAwake(); });
 
 let fpsN = 0, fpsT0 = performance.now(), lastVT = -1;

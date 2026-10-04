@@ -36,3 +36,4 @@
 .trow .x{min-width:44px;min-height:44px}
 .wide{min-height:48px;font-weight:600}
 .vbtn{min-height:44px;padding:8px 12px}
+.row[hidden]{display:none}

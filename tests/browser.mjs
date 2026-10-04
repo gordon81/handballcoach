@@ -398,6 +398,50 @@ test('Aufgaben „Wurfhöhe auf Ansage“ und „Serie unter Ermüdung“ (je 4 
   await page.close();
 });
 
+test('Rückraum-Modus (?rr=1): 9-m-Linie, Dreischritt, Abwurf im höchsten Punkt, eigener Speicher', {timeout:200000}, async t => {
+  const page = await browser.newPage({viewport:{width:1280, height:800}});
+  const errors = []; page.on('pageerror', e => errors.push(e.message));
+  page.on('console', m => { if(m.type()==='error') errors.push(m.text()); });
+  await page.addInitScript(() => { window.__said = []; if(!sessionStorage.getItem('init')){ sessionStorage.setItem('init', '1'); localStorage.clear(); localStorage.setItem('rr-demo-settings', JSON.stringify({pause:1})); } });
+  await page.goto(srv.url + 'aussenspieler/?rr=1&demo=1');
+  await modules(page);
+  await page.waitForFunction(() => document.title === 'Rückraum-Coach', null, {timeout:5000});
+
+  await t.test('9-m-Linie ablaufen: Ansage, eingerastet, genau', async () => {
+    await page.click('#btnStart');
+    await page.waitForSelector('#setup [data-a=wizard]');
+    assert.match(await page.textContent('#setup'), /9-m-Linie fehlt/);
+    await page.click('#setup [data-a=wizard]');
+    await until(page, () => M.store.settings.line?.pts?.length >= 2, null, 90000, 'Linie gespeichert');
+    assert.ok(await page.evaluate(() => __said.some(x => /Neun-Meter-Linie/.test(x))), 'Ansage nennt die 9-m-Linie');
+    const e = stats(await px(page, await page.evaluate(() => M.store.settings.line.pts)));
+    assert.ok(e.med < 6 && e.max < 14, `Linienfehler Median ${e.med.toFixed(1)} px, max ${e.max.toFixed(1)} px`);
+  });
+
+  await t.test('4 Würfe: sauber, 4 Schritte, innerhalb 9 m, zu spät abgeworfen', async () => {
+    await page.click('#setup [data-a=start]');
+    await until(page, () => M.store.log.length >= 4, null, 120000, '4 Würfe');
+    const log = await page.evaluate(() => M.store.log.map(e => ({issues:e.issues, m:e.m})));
+    assert.deepEqual(log.map(e => e.issues.filter(k => k !== 'jump')), [[], ['steps'], ['over'], ['peak']], JSON.stringify(log));
+    assert.deepEqual(log.map(e => e.m.steps), [3, 4, 3, 3]);
+    assert.ok(log[3].m.peakDt > 0.1, `Abwurf ${log[3].m.peakDt} s nach dem höchsten Punkt`);
+    assert.ok(!log.some(e => e.issues.includes('rot')), 'Drehung zählt im Rückraum nicht');
+    await page.click('#btnLog');
+    assert.match(await page.textContent('#logBody'), /Schritte 3 · Abwurf/);
+    await page.click('#logSheet [data-close]');
+    const rep = await page.evaluate(async () => (await import('/aussenspieler/js/report.js')).reportText());
+    assert.match(rep, /^Rückraum-Training vom/); assert.match(rep, /Rechtshänder im Rückraum/);
+  });
+
+  await t.test('Eigener Speicher: Außenwurf-Daten bleiben unberührt', async () => {
+    const keys = await page.evaluate(() => Object.keys(localStorage));
+    assert.ok(keys.includes('rr-demo-log') && !keys.includes('awc-demo-log'), keys.join(', '));
+  });
+
+  assert.deepEqual(errors, [], 'Fehler in der Browser-Konsole');
+  await page.close();
+});
+
 test('7-m-Trainer (Demo, Handy-Größe): Linie antippen, Pfiff, Bewertung, Serie, Log, Bericht', {timeout:200000}, async t => {
   const page = await browser.newPage({viewport:{width:390, height:800}});
   const errors = []; page.on('pageerror', e => errors.push(e.message));
@@ -538,6 +582,10 @@ test('Startmenü: Karten öffnen alle Trainings, „Alle Trainings“ führt zur
   await page.click('a[href="../"]');
   await page.waitForSelector('#trainings');
   assert.equal(new URL(page.url()).pathname, '/');
+  await page.click('#trainings a[href="aussenspieler/?rr=1"]');
+  await page.waitForFunction(() => document.title === 'Rückraum-Coach', null, {timeout:5000});
+  await page.click('a[href="../"]');
+  await page.waitForSelector('#trainings');
   await page.click('#trainings a[href="siebenmeter/"]');
   await page.waitForSelector('#btnStart');
   assert.ok(page.url().endsWith('/siebenmeter/'), page.url());

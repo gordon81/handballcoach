@@ -12,7 +12,7 @@ import { ensureModel } from '../model.js';
 import { startCamera, curT } from '../source.js';
 import { setState, hudTarget } from '../tracking.js';
 import { onLineChange, startTapMarking, finishLinePoints, undoPoint, cancelMarking, clearLine, setCamPos } from '../line.js';
-import { CAM_POS } from '../config.js';
+import { CAM_POS, TXT } from '../config.js';
 import { wizard, onWizardChange, startWizard, stopWizard, finishWalkNow } from '../lineWizard.js';
 import { checkCamera } from '../camCheck.js';
 import { beginTask, endTaskRun, taskBlock, onTaskButtons, chosenTask, hideEnd } from '../taskRun.js';
@@ -48,7 +48,7 @@ export async function openSetup(){
   }catch(e){ console.error(e); showHint('Start fehlgeschlagen: ' + (e.message || e), 7000); }
 }
 export function startTraining(){
-  if(app.source==='cam' && !settings.line){ showSetup(); showHint('Erst die 6-m-Linie einrichten', 2500); return; }
+  if(app.source==='cam' && !settings.line){ showSetup(); showHint(`Erst die ${TXT.line} einrichten`, 2500); return; }
   if(app.source==='cam' && !app.marking && !wizard.phase){
     const prev = cam?.status, c = runCamCheck();
     // Erst prüfen lassen. Wer „bewegt“ schon gesehen hat und trotzdem startet, darf (z. B. nur Licht anders).
@@ -84,6 +84,7 @@ function micBlock(){
 }
 // Kameraposition: 1 Grundlinie (Standard) oder 2 im Feld mit Tor im Bild. Jede Position hat ihre eigene Linie.
 function camPosBlock(){
+  if(Object.keys(CAM_POS).length < 2) return `<p class="muted">${esc(CAM_POS[settings.camPos]?.where || CAM_POS.base.where)}</p>`;
   return `<p class="muted">Kameraposition:</p><div class="btnrow campos">${Object.keys(CAM_POS).map(k => btn('camPos', CAM_POS[k].name, settings.camPos===k ? 'on' : '', true, k)).join('')}</div>
     <p class="muted">${esc(CAM_POS[settings.camPos]?.where || '')}</p>`;
 }
@@ -97,14 +98,14 @@ function render(){
   let h;
   if(app.marking && app.markStep==='line'){
     const n = app.marking.length;
-    h = `<p><b>Linie antippen:</b> Punkte entlang der 6-m-Linie setzen, beim Bogen 4–6. Gesetzt: ${n}</p>
+    h = `<p><b>Linie antippen:</b> Punkte entlang der ${TXT.line} setzen, ${TXT.tapHint}. Gesetzt: ${n}</p>
       <div class="btnrow">${btn('undo','↶ Zurück','',n>0)}${btn('done','Fertig','primaryBtn',n>=2)}${btn('cancel','Abbrechen')}${FLIP}</div>`;
   } else if(app.marking){
-    h = `<p><b>Torraum:</b> Jetzt 1 Punkt im Torraum antippen.</p>
+    h = `<p><b>${TXT.insideLabel}:</b> Jetzt ${TXT.insideTap}.</p>
       <div class="btnrow">${btn('undo','↶ Zurück')}${btn('cancel','Abbrechen')}${FLIP}</div>`;
   } else if(wizard.phase){
     h = `<p><b>Linie ablaufen:</b> ${esc(wizard.msg)}</p>
-      <div class="btnrow">${wizard.phase==='walk' ? btn('walkDone','Fertig','primaryBtn') : ''}${wizard.phase==='inside' ? btn('tapInside','Torraum antippen') : ''}${btn('wizCancel','Abbrechen')}${FLIP}</div>`;
+      <div class="btnrow">${wizard.phase==='walk' ? btn('walkDone','Fertig','primaryBtn') : ''}${wizard.phase==='inside' ? btn('tapInside', TXT.insideLabel + ' antippen') : ''}${btn('wizCancel','Abbrechen')}${FLIP}</div>`;
   } else {
     const line = settings.line, isCam = app.source==='cam';
     const how = line ? (line.snapped ? 'am Boden erkannt' : 'aus Fußpunkten/angetippt') + (line.at ? `, ${fmtDate(new Date(line.at))}` : '') : '';
@@ -116,7 +117,7 @@ function render(){
       ${isCam ? camPosBlock() : ''}
       <ul class="checks">
         <li>${icon(app.source!=='none')}<span>${isCam ? 'Kamera läuft' : app.source==='file' ? 'Video geladen' : 'Kamera aus'}. ${settings.camPos==='court' ? 'Tor, Linie und Absprungzone' : 'Ganzer Körper und Linie'} im Bild?</span></li>
-        <li>${icon(!!line)}<span>${line ? `6-m-Linie gesetzt (${line.pts.length} Punkte, ${how})` : '6-m-Linie fehlt'}</span></li>
+        <li>${icon(!!line)}<span>${line ? `${TXT.line} gesetzt (${line.pts.length} Punkte, ${how})` : `${TXT.line} fehlt`}</span></li>
         ${camLine}
       </ul>
       ${wizard.msg ? `<p class="muted">${esc(wizard.msg)}</p>` : ''}

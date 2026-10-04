@@ -46,6 +46,7 @@ Die simulierte Person (`demo/sim.js`) ist das Bindeglied: sie macht **absichtlic
 | Startmenü | – | ✓ | – |
 | Aufgaben (Baustein + A1 …) | ✓ | ✓ | offen |
 | 7-m-Trainer (Zeit, Linie, Standbein, Serie) | ✓ | ✓ | offen |
+| Rückraum-Modus (9-m-Linie, Schritte, Abwurf im höchsten Punkt) | ✓ (Schritte) | ✓ | offen |
 | Abwehr-Beinarbeit (Richtung, Reaktion, gekreuzt, Grundstellung) | ✓ | ✓ | offen |
 
 Die Tabelle wird mit jeder neuen Übung ergänzt.

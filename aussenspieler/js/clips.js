@@ -1,10 +1,10 @@
 // Kurze Videos pro Wurf: Kamerabild mit eingezeichneter Linie und Skelett aufnehmen (ab der Zielansage
 // bis kurz nach der Landung) und im Browser speichern (IndexedDB, die letzten KEEP Clips).
-import { DEMO } from './config.js';
+import { DEMO, RR } from './config.js';
 import { settings } from './store.js';
 import { video, canvas } from './dom.js';
 
-const DB = DEMO ? 'awc-demo-clips' : 'awc-clips', KEEP = 60, MAXW = 720;
+const DB = (RR ? 'rr-' : 'awc-') + (DEMO ? 'demo-clips' : 'clips'), KEEP = 60, MAXW = 720;
 // H.264 zuerst: auf Handys meist im Hardware-Encoder (spart Rechenzeit für die Pose-Erkennung), und MP4
 // lässt sich überall abspielen und teilen. VP9 nicht: wird oft in Software kodiert und bremst.
 const MIME = ['video/mp4;codecs=avc1.42E01E', 'video/mp4;codecs=avc1', 'video/webm;codecs=h264', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4']
