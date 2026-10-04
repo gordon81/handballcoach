@@ -3,7 +3,7 @@
 import { app } from './state.js';
 import { settings, store, th } from './store.js';
 import { $ } from './dom.js';
-import { esc } from './utils.js';
+import { esc } from '../../shared/js/utils.js';
 import { TASKS, judge, tally, repSpeech, endSpeech, passed, addHistory, best, speakSec } from './tasks.js';
 
 // Gewählte Aufgabe (null = freies Training). Nur im Kamera-Modus; Videodateien werden immer frei analysiert.

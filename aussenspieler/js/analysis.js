@@ -1,7 +1,7 @@
 // Bewertung eines Wurfs: die sechs Technik-Prüfungen und der Sprachtext danach.
 import { settings, th } from './store.js';
 import { canvas } from './dom.js';
-import { pick, angDiff } from './utils.js';
+import { pick, angDiff } from '../../shared/js/utils.js';
 import { inTorraum, lineOffset, lineCenter } from './line.js';
 import { LABEL_GOOD, PRIO, wrongSide, tips } from './feedback.js';
 

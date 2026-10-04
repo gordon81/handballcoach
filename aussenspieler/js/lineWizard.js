@@ -2,8 +2,8 @@
 // sammelt die Fußpunkte als grobe Lage. Im Kamerabild wird dann der gemalte Strich am Boden gesucht
 // und die Linie darauf eingerastet (sonst bleiben die Fußpunkte). Danach zwei Schritte in den Torraum = Torraum-Seite.
 import { canvas } from './dom.js';
-import { dist } from './utils.js';
-import { say } from './speech.js';
+import { dist } from '../../shared/js/utils.js';
+import { say } from '../../shared/js/speech.js';
 import { curve, saveLine } from './line.js';
 import { grabFrame, medianFrame, snapLine, simplify } from './lineDetect.js';
 import { makeRef } from './camCheck.js';

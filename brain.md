@@ -20,23 +20,27 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 
 ## Dateien
 - `index.html` (Wurzel) – Startmenü: eine Karte (ein `<a>` in `#trainings`) pro Trainingsart, Stil inline. Neue Trainingsart = eigener Ordner mit eigener `index.html` + eine Zeile im Menü.
+- `shared/` – gemeinsamer Code aller Trainings (Pfade aus einem Training: `../shared/…` bzw. in JS `../../shared/js/…`):
+  - `css/base.css` – Farben, Schriften, Grundstil.
+  - `js/utils.js` (Helfer), `js/speech.js` (Sprachausgabe `say(text, {queue})`, Piep `beep()`; Tests lesen `window.__said`), `js/wakelock.js` (Bildschirm wach), `js/pose.js` (`createPose(model)`: MediaPipe laden, GPU mit CPU-Fallback; URLs `TV`, `MODELS`).
+  - `js/demo/scene.js` – Demo-Szene: gezeichnete Halle (`setView(pos, look, move)`, `proj`, `drawFloor`) und Person aus Gelenken (`joints(P, R)`, `drawPerson`, `landmarks` im MediaPipe-Format, `ball`, `hand`). Das Verhalten der Person steht im Demo des jeweiligen Trainings.
 - `aussenspieler/` – Außenwurf-Coach (die folgenden Dateien bis `ui/` liegen in diesem Ordner, Pfade darin relativ):
-- `index.html` – nur das HTML-Gerüst; bindet die CSS-Dateien und `js/main.js` ein. Link „← Alle Trainings“ (`../`) zurück ins Menü.
-- `css/` – `base.css` (Farben, Schriften, Grundstil), `stage.css` (Kamerabild, HUD, Zielansage, Hinweis, Ergebnis-Karte), `controls.css` (Video- und Button-Leiste), `sheets.css` (Einstellungen, Training).
+- `index.html` – nur das HTML-Gerüst; bindet `../shared/css/base.css`, die eigenen CSS-Dateien und `js/main.js` ein. Link „← Alle Trainings“ (`../`) zurück ins Menü.
+- `css/` – `stage.css` (Kamerabild, HUD, Zielansage, Hinweis, Ergebnis-Karte), `controls.css` (Video- und Button-Leiste), `sheets.css` (Einstellungen, Training).
 - `js/` – ES-Module, ohne Build direkt vom Browser geladen:
   - `main.js` – Einstieg: verbindet die Bedienung, Hauptschleife (ein KI-Durchlauf pro Videobild).
   - `config.js` – feste Werte: MediaPipe-URLs, Modelle, Körperpunkt-Indizes, Skelett, Standard-Einstellungen.
   - `state.js` – gemeinsamer Laufzeit-Zustand `app` (Zustand, Quelle, Ziel, letzter Frame, Linien-Markierung). Als Objekt, weil importierte Variablen nicht neu zugewiesen werden können.
   - `store.js` – `settings` und `log` im localStorage, Trainings-Sitzungen.
-  - `utils.js`, `dom.js` – Helfer, Seitenelemente, Hinweis-Einblendung.
-  - `speech.js`, `wakelock.js`, `model.js`, `source.js` – Sprache, Bildschirm wach, KI-Modell laden, Kamera/Video + Layout.
+  - `dom.js` – Seitenelemente, Hinweis-Einblendung.
+  - `model.js`, `source.js` – KI-Modell laden (über `shared/js/pose.js`, im Demo die simulierte Person), Kamera/Video + Layout.
   - `line.js` – 6-m-Linie: Antippen (mit „Zurück“), Kurve, `inTorraum()`, `saveLine()`, `setCamPos()` (Kameraposition wechseln, Linie je Position).
   - `lineWizard.js` – Linie ablaufen: Person geht auf Sprachansage die Linie entlang, Fußpunkte geben die grobe Lage, dann Einrasten auf den Strich am Boden.
   - `lineDetect.js` – Bodenlinie im Kamerabild finden (`snapLine`), Bild ohne Person (`medianFrame`), Punkte glätten/reduzieren (`simplify`).
   - `camCheck.js` – Referenzbild bei der Einrichtung, Kamera-Check beim Öffnen der Einrichtung und beim Start, automatisches Nachjustieren.
   - `shout.js` + `shoutDetect.js` + `micControl.js` – Zuruf per Mikrofon erkennen (Pegel im Stimmbereich, Dauer, Klang; `shoutDetect.js` ist die reine Logik ohne Browser), Mikro nur im Modus „Zuruf“ während des Trainings an.
   - `clips.js` – Wurf-Videos aufnehmen (MediaRecorder) und in IndexedDB speichern. `ui/clipView.js` – Video ansehen (Zeitlupe, Speichern/Teilen). `ui/micMeter.js` – Mikrofon-Pegel anzeigen.
-  - `demo/sim.js` – Demo-Modus: gezeichnete Halle, simulierte Person, Ersatz für Kamera und KI.
+  - `demo/sim.js` – Demo-Modus: Verhalten der simulierten Person (Linie ablaufen, Würfe, Zuruf), Kamerapositionen, Ersatz für Kamera und KI; Halle und Körper aus `shared/js/demo/scene.js`.
   - `tracking.js` – Zustandsautomat, Absprung-/Landungserkennung, speichert den Wurf.
   - `analysis.js` – `evaluate()`: die sechs Prüfungen und der Sprachtext.
   - `tasks.js` – Aufgaben als Daten (`TASKS`) und ihre Regeln (`judge`, `tally`, Ansagen, Verlauf, Bestwert). Reine Logik ohne Browser, unit-getestet.
@@ -202,5 +206,6 @@ Die Grenzwerte (`TH` in `aussenspieler/js/config.js`) sind bisher nur im Demo ge
 - 2026-10-03: Zweite Kameraposition „Feld mit Tor“ (hinter dem 7-m-Punkt, Tor und Absprungzone im Bild) in der Einrichtung, eigene Linie je Position, eigene Sprunghöhen-Grenzen, Demo und Test für Position 2.
 - 2026-10-03: Fix Zuruf: die ersten Rufe nach dem Mikro-Start gingen verloren (Messungen ohne Ton zogen den Grundpegel auf −200 dB). Fix: Ruf über Dauerlärm wurde manchmal verpasst, weil der Grundpegel bei kurzen Einbrüchen des Lärms nicht mehr nachzog.
 - 2026-10-04: Baustein „Aufgabe“ (Serie mit Ziel, Zähler, Ansage pro Wurf, Ende-Karte mit „Nochmal“, Verlauf/Bestwert, Abschnitt in Log und Bericht) und erste Aufgabe A1 „Absprung an der Linie“. `TESTSTRATEGIE.md`.
+- 2026-10-04: Gemeinsamer Code nach `shared/` (Grundstil, Helfer, Sprache, Bildschirm wach, KI laden, Demo-Halle und -Person), Vorbereitung für den 7-m-Trainer.
 - 2026-10-04: Aufgabe A2 „Entscheidung in der Luft“ (Ziel erst beim Absprung, Verzögerung von Erkennung und Sprachausgabe als Messwert).
 - 2026-10-03: Außenwurf-Coach in den Ordner `aussenspieler/` verschoben, im Wurzelverzeichnis ein Startmenü für mehrere Trainingsarten. Neue Adresse: https://gordon81.github.io/handballcoach/aussenspieler/ (Daten bleiben erhalten).

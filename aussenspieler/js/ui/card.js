@@ -1,7 +1,7 @@
 // Ergebnis-Karte nach jedem Wurf (Prüfungen, Lob, Tipp, Treffer erfassen).
 import { store } from '../store.js';
 import { $ } from '../dom.js';
-import { esc } from '../utils.js';
+import { esc } from '../../../shared/js/utils.js';
 import { renderLog } from './logView.js';
 import { openClip } from './clipView.js';
 import { taskRecount } from '../taskRun.js';

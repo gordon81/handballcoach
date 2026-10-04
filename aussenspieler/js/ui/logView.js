@@ -1,7 +1,7 @@
 // Ansicht „Training“: Zusammenfassung, Schwerpunkte, Ziele und alle Würfe.
 import { settings, sessionEntries } from '../store.js';
 import { $ } from '../dom.js';
-import { esc, colorOf, fmtDate } from '../utils.js';
+import { esc, colorOf, fmtDate } from '../../../shared/js/utils.js';
 import { LABEL_BAD, LABEL_GOOD, tips } from '../feedback.js';
 import { summarize, profileText, measureText, MEASURE_HELP } from '../summary.js';
 import { sessionRuns } from '../taskRun.js';

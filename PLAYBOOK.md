@@ -160,7 +160,7 @@ Heute bewertet die App jeden Wurf, stellt aber keine **Aufgabe** mit Ziel. Für 
 2. [x] Baustein „Aufgabe“ (Abschnitt 1) im Außenwurf-Coach: Aufgabenkarte, Zähler, „geschafft / nicht geschafft“, Ergebnis im Log und Bericht. **M**
 3. [ ] Erste Aufgaben ohne neue Erkennung: **A1 Absprung an der Linie** ✅, **A5 Serie unter Ermüdung**, **A3 Wurfhöhe auf Ansage**. **S** je Aufgabe
 4. [x] **A2 Entscheidung in der Luft** (Ansage beim Absprung) ✅; Verzögerung wird gemessen (`callDet`/`callLag`), **in der Halle ansehen** (offen). **S**
-5. [ ] Gemeinsamen Code nach `shared/` ziehen (Kamera, Pose, Sprache, Zuruf, Clips, Demo), zweite Karte im Startmenü vorbereiten. **M**
+5. [x] Gemeinsamen Code nach `shared/` ziehen (Kamera, Pose, Sprache, Zuruf, Clips, Demo), zweite Karte im Startmenü vorbereiten. **M**
 6. [ ] **B1 7-m-Trainer** als zweites Training (mit C3 Wurf ohne Sprung, C4 gerade Linie). **M**
 7. [ ] **B5 Abwehr-Beinarbeit** (ohne Ball, mit C5 Reaktionszeit). **M**
 8. [ ] **B2 Rückraum-Sprungwurf** (großteils Außenwurf-Coach mit 9-m-Linie und Schrittzählung). **M**

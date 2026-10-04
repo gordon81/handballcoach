@@ -2,7 +2,7 @@
 import { app } from './state.js';
 import { $, video } from './dom.js';
 import { landmarker } from './model.js';
-import { keepAwake } from './wakelock.js';
+import { keepAwake } from '../../shared/js/wakelock.js';
 import { processFrame, heardCall } from './tracking.js';
 import { onShout } from './shout.js';
 import { recFrame } from './clips.js';

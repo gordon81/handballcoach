@@ -1,10 +1,6 @@
 // Feste Werte: KI-Bibliothek, Modelle, Körperpunkte und Standard-Einstellungen.
 
-export const TV = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
-export const MODELS = {
-  lite: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
-  full: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task"
-};
+// KI-Bibliothek und Modelle: shared/js/pose.js.
 
 // MediaPipe-Pose-Indizes der Punkte, die die Prüfungen brauchen.
 export const L = {nose:0,lSh:11,rSh:12,lEl:13,rEl:14,lWr:15,rWr:16,lHip:23,rHip:24,lAnk:27,rAnk:28,lHeel:29,rHeel:30,lToe:31,rToe:32};

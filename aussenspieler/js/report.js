@@ -1,7 +1,7 @@
 // Abschlussbericht: als Text teilen oder als eigenständige HTML-Datei.
 import { settings, sessionEntries } from './store.js';
 import { showHint } from './dom.js';
-import { esc, fmtDate } from './utils.js';
+import { esc, fmtDate } from '../../shared/js/utils.js';
 import { LABEL_BAD, LABEL_GOOD, tips } from './feedback.js';
 import { summarize, profileText, measures, MEASURE_HELP, LIMITS_TEXT } from './summary.js';
 import { sessionRuns } from './taskRun.js';

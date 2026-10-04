@@ -2,7 +2,7 @@
 import { app } from '../state.js';
 import { settings, store } from '../store.js';
 import { $, showHint } from '../dom.js';
-import { esc, colorOf } from '../utils.js';
+import { esc, colorOf } from '../../../shared/js/utils.js';
 import { landmarker, ensureModel } from '../model.js';
 import { startCamera } from '../source.js';
 import { clearLine } from '../line.js';

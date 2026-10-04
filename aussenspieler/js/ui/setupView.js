@@ -3,11 +3,11 @@
 import { app } from '../state.js';
 import { settings, store, ensureSession } from '../store.js';
 import { $, showHint } from '../dom.js';
-import { esc, fmtDate } from '../utils.js';
-import { say, beep, unlockBeep } from '../speech.js';
+import { esc, fmtDate } from '../../../shared/js/utils.js';
+import { say, beep, unlockBeep } from '../../../shared/js/speech.js';
 import { syncMic, micUse } from '../micControl.js';
 import { mic, onShout } from '../shout.js';
-import { keepAwake, releaseWake } from '../wakelock.js';
+import { keepAwake, releaseWake } from '../../../shared/js/wakelock.js';
 import { ensureModel } from '../model.js';
 import { startCamera, curT } from '../source.js';
 import { setState, hudTarget } from '../tracking.js';
