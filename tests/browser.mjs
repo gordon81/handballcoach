@@ -635,6 +635,54 @@ test('Pässe gegen die Wand (Demo, Handy-Größe): Zählen, Arm und Gegenbein je
   await page.close();
 });
 
+test('Sprungkraft (Demo, Handy-Größe): Strecksprünge und Einbein links/rechts', {timeout:150000}, async t => {
+  const page = await browser.newPage({viewport:{width:390, height:800}});
+  const errors = []; page.on('pageerror', e => errors.push(e.message));
+  page.on('console', m => { if(m.type()==='error') errors.push(m.text()); });
+  await page.addInitScript(() => { window.__said = []; if(!sessionStorage.getItem('init')){ sessionStorage.setItem('init', '1'); localStorage.clear(); } });
+  await page.goto(srv.url + 'sprung/?demo=1');
+  await page.evaluate(async () => { window.M = {st:await import('/sprung/js/state.js'), demo:await import('/sprung/js/demo.js')}; });
+
+  await t.test('10 Strecksprünge: Höhen wie simuliert (Reihenfolge), Bodenkontakt', async () => {
+    await page.click('#btnStart');
+    await page.waitForSelector('#setup [data-a=start]');
+    assert.ok(await minHeight(page, '#setup button') >= 44);
+    await page.click('#setup [data-a=start]');
+    await until(page, () => M.st.log.length >= 1, null, 60000, 'Übung fertig');
+    const {e, done} = await page.evaluate(() => ({e:M.st.log[0], done:M.demo.demo.done}));
+    assert.equal(e.n, 10);
+    // Gemessen in KL (Schulter–Knöchel): proportional zur simulierten Höhe; höchster Sprung = erster.
+    const ratio = e.heights.map((h, i) => h/done[i].h);
+    assert.ok(Math.max(...ratio) - Math.min(...ratio) < 0.12, `Verhältnis gemessen/simuliert ${ratio.map(r => r.toFixed(2))}`);
+    assert.ok(e.contact > 0.25 && e.contact < 0.5, `Bodenkontakt ${e.contact}`);
+    assert.match(await page.evaluate(() => __said.at(-1)), /^Fertig\. 10 Sprünge\. Im Schnitt \d+ Zentimeter, bester \d+\./);
+    await page.click('#card [data-c=close]');
+  });
+
+  await t.test('Einbein: links 5, Wechsel, rechts 5; rechts stärker; Vergleich nur mit gleicher Übung', async () => {
+    await page.click('#btnSetup');
+    await page.click('#setup [data-a=ex][data-v=single]');
+    await page.click('#setup [data-a=start]');
+    await until(page, () => M.st.log.length >= 2, null, 60000, 'Übung fertig');
+    const e = await page.evaluate(() => M.st.log[1]);
+    assert.equal(e.n, 10); assert.ok(e.right > e.left, `links ${e.left}, rechts ${e.right}`);
+    const said = await page.evaluate(() => __said);
+    assert.ok(said.includes('Wechsel. Fünf auf dem rechten Bein.'));
+    assert.ok(!said.includes('Nur ein Bein.') && !said.includes('Falsches Bein.'), said.join(' | '));
+    assert.match(said.at(-1), /Rechts \d+ Prozent stärker/);
+    assert.doesNotMatch(said.at(-1), /letztes Mal/, 'erste Einbein-Übung: kein Vergleich mit den Strecksprüngen');
+    await page.click('#card [data-c=close]');
+    await page.click('#btnLog');
+    assert.match(await page.textContent('#logBody'), /Einbein links und rechts: 10 Sprünge[\s\S]*Strecksprünge: 10 Sprünge/);
+    await page.click('#logSheet [data-close]');
+    const rep = await page.evaluate(async () => (await import('/sprung/js/main.js')).reportText());
+    assert.match(rep, /Einbein links und rechts: 10 Sprünge, links \d+ cm, rechts \d+ cm/);
+  });
+
+  assert.deepEqual(errors, [], 'Fehler in der Browser-Konsole');
+  await page.close();
+});
+
 test('Mikrofon: Rufe erkannt, Lärm nicht (Fake-Mikrofon)', {timeout:120000}, async t => {
   const page = await browser.newPage();
   await page.goto(srv.url + 'aussenspieler/');
@@ -695,6 +743,11 @@ test('Startmenü: Karten öffnen alle Trainings, „Alle Trainings“ führt zur
   await page.click('#trainings a[href="passen/"]');
   await page.waitForSelector('#btnStart');
   assert.ok(page.url().endsWith('/passen/'), page.url());
+  await page.click('a[href="../"]');
+  await page.waitForSelector('#trainings');
+  await page.click('#trainings a[href="sprung/"]');
+  await page.waitForSelector('#btnStart');
+  assert.ok(page.url().endsWith('/sprung/'), page.url());
   await page.click('a[href="../"]');
   await page.waitForSelector('#trainings');
   await page.click('#trainings a[href="abwehr/"]');

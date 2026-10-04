@@ -122,7 +122,7 @@ Heute bewertet die App jeden Wurf, stellt aber keine **Aufgabe** mit Ziel. Für 
 - **Prüfbar:** ●●● für Richtung und Reaktionszeit, ●●○ für Füße kreuzen und Tiefe.
 - **Baut auf:** Ansage, Pose, Stillstand-Erkennung aus dem Modus „Wenn Spieler im Bild steht“. Kein Ball, keine Linie nötig. **Aufwand M.**
 
-### B6 · Sprungkraft und Koordination
+### B6 · Sprungkraft und Koordination ✅ gebaut (`sprung/`; Hürdensprünge seitlich noch nicht)
 - **Ziel:** Sprungkraft für den Wurf, Einbein-Absprung.
 - **Übungen:** 10 Strecksprünge aus dem Stand, je 5 Einbein-Sprünge links/rechts, Hürdensprünge seitlich.
 - **Erfolg:** Anzahl, Sprunghöhe pro Sprung (Hüfte über Stand-Höhe), Unterschied links/rechts, Bodenkontaktzeit.
@@ -165,7 +165,7 @@ Heute bewertet die App jeden Wurf, stellt aber keine **Aufgabe** mit Ziel. Für 
 7. [x] **B5 Abwehr-Beinarbeit** ✅ (ohne Ball, mit C5 Reaktionszeit). **M**
 8. [x] **B2 Rückraum-Sprungwurf** ✅ (großteils Außenwurf-Coach mit 9-m-Linie und Schrittzählung). **M**
 9. [x] **C2 Ballaufprall per Mikro** ✅, dann **B4 Pässe gegen die Wand** ✅. **M**
-10. [ ] **A4 Winkel vergrößern** ✅, **A6 Gegenstoß auf Zeit** ✅, **B3 Kreisläufer**, **B6 Sprungkraft**. **S–M**
+10. [ ] **A4 Winkel vergrößern** ✅, **A6 Gegenstoß auf Zeit** ✅, **B3 Kreisläufer**, **B6 Sprungkraft** ✅. **S–M**
 11. [ ] **C1 Treffererkennung** und **B7 Wurfgeschwindigkeit**. **L / M**, erst wenn der Rest in der Halle läuft.
 
 Jede neue Übung bekommt einen Demo-Ablauf in `demo/sim.js` und einen Test in `tests/browser.mjs`, wie der Außenwurf-Coach heute.

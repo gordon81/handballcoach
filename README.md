@@ -10,6 +10,8 @@ Web-App fürs Handy: Zielansage per Sprache, KI-Technik-Check (Übertritt, Sprun
 
 **Pässe gegen die Wand öffnen:** https://gordon81.github.io/handballcoach/passen/ (Demo: `passen/?demo=1`)
 
+**Sprungkraft öffnen:** https://gordon81.github.io/handballcoach/sprung/ (Demo: `sprung/?demo=1`)
+
 **Abwehr-Beinarbeit öffnen:** https://gordon81.github.io/handballcoach/abwehr/ (Demo: `abwehr/?demo=1`)
 
 **7-m-Trainer öffnen:** https://gordon81.github.io/handballcoach/siebenmeter/ (Demo: `siebenmeter/?demo=1`)

@@ -454,3 +454,20 @@ So viele saubere Pässe wie möglich in 30 oder 60 Sekunden. Das Handy **hört d
 
 ### Hallentest Pässe
 Mikro-Test vor der Wand (zählt jeder Aufprall, das Fangen nicht?), einmal mit Lärm vom Nachbarfeld. Eine Runde mit Absicht ein paar Pässe aus der Hüfte und mit dem falschen Bein vorn: erkennt die App das?
+
+---
+
+## 16. Sprungkraft
+
+**App:** https://gordon81.github.io/handballcoach/sprung/ (Karte „Sprungkraft“ im Startmenü) · **Demo:** `sprung/?demo=1`
+
+Sprungkraft für den Wurf: die App zählt Sprünge auf der Stelle, schätzt die Höhe jedes Sprungs und vergleicht links mit rechts.
+
+### Aufbau und Ablauf
+1. Handy frontal, 3–4 m weg, etwa Hüfthöhe; der ganze Körper muss auch im Sprung im Bild sein.
+2. **Start**, Übung wählen: **10 Strecksprünge** (beidbeinig) oder **Einbein 5+5** (erst links, dann rechts).
+3. **Übung starten**, ruhig hinstellen. Nach *„… Los.“* und Piep auf der Stelle springen. Die Höhe jedes Sprungs steht groß im Bild, oben der Zähler.
+4. Einbein: nach fünf Sprüngen *„Wechsel. Fünf auf dem rechten Bein.“* Sprünge auf dem falschen Bein oder mit beiden Beinen zählen nicht.
+5. Am Ende z. B. *„Fertig. 10 Sprünge. Im Schnitt 35 Zentimeter, bester 39. Bodenkontakt 0,32 Sekunden. 3 Zentimeter mehr als letztes Mal.“* bzw. *„Links 19, rechts 25 Zentimeter. Rechts 25 Prozent stärker, das schwächere Bein extra trainieren.“*
+
+Die Höhe ist geschätzt (wie weit die Hüfte über die Stand-Höhe steigt). Absolut ist sie ungenau, für den Vergleich mit dem letzten Mal und zwischen den Beinen aber aussagekräftig. **Log** zeigt jede Übung mit allen Höhen, **Bericht teilen** als Text. Daten: localStorage `jump-settings`, `jump-log`.

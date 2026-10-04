@@ -409,3 +409,44 @@ test('Pässe: Kamera-Zählung und Zusammenfassung', () => {
   assert.deepEqual([s.n, s.seen, s.arm, s.foot, s.perMin], [3, 2, 1, 2, 6]);
   assert.match(s.say, /^Fertig\. 3 Pässe in 30 Sekunden\. 1 mit Arm oben, 2 mit dem richtigen Bein vorn\. Ellbogen und Hand über die Schulter\.$/);
 });
+
+/* ---------- Sprungkraft (sprung/js/rules.js) ---------- */
+import { jumpTracker, summary as jumpSummary, cm as jcm } from '../sprung/js/rules.js';
+
+// Sprünge auf der Stelle: Boden y = 600, Hüfte 400, KL 200 px. jumps = [{h (KL), leg: 'both'|'l'|'r'}], 0,3 s Bodenkontakt.
+function jumpFrames(jumps){
+  const out = []; let t = 0;
+  const push = (lift, leg, noise = 0.5) => {
+    const j = Math.sin(t*61)*noise, up = 30;   // angezogenes Bein: 30 px über dem Boden
+    out.push({t, hipY:400 - lift + j, bl:200, lY:600 - lift - (leg === 'r' ? up : 0) + j, rY:600 - lift - (leg === 'l' ? up : 0) - j});
+    t += 1/30;
+  };
+  for(let k = 0; k < 9; k++) push(0, 'both');
+  for(const jp of jumps){
+    for(let k = 0; k < 9; k++) push(0, jp.leg);
+    const T = 2*Math.sqrt(2*jp.h*1.4/9.81), n = Math.round(T*30);
+    for(let k = 1; k < n; k++){ const u = k/n; push(4*jp.h*200*u*(1-u), jp.leg); }
+  }
+  for(let k = 0; k < 9; k++) push(0, 'both');
+  return out;
+}
+const runJumps = fr => { const tr = jumpTracker({hipY:400, ground:600, bl:200}), out = []; for(const f of fr){ const j = tr.push(f); if(j) out.push(j); } return out; };
+
+test('Sprungkraft: Sprünge gezählt, Höhe, Bodenkontakt, Bein', () => {
+  const js = runJumps(jumpFrames([{h:0.25, leg:'both'}, {h:0.2, leg:'both'}, {h:0.15, leg:'l'}, {h:0.18, leg:'r'}]));
+  assert.equal(js.length, 4);
+  assert.ok(Math.abs(js[0].height - 0.25) < 0.03 && Math.abs(js[1].height - 0.2) < 0.03, js.map(j => j.height).join(', '));
+  assert.deepEqual(js.map(j => j.leg), ['both', 'both', 'l', 'r']);
+  assert.equal(js[0].contact, null); assert.ok(js[1].contact > 0.2 && js[1].contact < 0.45, `Kontakt ${js[1].contact}`);
+  assert.equal(runJumps(jumpFrames([])).length, 0, 'Stehen mit Rauschen ist kein Sprung');
+  assert.equal(runJumps(jumpFrames([{h:0.03, leg:'both'}])).length, 0, 'Wippen ist kein Sprung');
+});
+
+test('Sprungkraft: Zusammenfassung, links gegen rechts, Vergleich mit dem letzten Mal', () => {
+  const s = jumpSummary([{height:0.2, contact:null}, {height:0.3, contact:0.3}], 'both', {avg:0.2});
+  assert.equal(jcm(s.avg), 35);
+  assert.equal(s.say, 'Fertig. 2 Sprünge. Im Schnitt 35 Zentimeter, bester 42. Bodenkontakt 0,30 Sekunden. 7 Zentimeter mehr als letztes Mal.');
+  const lr = jumpSummary([{height:0.15, leg:'l'}, {height:0.2, leg:'r'}], 'single');
+  assert.match(lr.say, /Links 21, rechts 28 Zentimeter\. Rechts 25 Prozent stärker/);
+  assert.match(jumpSummary([{height:0.2, leg:'l'}, {height:0.21, leg:'r'}], 'single').say, /Beide Beine ähnlich stark/);
+});
