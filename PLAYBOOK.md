@@ -151,6 +151,23 @@ Heute bewertet die App jeden Wurf, stellt aber keine **Aufgabe** mit Ziel. Für 
 | **C3 Wurf ohne Sprung** ✅ (`findThrow` im 7-m-Trainer) (Abwurf an Handgelenk-Geschwindigkeit erkennen) | B1, B4, B7 | ●●○ | **M** |
 | **C4 Gerade Linien** (7 m, 9 m gestrichelt) für Einrichtung und Übertritt ✅ (7 m: antippen; 9 m: ablaufen/einrasten wie 6 m) | B1, B2 | ●●● | **S** |
 | **C5 Reaktionszeit** ✅ (`judgeMove` in `abwehr/`) (Ansage-Zeitpunkt → erste deutliche Hüftbewegung, Sprachausgabe-Verzögerung abziehen) | A2, B3, B5 | ●●○ | **S** |
+| **C6 Bedienung aus der Ferne** (Handy hängt zu hoch, siehe unten) | alle Trainings | ●●● Stufe 1, ●●○ Stufe 2 | **S** / **M–L** |
+
+### C6 · Bedienung, wenn das Handy zu hoch hängt (geplant, 2026-10-05)
+**Problem:** Das Kamera-Handy steht oder hängt erhöht (Stativ 1,5–2 m, am Tor, an der Wand) und ist zum Tippen nicht erreichbar: Start, Stopp, Einstellungen, „Treffer/Daneben“, Bereit/Pause.
+
+**Möglichkeiten**
+- **(a) Fernbedienung über WebRTC, Pairing per QR-Code.** Dieselbe Seite auf einem zweiten Gerät im Modus „Fernbedienung“. Das Kamera-Handy zeigt vor dem Aufhängen einen QR-Code, das zweite Handy scannt ihn, dann laufen Befehle (Start, Stopp, Bereit, Pause, Treffer/Daneben, Einstellungen) und der Zustand (Zähler, letzte Bewertung, Serie) direkt zwischen den Geräten. Ein Live-Bild ist mit demselben Weg möglich (Kamerastrom klein mitschicken). *Haken:* WebRTC braucht zum Verbinden einen Vermittlungsdienst; ohne eigenen Server geht das nur über einen öffentlichen kostenlosen (z. B. PeerJS), der nur die Kennungen sieht, nicht Bild und Daten. Im Hallen-WLAN oder Mobilnetz kann die direkte Verbindung scheitern (kein TURN-Server); dann hilft der Hotspot eines der beiden Handys. Aufwand **M–L** (gemeinsames `shared/js/remote.js`, Befehle je Training anbinden, Fernbedien-Ansicht, Tests mit zwei Browser-Seiten im Demo).
+- **(b) Nur den Bildschirm streamen** (`getDisplayMedia`/WebRTC). Auf Handys (Chrome Android, Safari iOS) gibt es Bildschirm-Teilen im Browser nicht, und man könnte damit nur zusehen, nicht bedienen. **Nicht machbar.** Als Notlösung ohne Programmierung gehen Fremd-Apps zur Fernsteuerung des ganzen Handys (z. B. Fernwartungs-Apps), mit viel Einrichtung und Datenschutzfragen.
+- **(c) Ohne Netz.** Bausteine, die es teils schon gibt: Zuruf (7-m-Pause mit Bereit/Pause, Gegenstoß, Zuruf-Modus), große Anzeige aus 5–7 m lesbar. Neu dazu: **Start mit Vorlauf** („Start in 10 s“, Zeit zum Weggehen) und **Bluetooth-Presenter** (Funk-Klicker für Präsentationen, ca. 10–20 €): er sendet Tasten wie „Bild ab/auf“, die die Seite als Tastendruck empfängt, also Start/Stopp, Bereit, Pause auf Knopfdruck aus der Hand. (Selfie-Auslöser senden meist „Lauter“, das bekommt eine Webseite nicht.) Aufwand **S**.
+
+**Empfehlung:** Zuerst **Stufe 1 = (c)**: Start mit Vorlauf und Presenter-Tasten in allen Trainings, dazu die vorhandenen Zurufe. Geht sofort, ohne Netz, ohne Konto, im Demo testbar (Tastendruck im Browser-Test). Danach **Stufe 2 = (a)** nur für Befehle und Zustand (ohne Live-Bild), wenn Einstellungen und „Treffer/Daneben“ aus der Ferne wirklich gebraucht werden; das Live-Bild erst, wenn die Verbindung in der Halle stabil läuft. (b) entfällt.
+
+**Offene Fragen an Gordon**
+1. Welches zweite Gerät: zweites Handy, Tablet, Smartwatch, oder lieber ein Presenter-Klicker?
+2. Reichen Start/Stopp, Bereit/Pause und Treffer/Daneben aus der Ferne, oder sollen auch Einstellungen und das Live-Bild auf das zweite Gerät?
+3. Gibt es in der Halle WLAN oder Mobilnetz, und ist ein Handy-Hotspot in Ordnung?
+4. Ist ein öffentlicher kostenloser Vermittlungsdienst (nur für den Verbindungsaufbau) für Stufe 2 in Ordnung?
 
 ---
 
@@ -167,6 +184,8 @@ Heute bewertet die App jeden Wurf, stellt aber keine **Aufgabe** mit Ziel. Für 
 9. [x] **C2 Ballaufprall per Mikro** ✅, dann **B4 Pässe gegen die Wand** ✅. **M**
 10. [x] **A4 Winkel vergrößern** ✅, **A6 Gegenstoß auf Zeit** ✅, **B3 Kreisläufer** ✅, **B6 Sprungkraft** ✅. **S–M**
 11. [x] **C1 Treffererkennung** ✅ und **B7 Wurfgeschwindigkeit** ✅ (im Demo; Grenzen erst nach dem Hallentest einstellen). **L / M**
+12. [ ] **C6 Bedienung aus der Ferne**, Stufe 1: Start mit Vorlauf und Bluetooth-Presenter-Tasten in allen Trainings. **S** (nach Antwort auf die offenen Fragen)
+13. [ ] **C6** Stufe 2: Fernbedienung per WebRTC mit QR-Pairing (Befehle und Zustand, Live-Bild später). **M–L**
 
 Jede neue Übung bekommt einen Demo-Ablauf in `demo/sim.js` und einen Test in `tests/browser.mjs`, wie der Außenwurf-Coach heute.
 
