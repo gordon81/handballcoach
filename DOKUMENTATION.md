@@ -49,11 +49,21 @@ Drehung, Sprunghöhe und Oberkörper sind Schätzungen aus einer einzigen Kamera
 
 ## 3. Bedienung im Überblick
 
+### Der Ablauf auf einen Blick
+Die Startseite führt in vier Schritten zum Training, oben stehen sie als Leiste (antippen springt hin):
+
+1. **Übung:** Freies Training oder eine Aufgabe (mit Regeln, Anzahl der Würfe, Bestwert).
+2. **Seite & Hand:** Linksaußen oder Rechtsaußen (aus deiner Sicht mit Blick aufs Tor) und Rechts- oder Linkshand. Darunter steht, was das heißt: Anlauf (z. B. *links – rechts – links*), **Sprungbein** und **Wurfarm**.
+3. **Ablauf:** der Bewegungsablauf Schritt für Schritt für genau diese Seite und Hand, dazu **▶ Anleitungsvideo ansehen**.
+4. **Kamera:** wo das Handy hinkommt. **Kamera starten** lädt Kamera und KI und öffnet die Einrichtung (Kameraposition, 6-m-Linie), dann **Training starten**.
+
+Die Wahl bleibt gespeichert. Wer schon eingerichtet hat, drückt unten direkt **Start**. In der Einrichtung steht oben, was gewählt ist (z. B. *Absprung an der Linie · Linksaußen · Rechtshand*); **Ändern** öffnet die vier Schritte wieder.
+
 ### Untere Button-Leiste
 
 | Button | Funktion |
 |---|---|
-| **Start / Stopp** | Erster Druck: KI und Kamera laden, Einrichtung öffnen. In der Einrichtung startet „Training starten“. Während des Trainings wird der Button zu **Stopp**. |
+| **Start / Stopp** | Erster Druck: KI und Kamera laden, Einrichtung öffnen (mit der Übung, Seite und Hand von der Startseite). In der Einrichtung startet „Training starten“. Während des Trainings wird der Button zu **Stopp**. |
 | **Setup** | Einrichtung öffnen oder schließen (Kameraposition, 6-m-Linie, Mikro-Test). |
 | **Ansage** | Sofort ein Ziel ansagen (nur im Kamera-Modus bei laufendem Training). Nützlich, wenn die automatische Ansage nicht kommt. |
 | **Video** | Eine Videodatei vom Handy laden und analysieren (siehe Abschnitt 6). |
@@ -81,7 +91,7 @@ Die Karte verschwindet nach 10 s von selbst (nach dem Antippen von Treffer/Daneb
 
 ## 4. Einrichtung (vor jedem Training)
 
-**Start** drücken. Die App lädt KI und Kamera und öffnet die Einrichtung. Darin:
+Auf der Startseite **Kamera starten** (Schritt 4) oder unten **Start** drücken. Die App lädt KI und Kamera und öffnet die Einrichtung „Kamera einrichten“. Darin:
 
 ### 4.1 Kameraposition wählen
 
@@ -132,7 +142,7 @@ Erscheint in der Einrichtung, wenn in den Einstellungen „Ansage: Nach Zuruf“
 
 ### 4.5 Übung wählen: freies Training oder Aufgabe
 
-Ganz oben in der Einrichtung steht **Übung**:
+Die Übung wählst du auf der Startseite im ersten Schritt **Übung** (in der Einrichtung: **Ändern**):
 - **Freies Training** (Standard): Würfe mit Zielansage und Technik-Feedback, ohne feste Anzahl.
 - **Absprung an der Linie:** 10 Würfe, so nah wie möglich an der 6-m-Linie abspringen, ohne überzutreten. Geschafft ist ein Wurf, wenn der Fuß beim Absprung höchstens ca. 30 cm vor der Linie ist und nicht übertritt. Die Aufgabe ist geschafft bei **7 von 10**.
 
@@ -144,7 +154,7 @@ Ganz oben in der Einrichtung steht **Übung**:
 - **Kreisläufer: Drehen auf Ansage:** mit dem Rücken zum Tor an der 6-m-Linie stehen (Ball in der Hand). Die App sagt **„Links.“** oder **„Rechts.“** und das Ziel; in diese Richtung (aus deiner Sicht) aufdrehen und vor der Linie abspringen. Danach *„Richtig. Reaktion 0,4 Sekunden.“* oder *„Falsche Richtung.“* 10 Würfe, Ziel **7 von 10**. Die Drehrichtung kommt aus der 3D-Schätzung der KI; im Hallentest prüfen.
 - **Serie unter Ermüdung:** 20 Würfe mit nur 2 s Pause. Ab dem 6. Wurf warnt die App *„Sprung wird flacher. Knie hoch.“*, wenn ein Sprung deutlich niedriger ist als am Anfang. Geschafft, wenn die letzten 5 Sprünge im Schnitt mindestens **90 %** so hoch sind wie die ersten 5 und kein Übertritt dabei war. Das Ergebnis steht in Prozent.
 
-Unter der Auswahl stehen kurz die Regeln und, sobald es sie gibt, **Bestwert** und **letztes Ergebnis**. Der Start-Button heißt dann „Aufgabe starten“.
+Bei jeder Übung stehen kurz die Regeln und, sobald es sie gibt, **Bestwert** und **letztes Ergebnis**. Der Start-Button in der Einrichtung heißt dann „Aufgabe starten“.
 
 So läuft eine Aufgabe:
 1. Die App liest die Aufgabe vor, danach kommt die erste Zielansage.
@@ -256,6 +266,7 @@ In jeder Einrichtung und auf dem Startbildschirm jedes Trainings. Eine Lehrbild-
 - **Tempo** 1×, 0,5×, 0,25×, **Pause** zum Anhalten in einer Phase; **Speichern** legt einen Durchlauf als Video ab.
 - **Varianten:** Strecksprung / Einbein, Schlagwurf / mit Wurffinte, Grundstellung / Heraustreten, Schlagpass / schnelle Passfolge, im Außenwurf je Aufgabe (z. B. Wurf hoch / aus der Hüfte).
 - Wurfhand (Außenwurf, 7 m, Pässe), Position links/rechts außen und bei der Abwehr die Wurfhand des Gegners werden übernommen; die Figur ist dann gespiegelt.
+- **Außenwurf-Coach:** im Video direkt **Linksaußen / Rechtsaußen** und **Rechtshand / Linkshand** umschalten (gilt dann auch fürs Training). Unten links im Bild steht, wer wirft (*LINKSAUSSEN · RECHTSHAND, Sprungbein links, Wurfarm rechts*), oben rechts eine **Draufsicht** mit Tor, Anlaufweg und Spieler. **Sprungbein grün, Wurfarm orange**, die drei Schritte als Fußabdrücke am Boden (*1 L, 2 R, 3 L*). Unter dem Video steht der **Bewegungsablauf in 9 Schritten**; der laufende ist markiert, Antippen springt an die Stelle und hält an.
 
 ## 6. Videodatei analysieren
 

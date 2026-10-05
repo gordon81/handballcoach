@@ -62,15 +62,16 @@ export function drawCourt(ctx, cam){
 }
 
 /* ---------- Figur ---------- */
-const SKIN = '#e3b28a', SHIRT = '#1f5fbf', SHIRT2 = '#174a96', SHORTS = '#1a1f2a', SHOE = '#f5f5f5', HL = '#2ecc71';
-// j: Gelenke aus body(), pose: für den Ball, hl: hervorgehobene Glieder (z. B. ['lThigh', 'lShank'] = Sprungbein).
-export function drawFigure(ctx, cam, j, pose = {}, {hl = []} = {}){
+const SKIN = '#e3b28a', SHIRT = '#1f5fbf', SHIRT2 = '#174a96', SHORTS = '#1a1f2a', SHOE = '#f5f5f5', HL = '#2ecc71', HL2 = '#ff8a1f';
+// j: Gelenke aus body(), pose: für den Ball, hl: hervorgehobene Glieder grün (z. B. ['lThigh', 'lShank'] = Sprungbein),
+// hl2: orange (z. B. Wurfarm).
+export function drawFigure(ctx, cam, j, pose = {}, {hl = [], hl2 = []} = {}){
   const {proj, F} = cam, items = [];
   const sh = proj([j.pelvis[0], j.pelvis[1], 0]);
   if(sh.z > 0.2){ ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(sh.x, sh.y, F*0.32/sh.z, F*0.1/sh.z, 0, 0, 7); ctx.fill(); }
   const limb = (a, b, r, col, key) => items.push({z:(proj(a).z + proj(b).z)/2, draw(){
     const p = proj(a), q = proj(b); ctx.lineCap = 'round';
-    if(hl.includes(key)){ ctx.strokeStyle = HL; ctx.lineWidth = F*(r + 0.03)*2/p.z; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke(); }
+    if(hl.includes(key) || hl2.includes(key)){ ctx.strokeStyle = hl.includes(key) ? HL : HL2; ctx.lineWidth = F*(r + 0.03)*2/p.z; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke(); }
     ctx.strokeStyle = col; ctx.lineWidth = F*r*2/p.z; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke();
   }});
   for(const s of ['l', 'r']){

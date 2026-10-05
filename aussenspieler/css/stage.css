@@ -115,3 +115,49 @@
 .chip{font-size:1.1rem}
 #setup .wide.primaryBtn{min-height:52px;font-size:1.1rem}
 #card .autohit{margin:8px 0 0;font-weight:600;color:var(--muted)}
+
+/* Startseite als Ablauf: 1 Übung → 2 Seite & Hand → 3 Ablauf → 4 Kamera (startView.js) */
+#empty{justify-content:flex-start;padding:18px 16px 0;gap:12px;background:var(--bg)}
+#empty.over{z-index:22}   /* „Ändern“ aus der Einrichtung: über dem Kamerabild */
+#empty h1{font-size:2.2rem}
+#empty h1 span{font-size:1.05rem}
+#flow{display:flex;flex-direction:column;gap:12px;flex:1 0 auto}
+.flow-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.flow-steps button{min-height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px 2px;
+  background:var(--panel);border:1px solid var(--line);border-radius:10px;font-size:.82rem;font-weight:600;color:var(--muted);line-height:1.1}
+.flow-steps button b{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--panel2);color:var(--text);font-family:var(--head)}
+.flow-steps button.on{border-color:var(--orange);color:var(--text)}
+.flow-steps button.on b{background:var(--orange);color:#1a1000}
+.flow-steps button.done b{background:var(--ok);color:#06210f}
+.flow-body h2{font-family:var(--head);font-size:1.6rem;margin:4px 0 8px}
+.flow-body .muted b{font-weight:700}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opts.two{flex-direction:row}
+.opts.two .opt{flex:1;align-items:center;text-align:center}
+.opt{display:flex;flex-direction:column;gap:3px;text-align:left;min-height:52px;padding:10px 12px;background:var(--panel);border:1.5px solid var(--line);border-radius:12px;color:var(--text)}
+.opt b{font-family:var(--head);font-size:1.2rem;font-weight:600}
+.opt small{color:var(--muted);line-height:1.35;font-size:.88rem}
+.opt.on{border-color:var(--orange);background:rgba(255,138,31,.12)}
+.opt.on b::before{content:"✓ ";color:var(--orange)}
+.opt .mini{width:100%;max-width:120px;color:var(--muted);margin:0 auto 2px}
+.who{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:12px 0 4px}
+.who div{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center}
+.who span{display:block;color:var(--muted);font-size:.8rem;font-weight:600}
+.who b{font-family:var(--head);font-size:1.15rem}
+.leg{color:var(--ok)!important} .arm{color:var(--orange)!important}
+.phases{margin:6px 0 10px;padding-left:1.5em;line-height:1.45;display:flex;flex-direction:column;gap:5px}
+.phases li::marker{color:var(--orange);font-weight:800}
+.bigGuide{width:100%;justify-content:center;min-height:52px;font-size:1.05rem}
+.flow-body .checks{gap:10px;margin-top:4px}
+.flow-body .checks .ic{background:var(--panel2);border-radius:50%;width:24px;height:24px;display:grid;place-items:center;font-size:.85rem}
+.flow-nav{position:sticky;bottom:0;display:flex;gap:8px;padding:10px 0 14px;margin-top:auto;background:linear-gradient(transparent,var(--bg) 30%)}
+.flow-nav button{flex:1;min-height:52px;border-radius:12px;background:var(--panel2);border:1px solid var(--line);font-weight:700;font-size:1.05rem}
+.flow-nav .primaryBtn{flex:2}
+.flow-links{display:flex;flex-direction:column;gap:6px;margin:0 0 8px}
+/* Einrichtung: gewählte Übung, Seite, Hand */
+.flowsum{background:var(--panel2);border-radius:10px;padding:8px 10px;margin-bottom:8px}
+.flowsum p{margin:2px 0}
+.flowsum .btnrow{margin-top:6px}
+.flowsum .guideBtn{margin:0}
+#empty{z-index:6}   /* über HUD-Chips (Zustand, fps), solange die Startseite offen ist */
+.flow-nav .primaryBtn{background:var(--orange);color:#1a1000;border-color:transparent}

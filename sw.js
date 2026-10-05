@@ -1,5 +1,5 @@
 // Service Worker für Handballcoach: Offline-Betrieb in der Halle
-const CACHE_NAME = "handballcoach-v5";   // bei neuen/geänderten Dateien hochzählen, sonst mischt der Cache alte und neue Module
+const CACHE_NAME = "handballcoach-v6";   // bei neuen/geänderten Dateien hochzählen, sonst mischt der Cache alte und neue Module
 
 const PRECACHE_URLS = [
   "./",
@@ -53,6 +53,7 @@ const PRECACHE_URLS = [
   "./aussenspieler/js/summary.js",
   "./aussenspieler/js/report.js",
   "./aussenspieler/js/ui/setupView.js",
+  "./aussenspieler/js/ui/startView.js",
   "./aussenspieler/js/ui/guideView.js",
   "./aussenspieler/js/ui/controls.js",
   "./aussenspieler/js/ui/settingsView.js",

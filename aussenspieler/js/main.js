@@ -16,6 +16,7 @@ import { initSheets } from './ui/sheets.js';
 import { initControls } from './ui/controls.js';
 import { initSettings } from './ui/settingsView.js';
 import { initSetup } from './ui/setupView.js';
+import { initFlow } from './ui/startView.js';
 import { DEMO, RR, TXT } from './config.js';
 
 initLineMarking();
@@ -23,6 +24,7 @@ initSheets();
 initControls();
 initSettings();
 initSetup();
+initFlow();
 initClipView();
 initMicMeter();
 onShout(heardCall);
@@ -30,10 +32,6 @@ onShout(heardCall);
 if(RR){
   document.title = TXT.app; document.body.classList.add('rr');
   $('#empty h1').innerHTML = `${TXT.app}<span>${TXT.sub}</span>`;
-  const li = document.querySelectorAll('#empty li');
-  li[0].innerHTML = '<b>Handy aufs Stativ</b>, seitlich vor dem Rückraum, erhöht. 9-m-Linie, Anlauf und Absprung im Bild.';
-  li[2].innerHTML = '<b>9-m-Linie einrichten:</b> eine Person läuft sie auf Ansage ab, oder du tippst Punkte auf die Striche.';
-  li[3].innerHTML = '<b>Training starten:</b> Ziel hören, drei Schritte, vor der 9-m-Linie abspringen, im höchsten Punkt werfen.';
   $('#demoLink').href = '?rr=1&demo=1';
   $('#sPos').closest('label').hidden = true;
   $('#sClearLine').textContent = '9-m-Linie löschen';

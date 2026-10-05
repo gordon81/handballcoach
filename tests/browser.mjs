@@ -267,12 +267,26 @@ test('Aufgabe „Absprung an der Linie“ (Handy-Größe): Zähler, Ansagen, End
   const {page, errors} = await demoPage({pause:1}, {width:390, height:800});
   await page.evaluate(() => { M.tasks.TASKS.line.reps = 4; M.tasks.TASKS.line.goal = 2; });
 
-  await t.test('Aufgabe in der Einrichtung wählen', async () => {
-    await page.click('#btnStart');
-    await page.click('#setup [data-a=task][data-v=line]');
+  await t.test('Startseite: Übung, Seite und Hand, Ablauf, Kamera; dann Einrichtung', async () => {
+    assert.deepEqual(await page.$$eval('#empty .flow-steps button', b => b.map(x => x.textContent.slice(1))), ['Übung', 'Seite & Hand', 'Ablauf', 'Kamera']);
+    await page.click('#empty [data-a=task][data-v=line]');
     assert.equal(await page.evaluate(() => M.store.settings.task), 'line');
-    assert.match(await page.textContent('#setup'), /4 Würfe, geschafft bei 2/);
-    assert.ok(await minHeight(page, '#setup .tasks button') >= 44, 'Aufgaben-Buttons groß genug');
+    assert.ok(await minHeight(page, '#empty .tasks button') >= 44, 'Aufgaben-Buttons groß genug');
+    await page.click('#empty [data-a=next]');
+    await page.click('#empty [data-a=hand][data-v=L]');
+    assert.match(await page.textContent('#empty .who'), /rechts – links – rechts[\s\S]*Sprungbein\s*rechts[\s\S]*Wurfarm\s*links/);
+    await page.click('#empty [data-a=hand][data-v=R]');
+    assert.equal(await page.evaluate(() => M.store.settings.hand), 'R');
+    await page.click('#empty [data-a=next]');
+    assert.match(await page.textContent('#empty .phases'), /Schritt 3: links = Stemmschritt/);
+    assert.equal(await page.isVisible('#empty [data-a=guide]'), false, 'im Demo keine Anleitungsvideos');
+    await page.click('#empty [data-a=next]');
+    assert.ok(await minHeight(page, '#empty .flow-nav button, #empty .flow-steps button') >= 44, 'Schritt-Buttons groß genug');
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, 'Startseite ohne Querscrollen');
+    await page.click('#empty [data-a=go]');
+    await page.waitForSelector('#setup [data-a=change]');
+    assert.equal(await page.isVisible('#empty'), false, 'Startseite zu');
+    assert.match(await page.textContent('#setup'), /Absprung an der Linie · Linksaußen · Rechtshand[\s\S]*4 Würfe, geschafft bei 2/);
     assert.equal(await page.isVisible('#setup [data-a=guide]'), false, 'im Demo keine Anleitungsvideos');
     await walkLine(page);
     assert.match(await page.textContent('#setup [data-a=start]'), /Aufgabe starten/);
@@ -413,8 +427,12 @@ test('Aufgaben „Wurfhöhe auf Ansage“ und „Serie unter Ermüdung“ (je 4 
 
   await t.test('Ermüdung: kurze Pause, Warnung „flacher“, Ergebnis in Prozent', async () => {
     await page.click('#btnLine');
-    await page.click('#setup [data-a=task][data-v=tired]');
-    assert.match(await page.textContent('#setup'), /2 s Pause/);
+    await page.click('#setup [data-a=change]');   // Übung wird auf der Startseite gewählt
+    await page.click('#empty [data-a=task][data-v=tired]');
+    assert.match(await page.textContent('#empty'), /2 s Pause/);
+    await page.click('#empty [data-a=step][data-v="3"]');
+    await page.click('#empty [data-a=go]');
+    assert.match(await page.textContent('#setup'), /Serie unter Ermüdung/);
     await page.click('#setup [data-a=start]');
     const n0 = await page.evaluate(() => M.store.log.length);
     assert.equal(await page.evaluate(async () => (await import('/aussenspieler/js/taskRun.js')).taskPause()), 2, 'eigene Pause 2 s statt Einstellung');

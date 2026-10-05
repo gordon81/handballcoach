@@ -32,8 +32,10 @@ export function initSettings(){
     $('#sCallDelay').value = settings.callMin===settings.callMax && [1,2,3,4,5].includes(+settings.callMin) ? String(settings.callMin) : 'r'; $('#sSens').value = settings.sens; $('#sClips').value = settings.clips ? '1' : '0'; showCallRows();
     $('#sDist').value = settings.throwDist; $('#sRing').value = String(settings.ringSize); $('#sCam').value = settings.camera; $('#sModel').value = settings.model; renderTargets(); openSheet('#setSheet');
   };
-  $('#sHand').onchange = e => { settings.hand = e.target.value; store(); };
-  $('#sPos').onchange = e => { settings.pos = e.target.value; store(); };
+  // Wurfhand und Seite gelten auch für Startseite, Einrichtung und Anleitungsvideo.
+  const whoChanged = () => document.dispatchEvent(new CustomEvent('awc:who'));
+  $('#sHand').onchange = e => { settings.hand = e.target.value; store(); whoChanged(); };
+  $('#sPos').onchange = e => { settings.pos = e.target.value; store(); whoChanged(); };
   $('#sMode').onchange = e => { settings.mode = e.target.value; store(); showCallRows(); syncMic(); refreshSetup(); };
   // Feste 1–5 s oder zufällig 1–5 s (gespeichert als Bereich callMin…callMax).
   $('#sCallDelay').onchange = e => { const v = e.target.value; [settings.callMin, settings.callMax] = v==='r' ? [1, 5] : [+v, +v]; store(); };

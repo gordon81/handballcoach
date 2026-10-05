@@ -122,7 +122,7 @@ test('Pässe: Gegenbein vorn, Wurfauslage 90/90, Fangen mit beiden Händen', {ti
   await page.close();
 });
 
-test('Außenwurf und Rückraum: Drei-Schritt-Anlauf, Absprung links, Kniehub ~90°, Ellbogen ~90°, Aufgaben-Lehrbilder', {timeout:90000}, async () => {
+test('Außenwurf und Rückraum: Drei-Schritt-Anlauf, Absprung links, Kniehub ~90°, Ellbogen ~90°, Aufgaben-Lehrbilder', {timeout:180000}, async () => {
   const {page, errors} = await open('aussenspieler/', '/aussenspieler/js/ui/guideView.js');
   // Über die Einrichtung (Kamera ist hier ein Testbild).
   await page.click('#btnStart');
@@ -133,11 +133,26 @@ test('Außenwurf und Rückraum: Drei-Schritt-Anlauf, Absprung links, Kniehub ~90
   assert.deepEqual(await page.$$eval('#guideSheet [data-view]', b => b.map(x => x.textContent)), ['Seite', 'Kamera 1', 'Kamera 2']);
   assert.equal(await page.evaluate(() => document.querySelector('#guideCam').hidden), true, 'alte Kamera-Taste ersetzt');
   // Kontakte des linken Fußes: zuletzt beim Absprung (Stemmschritt), danach in der Luft.
-  let s = await at(page, 0.5); assert.match(s.phase, /Anlauf/);
-  s = await at(page, 1.2); assert.match(s.phase, /Absprung: Stemmschritt links/); assert.ok(s.lToe[2] < 0.02, 'links am Boden');
+  let s = await at(page, 0.5); assert.match(s.phase, /Schritt 1: links/);
+  assert.ok(s.pelvis[0] > 3, `Linksaußen steht links vom Tor aus Sicht des Angreifers (x ${s.pelvis[0].toFixed(1)} > 0)`);
+  s = await at(page, 1.2); assert.match(s.phase, /Schritt 3: links = Stemmschritt/); assert.ok(s.lToe[2] < 0.02, 'links am Boden');
   s = await at(page, 1.55);
   near(s.rKnee, 90, 20, 'Kniehub'); near(s.rElbow, 90, 20, 'Ellbogen'); assert.ok(Math.min(s.lToe[2], s.rToe[2]) > 0.2, 'in der Luft');
   assert.ok(s.rHip[2] > 1.3, 'hoch gesprungen');
+  // Ablauf als Liste: 9 Schritte, Antippen springt dorthin und hält an.
+  assert.equal(await page.$$eval('#guideSteps button', b => b.length), 9);
+  await page.click('#guideSteps [data-step="4"]');
+  assert.match((await page.evaluate(() => G.guideState())).phase, /Absprung vom linken Bein, rechtes Knie hoch/);
+  assert.match(await page.textContent('#guideSteps button.on'), /Absprung/);
+  assert.match(await page.textContent('#guideSub'), /Linksaußen, Rechtshand: Sprungbein links, Wurfarm rechts/);
+  // Seite und Hand im Video umschalten (gilt auch fürs Training).
+  await page.click('#guideWho [data-who=pos][data-v=RA]');
+  s = await at(page, 0.5); assert.ok(s.pelvis[0] < -3, 'Rechtsaußen auf der anderen Seite');
+  await page.click('#guideWho [data-who=hand][data-v=L]');
+  s = await at(page, 1.2); assert.match(s.phase, /Schritt 3: rechts = Stemmschritt/); assert.ok(s.rToe[2] < 0.02, 'rechts am Boden');
+  assert.match(await page.textContent('#guideCues'), /Stemmschritt mit dem rechten Bein/);
+  assert.deepEqual(await page.evaluate(async () => { const st = (await import('/aussenspieler/js/store.js')).settings; return [st.pos, st.hand]; }), ['RA', 'L']);
+  await page.click('#guideWho [data-who=pos][data-v=LA]'); await page.click('#guideWho [data-who=hand][data-v=R]');
   await page.click('#guideSheet [data-close]');
   await page.evaluate(() => G.openGuide('height'));
   assert.match(await page.textContent('#guideTitle'), /Wurfhöhe auf Ansage/);

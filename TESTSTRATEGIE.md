@@ -45,12 +45,13 @@ Die simulierte Person (`demo/sim.js`) ist das Bindeglied: sie macht **absichtlic
 | Sechs Prüfungen des Außenwurfs | – | ✓ (4 Wurfarten, 2 Kamerapositionen) | offen |
 | Wurf-Videos | – | ✓ | offen |
 | Startmenü | – | ✓ | – |
+| Außenwurf-Startseite: Übung → Seite & Hand → Ablauf → Kamera, Ändern aus der Einrichtung | – | ✓ | offen (Bedienung am Handy) |
 | Treffererkennung und Tempo (Kamera 2) | ✓ | ✓ | offen |
 | Aufgaben (Baustein, A1–A6, Kreisläufer) | ✓ | ✓ | offen |
 | 7-m-Trainer (Zeit, Linie, Standbein, Serie) | ✓ | ✓ | offen |
 | 7-m-Trainer: Pause mit Zähler und Zuruf (bereit an der Linie, anhalten unterwegs, Ablauf) | ✓ | ✓ (`tests/pause7m.mjs`) | offen |
 | Bedienung aus der Ferne: Start mit Vorlauf, Presenter-Tasten (alle Trainings) | ✓ | ✓ (`tests/remote.mjs`, Sprung und 7 m) | offen (echter Klicker) |
-| Anleitungsvideos: Gelenkwinkel der Lehrbilder (Knie 90°, Kniehub, Ellbogen/Oberarm 90°, Standfuß fest, kein Fuß unter dem Boden), im Demo ausgeblendet | ✓ (`figure.js`) | ✓ (`tests/guide.mjs`) | – (Lehrbild, keine Messung) |
+| Anleitungsvideos: Gelenkwinkel der Lehrbilder (Knie 90°, Kniehub, Ellbogen/Oberarm 90°, Standfuß fest, kein Fuß unter dem Boden), Außenwurf: Linksaußen/Rechtsaußen auf der richtigen Seite, Wurfhand umschaltbar, Ablauf-Liste, im Demo ausgeblendet | ✓ (`figure.js`) | ✓ (`tests/guide.mjs`) | – (Lehrbild, keine Messung) |
 | Rückraum-Modus (9-m-Linie, Schritte, Abwurf im höchsten Punkt) | ✓ (Schritte) | ✓ | offen |
 | Pässe gegen die Wand (Zählen, Arm, Gegenbein) | ✓ | ✓ | offen |
 | Sprungkraft (Zählen, Höhe, Bein, Bodenkontakt) | ✓ | ✓ | offen |

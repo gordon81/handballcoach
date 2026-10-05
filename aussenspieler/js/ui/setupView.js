@@ -16,8 +16,9 @@ import { CAM_POS, TXT } from '../config.js';
 import { wizard, onWizardChange, startWizard, stopWizard, finishWalkNow } from '../lineWizard.js';
 import { checkCamera } from '../camCheck.js';
 import { rings, startRingMarking, ringSkip, ringUndo, cancelRings, clearRings, onRingsChange } from '../rings.js';
-import { beginTask, endTaskRun, taskBlock, onTaskButtons, chosenTask, hideEnd } from '../taskRun.js';
-import { openGuide } from './guideView.js';
+import { beginTask, endTaskRun, onTaskButtons, chosenTask, hideEnd, taskName, taskInfo } from '../taskRun.js';
+import { openGuide, who } from './guideView.js';
+import { openFlow } from './startView.js';
 
 let visible = false, cam = null;   // cam = letztes Ergebnis des Kamera-Checks
 let micHits = 0;                   // erkannte Rufe beim Mikro-Test
@@ -71,6 +72,7 @@ export function stopTraining(){ setState('off', curT()); app.target=null; hudTar
 
 export function showSetup(check = true){
   const open = visible; visible = true; hideEnd();
+  if(app.source!=='none') $('#empty').hidden = true;   // Startseite (Ändern) schließen
   collapsed = false;
   if(check && !open && !app.marking && !wizard.phase) runCamCheck();
   render();
@@ -91,6 +93,12 @@ function micBlock(){
   return `<div class="mictest"><p><b>Zuruf-Mikrofon:</b> ${esc(msg)}</p><span class="meter"><i class="lvl"></i><i class="thr"></i></span>
     <div class="btnrow">${btn('micTest', micUse.test ? 'Test beenden' : 'Mikro testen')}</div>
     <p class="muted">Empfindlichkeit:</p><div class="btnrow sens">${['low','mid','high'].map(k => btn('sens', SENS_LABEL[k], settings.sens===k ? 'on' : '', true, k)).join('')}</div></div>`;
+}
+// Was gewählt ist (Übung, Seite, Wurfhand) – geändert wird auf der Startseite, nicht hier.
+function flowBlock(){
+  const w = who(), tk = settings.task || 'free';
+  return `<div class="flowsum"><p><b>${esc(taskName(tk))}</b> · ${esc(w.wing)} · ${esc(w.hand)}</p><p class="muted">${esc(taskInfo(tk))}</p>
+    <div class="btnrow">${btn('change', 'Ändern')}<button class="guideBtn" data-a="guide">▶ Video</button></div></div>`;
 }
 // Kameraposition: 1 Grundlinie (Standard) oder 2 im Feld mit Tor im Bild. Jede Position hat ihre eigene Linie.
 function camPosBlock(){
@@ -160,9 +168,9 @@ function render(){
     const camLine = !line || !cam ? '' : cam.status==='ok' ? `<li>${icon(true)}<span>Kamera steht wie bei der Einrichtung</span></li>`
       : cam.status==='adjusted' ? `<li><span class="ic mid">!</span><span>Kamera hat sich bewegt: Linie neu ausgerichtet. Passt die rote Linie?</span></li>`
       : cam.status==='moved' ? `<li><span class="ic bad">✗</span><span>Kamera hat sich bewegt: Linie bitte neu ablaufen oder antippen.</span></li>` : '';
-    h = `${head('Einrichtung', `${colBtn}<button class="x" data-a="close" aria-label="Schließen">✕</button>`)}
+    h = `${head('Kamera einrichten', `${colBtn}<button class="x" data-a="close" aria-label="Schließen">✕</button>`)}
       <div class="setup-body">
-        ${isCam ? taskBlock(btn) : ''}
+        ${isCam ? flowBlock() : ''}
         ${isCam ? camPosBlock() : ''}
         <ul class="checks">
           <li>${icon(app.source!=='none')}<span>${isCam ? 'Kamera läuft' : app.source==='file' ? 'Video geladen' : 'Kamera aus'}. ${settings.camPos==='court' ? 'Tor, Linie und Absprungzone' : 'Ganzer Körper und Linie'} im Bild?</span></li>
@@ -203,7 +211,7 @@ const ACTIONS = {
   micTest(){ micUse.test = !micUse.test; micHits = 0; syncMic().then(render); render(); },
   guide(){ openGuide(chosenTask()?.id || 'free'); },
   sens(el){ settings.sens = el.dataset.v; store(); render(); },
-  task(el){ settings.task = el.dataset.v; store(); render(); },
+  change(){ if(app.source==='cam' && app.state!=='off') stopTraining(); hideSetup(); openFlow(0); },
   // Andere Position: deren Linie laden und prüfen, ob die Kamera so steht wie bei deren Einrichtung.
   camPos(el){
     if(el.dataset.v===settings.camPos) return;
@@ -302,6 +310,7 @@ function clampPosition(box = $('#setup')){
 export function initSetup(){
   onLineChange(render); onWizardChange(render); onRingsChange(render);
   onTaskButtons(startTraining, stopTraining);
+  document.addEventListener('awc:who', render);
   const box = $('#setup');
   box.addEventListener('click', e => {
     if(moved){ moved = false; return; }

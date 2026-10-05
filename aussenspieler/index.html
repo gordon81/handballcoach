@@ -22,15 +22,9 @@
   <canvas id="overlay"></canvas>
   <div id="empty">
     <h1>Außenwurf-Coach<span>Zielansage, Technik-Check und Feedback per Sprache</span></h1>
-    <div class="rings" aria-hidden="true"><i class="o"></i><i class="o"></i><i class="b"></i><i class="b"></i></div>
-    <ol>
-      <li><b>Handy aufs Stativ</b>, seitlich-schräg auf die Absprungzone, ganzer Körper im Bild.</li>
-      <li><b>Start</b> drücken: Kamera und KI-Modell werden geladen, die Einrichtung öffnet sich.</li>
-      <li><b>6-m-Linie einrichten:</b> eine Person läuft sie auf Ansage ab, oder du tippst Punkte entlang des Bogens an.</li>
-      <li><b>Training starten:</b> das Handy ruft das Ziel, Anlauf, Wurf, Feedback.</li>
-    </ol>
-    <a class="demoLink" id="demoLink" href="?demo=1">Demo ohne Kamera: gezeichnete Halle mit simulierter Person</a>
-    <a class="demoLink" href="../">← Alle Trainings</a>
+    <div id="flow"></div>
+    <p class="flow-links"><a class="demoLink" id="demoLink" href="?demo=1">Demo ohne Kamera: gezeichnete Halle mit simulierter Person</a>
+    <a class="demoLink" href="../">← Alle Trainings</a></p>
   </div>
   <div id="hud"><span class="chip" id="state" data-s="off">Gestoppt</span><span class="chip" id="micChip" hidden>Mikro <span class="meter"><i class="lvl"></i><i class="thr"></i></span></span><span class="chip" id="fps">– fps</span></div>
   <div id="taskBox" hidden></div>
@@ -103,8 +97,12 @@
       <button class="on" data-hvariant="high">Wurf über Kopf (Hoch)</button>
       <button data-hvariant="hip">Wurf aus der Hüfte (Hüfte)</button>
     </div>
+    <div id="guideWho" class="guide-who" aria-label="Seite und Wurfhand"></div>
     <div class="guide-info">
       <h3 id="guideSub">Technik-Merkmale (DHB / KNSU)</h3>
+      <p class="muted">Bewegungsablauf: antippen springt zur Stelle.</p>
+      <ol id="guideSteps" class="guide-steps"></ol>
+      <h3>Worauf achten</h3>
       <ul id="guideCues" class="guide-cues"></ul>
     </div>
   </div>

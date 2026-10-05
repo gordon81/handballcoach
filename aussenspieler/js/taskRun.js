@@ -99,15 +99,14 @@ function showEnd(task, rec, res){
 }
 export function hideEnd(){ $('#taskEnd').hidden = true; }
 
-// Auswahl in der Einrichtung: große Buttons, darunter kurz, was zu tun ist, und der Bestwert.
-export function taskBlock(btn){
-  const keys = ['free', ...Object.keys(TASKS)], cur = chosenTask();
-  const name = k => k==='free' ? 'Freies Training' : TASKS[k].name;
-  const b = cur && best(settings.taskHist, cur.id), last = cur && settings.taskHist?.[cur.id]?.at(-1);
-  const info = !cur ? 'Würfe mit Zielansage und Technik-Feedback, ohne feste Anzahl.'
-    : `${cur.short} ${cur.reps} Würfe` + (cur.goal != null ? `, geschafft bei ${cur.goal}.` : '.') + (b ? ` Bestwert ${label(b)}, zuletzt ${label(last)}.` : '');
-  return `<p class="muted">Übung:</p><div class="btnrow tasks">${keys.map(k => btn('task', name(k), (settings.task || 'free')===k ? 'on' : '', true, k)).join('')}</div>
-    <div class="task-info-row"><p class="muted">${esc(info)}</p><button class="guideBtn" data-a="guide">▶ Video: Korrekte Ausführung</button></div>`;
+// Auswahl auf der Startseite (Schritt „Übung“, startView.js): Liste der Übungen, Name und was zu tun ist mit Bestwert.
+export const taskKeys = () => ['free', ...Object.keys(TASKS)];
+export const taskName = k => k==='free' ? 'Freies Training' : TASKS[k]?.name || k;
+export function taskInfo(k = settings.task || 'free'){
+  const cur = TASKS[k];
+  if(!cur) return 'Würfe mit Zielansage und Technik-Feedback, ohne feste Anzahl.';
+  const b = best(settings.taskHist, cur.id), last = settings.taskHist?.[cur.id]?.at(-1);
+  return `${cur.short} ${cur.reps} Würfe` + (cur.goal != null ? `, geschafft bei ${cur.goal}.` : '.') + (b ? ` Bestwert ${label(b)}, zuletzt ${label(last)}.` : '');
 }
 
 // Abschnitt für Bericht und Log: Serien dieses Trainings.

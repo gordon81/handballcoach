@@ -3,7 +3,9 @@
 // Video speichern. Ganz getrennt vom Demo-Modus: eigener Zeichenstand, und im Demo (?demo=1) gibt es keine Anleitungsvideos.
 //
 // cfg: {id, title(v), sub(v), cues(v), variants:[{id, label}], views:[{id, label, cam(v, R, j)}], isRightHand(),
-//       motion(v, R) → {dur, frame(t) → {pose, phase, marks, hl, ball}}, overlay(ctx, cam, v, R, st, j, viewId)}
+//       motion(v, R) → {dur, phases?:[[t, Text], …], frame(t) → {pose, phase, marks, hl, hl2, ball}},
+//       overlay(ctx, cam, v, R, st, j, viewId) unter der Figur, hud(…) darüber}
+// phases + Element #guideSteps: Ablauf als antippbare Liste (springt zur Stelle und hält an), der laufende Schritt ist markiert.
 // ball: 3D-Punkt eines fliegenden Balls oder null. Elemente im Fenster #guideSheet wie bisher.
 import { esc } from '../utils.js';
 import { body } from './figure.js';
@@ -64,6 +66,20 @@ export function createGuide(cfg){
       }
     }
     const pb = $('#guidePlay'); if(pb) pb.textContent = playing ? '❚❚' : '▶︎';
+    const steps = $('#guideSteps');
+    if(steps){
+      steps.hidden = !motion?.phases;
+      steps.innerHTML = (motion?.phases || []).map(([t, label], i) => `<li><button data-step="${i}"><b>${i + 1}</b><span>${esc(label)}</span></button></li>`).join('');
+      stepNow = -1;
+    }
+  }
+  // Laufenden Schritt in der Liste markieren.
+  let stepNow = -1;
+  function markStep(t){
+    const list = motion?.phases, steps = $('#guideSteps'); if(!list || !steps) return;
+    let i = 0; while(i < list.length - 1 && list[i+1][0] <= t) i++;
+    if(i === stepNow) return; stepNow = i;
+    steps.querySelectorAll('button').forEach((b, n) => b.classList.toggle('on', n === i));
   }
 
   function start(){
@@ -87,10 +103,12 @@ export function createGuide(cfg){
     const cam = camera(ctx, w.cam(variant, r, j));   // j: Kamera darf mitschwenken (Anlauf)
     drawCourt(ctx, cam);
     cfg.overlay?.(ctx, cam, variant, r, st, j, w.id);
-    drawFigure(ctx, cam, j, st.pose, {hl:st.hl || []});
+    drawFigure(ctx, cam, j, st.pose, {hl:st.hl || [], hl2:st.hl2 || []});
     if(st.ball) drawBall(ctx, cam, st.ball);
     drawMarks(ctx, cam, j, st.marks || []);
+    cfg.hud?.(ctx, cam, variant, r, st, j, w.id);
     const ph = $('#guidePhase'); if(ph && st.phase) ph.textContent = st.phase;
+    markStep(tSim % motion.dur);
   }
   // Für Tests: aktueller Stand (Phase, Gelenkwinkel im Bild).
   function state(){ const st = motion?.frame(tSim % motion.dur); return st && {t:tSim % motion.dur, phase:st.phase, pose:st.pose, j:body(st.pose), variant, view}; }
@@ -103,6 +121,7 @@ export function createGuide(cfg){
     else if(b.dataset.speed){ speed = +b.dataset.speed; sheet.querySelectorAll('[data-speed]').forEach(x => x.classList.toggle('on', x === b)); }
     else if(b.dataset.variant){ variant = b.dataset.variant; tSim = 0; motion = cfg.motion(variant, R()); renderInfo(); }
     else if(b.dataset.view){ view = b.dataset.view; renderInfo(); }
+    else if(b.dataset.step != null && motion?.phases){ seek(motion.phases[+b.dataset.step][0] + 0.02); }
     else if(b.id === 'guideSave') save(b);
   }
 
