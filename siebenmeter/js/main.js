@@ -7,7 +7,8 @@ import { esc, pick, fmtDate } from '../../shared/js/utils.js';
 import { $, video, canvas, ctx, now, hint, big, startSource as startStage, bodyPoints, drawSkeleton, initSheets } from '../../shared/js/stage.js';
 import { createGuide } from '../../shared/js/demoGuide.js';
 import { REST, REST_MODES, restLen, restClock, nearLine, callAction, restIntro } from './rest.js';
-import { onCall, quietCall, startCall, stopCall, renderRest, callMic } from './restCtl.js';
+import { onCall, quietCall, startCall, stopCall, renderRest, callMic, press } from './restCtl.js';
+import { initRemote } from '../../shared/js/remote.js';
 import { proj, add, sub, hand } from '../../shared/js/demo/scene.js';
 
 const CAM7 = { pos: [4.2, 10.6, 1.7], look: [-0.3, 7.0, 0.5] };
@@ -544,3 +545,6 @@ initSheets();
 $('#emptyGuideBtn')?.addEventListener('click', () => openGuide());
 if(DEMO){ const a = $('#demoLink'); a.textContent = 'Demo-Modus aktiv: „Start“ drücken. Hier zurück zur echten Kamera.'; a.href = './'; }
 document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible' && app.state!=='off') keepAwake(); });
+// Presenter-Tasten und Start mit Vorlauf (shared/js/remote.js): Weiter = bereit, Zurück = Pause/weiter in der Pause.
+initRemote({canStart:() => app.source!=='none' && app.state==='off' && !!settings.line, running:() => app.state!=='off', start, stop,
+  next:() => press('ready'), prev:() => press('hold'), hint:t => hint(t, 2500)});

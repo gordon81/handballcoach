@@ -65,6 +65,7 @@ Drehung, Sprunghöhe und Oberkörper sind Schätzungen aus einer einzigen Kamera
 - **Zustand:** *Gestoppt*, *Bereit*, *Anlauf* (Ziel angesagt), *Sprung*, *Pause* (nach dem Wurf); im Zuruf-Modus *Warte auf Zuruf* bzw. *Zuruf gehört*; bei Videodateien *Analyse aktiv*.
 - **Mikro** mit kleinem Pegel-Balken: nur sichtbar, solange das Mikrofon an ist. Rot = das Mikrofon liefert keinen Ton.
 - **fps:** wie viele Bilder pro Sekunde die KI auswertet. Ziel: 25 oder mehr.
+- **⏱ aus / ⏱ 10 s:** Start mit Vorlauf an/aus (in allen Trainings gleich, siehe 5.7).
 - **Zielname** groß in der Mitte, solange ein Ziel angesagt ist.
 - Im Bild: die **rote 6-m-Linie** (eingerichtet) und das **Skelett** des Spielers.
 
@@ -233,6 +234,21 @@ Alle Einstellungen werden sofort gespeichert und gelten auch beim nächsten Öff
 Würfe werden zu „Trainings“ zusammengefasst. Ein neues Training beginnt automatisch, wenn seit dem letzten Wurf mehr als **3 Stunden** vergangen sind, oder per Button „Neues Training starten“ im Log. Das alte Training bleibt gespeichert.
 
 ---
+
+### 5.7 Bedienung aus der Ferne: Start mit Vorlauf und Presenter-Klicker
+Für alle Trainings, wenn das Handy zu hoch hängt oder steht, um es während des Trainings zu bedienen.
+
+**Start mit Vorlauf:** Oben im Bild den Chip **⏱** antippen, bis er **⏱ 10 s** zeigt. Dann zählt die App nach „Start“ (oder „Training starten“ in der Einrichtung) **10 Sekunden** groß herunter, sagt *„Start in 10 Sekunden.“* und piept bei 3, 2, 1. Zeit genug, das Handy aufzuhängen und sich hinzustellen. Antippen der großen Zahl bricht ab. Die Einstellung gilt für alle Trainings.
+
+**Bluetooth-Presenter** (Funk-Klicker für Präsentationen, ca. 10–20 €, mit dem Handy per Bluetooth verbunden) oder eine Bluetooth-Tastatur:
+
+| Taste am Klicker | gestoppt | im Training |
+|---|---|---|
+| **Weiter** (Bild ab, → oder ↓) | Start (mit Vorlauf, wenn ⏱ an) | 7-m-Pause: **bereit** (Pfiff 1 s später) · Außenwurf-Coach „Nach Zuruf“ und Gegenstoß: zählt wie ein **Zuruf** |
+| **Zurück** (Bild auf, ← oder ↑) | – | 7-m-Pause: **anhalten / weiter** |
+| **Bildschirm schwarz** (B oder Punkt) oder **Esc** | Vorlauf abbrechen | **Stopp** |
+
+Die Kamera und die Einrichtung (Linie) müssen vorher einmal am Handy gestartet sein. Selfie-Fernauslöser funktionieren meist nicht: sie senden „Lauter“, und das bekommt eine Webseite nicht.
 
 ## 6. Videodatei analysieren
 

@@ -582,3 +582,12 @@ test('Pause: zwei Rufe kurz hintereinander verschmelzen im Nachhall (deshalb ent
   const hits = run([...noise(2), ...shout(250), ...noise(0.35), ...shout(250), ...noise(2)]);
   assert.ok(hits.length < 2 || hits[1] - hits[0] > REST.lead, `Treffer ${hits}: zweiter Ruf käme erst nach dem Pfiff`);
 });
+
+/* ---------- Bedienung aus der Ferne (shared/js/remote.js) ---------- */
+import { keyAction } from '../shared/js/remote.js';
+test('Presenter-Tasten: Bild ab = weiter, Bild auf = zurück, Bildschirm schwarz / Esc = Stopp', () => {
+  for(const k of ['PageDown', 'ArrowRight', 'ArrowDown']) assert.equal(keyAction(k), 'next', k);
+  for(const k of ['PageUp', 'ArrowLeft', 'ArrowUp']) assert.equal(keyAction(k), 'prev', k);
+  for(const k of ['Escape', 'b', '.']) assert.equal(keyAction(k), 'stop', k);
+  for(const k of [' ', 'Enter', 'AudioVolumeUp', 'a']) assert.equal(keyAction(k), null, `${k}: Leertaste/Enter klicken schon Buttons`);
+});

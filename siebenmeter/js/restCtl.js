@@ -16,6 +16,8 @@ const fire = (kind) => handler(kind, performance.now()/1000);
 export function quietCall(sec){ quietUntil = Math.max(quietUntil, performance.now() + sec*1000); }
 // Demo und Tests: Zuruf auslösen, ohne Mikrofon.
 export function shoutNow(){ fire('shout'); }
+// Presenter-Tasten (shared/js/remote.js): wie Antippen von „Bereit“ bzw. „Anhalten/Weiter“.
+export const press = kind => fire(kind);
 export const callMic = {on:false};
 
 // → Fehlertext, wenn das Mikrofon nicht geht (dann bleibt nur Antippen).

@@ -2,6 +2,7 @@ import { app, settings, log, store, ensureSession, sessionEntries, DEMO } from '
 import { judgeMove, judgeOut, baseFrame, nextCmd, summary, TH_D, fmtS, leadSide, SIDE } from './rules.js';
 import { say, beep, unlockBeep } from '../../shared/js/speech.js';
 import { keepAwake, releaseWake } from '../../shared/js/wakelock.js';
+import { initRemote } from '../../shared/js/remote.js';
 import { esc, fmtDate } from '../../shared/js/utils.js';
 import { $, video, canvas, ctx, now, hint, big, startSource as startStage, bodyPoints, drawSkeleton, initSheets } from '../../shared/js/stage.js';
 import { createGuide } from '../../shared/js/demoGuide.js';
@@ -313,3 +314,6 @@ initSheets();
 $('#emptyGuideBtn')?.addEventListener('click', () => openGuide());
 if(DEMO){ const a = $('#demoLink'); a.textContent = 'Demo-Modus aktiv: „Start“ drücken. Hier zurück zur echten Kamera.'; a.href = './'; }
 document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible' && app.state!=='off') keepAwake(); });
+// Presenter-Tasten und Start mit Vorlauf (shared/js/remote.js).
+initRemote({canStart:() => app.source!=='none' && app.state==='off', running:() => app.state!=='off', start,
+  stop:() => $('#btnStart').click(), hint:t => hint(t, 2500)});   // Stopp wie der Button (räumt die Anzeige mit auf)

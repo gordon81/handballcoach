@@ -151,7 +151,7 @@ Heute bewertet die App jeden Wurf, stellt aber keine **Aufgabe** mit Ziel. Für 
 | **C3 Wurf ohne Sprung** ✅ (`findThrow` im 7-m-Trainer) (Abwurf an Handgelenk-Geschwindigkeit erkennen) | B1, B4, B7 | ●●○ | **M** |
 | **C4 Gerade Linien** (7 m, 9 m gestrichelt) für Einrichtung und Übertritt ✅ (7 m: antippen; 9 m: ablaufen/einrasten wie 6 m) | B1, B2 | ●●● | **S** |
 | **C5 Reaktionszeit** ✅ (`judgeMove` in `abwehr/`) (Ansage-Zeitpunkt → erste deutliche Hüftbewegung, Sprachausgabe-Verzögerung abziehen) | A2, B3, B5 | ●●○ | **S** |
-| **C6 Bedienung aus der Ferne** (Handy hängt zu hoch, siehe unten) | alle Trainings | ●●● Stufe 1, ●●○ Stufe 2 | **S** / **M–L** |
+| **C6 Bedienung aus der Ferne** (Handy hängt zu hoch, siehe unten; Stufe 1 ✅) | alle Trainings | ●●● Stufe 1, ●●○ Stufe 2 | **S** / **M–L** |
 
 ### C6 · Bedienung, wenn das Handy zu hoch hängt (geplant, 2026-10-05)
 **Problem:** Das Kamera-Handy steht oder hängt erhöht (Stativ 1,5–2 m, am Tor, an der Wand) und ist zum Tippen nicht erreichbar: Start, Stopp, Einstellungen, „Treffer/Daneben“, Bereit/Pause.
@@ -184,8 +184,8 @@ Heute bewertet die App jeden Wurf, stellt aber keine **Aufgabe** mit Ziel. Für 
 9. [x] **C2 Ballaufprall per Mikro** ✅, dann **B4 Pässe gegen die Wand** ✅. **M**
 10. [x] **A4 Winkel vergrößern** ✅, **A6 Gegenstoß auf Zeit** ✅, **B3 Kreisläufer** ✅, **B6 Sprungkraft** ✅. **S–M**
 11. [x] **C1 Treffererkennung** ✅ und **B7 Wurfgeschwindigkeit** ✅ (im Demo; Grenzen erst nach dem Hallentest einstellen). **L / M**
-12. [ ] **C6 Bedienung aus der Ferne**, Stufe 1: Start mit Vorlauf und Bluetooth-Presenter-Tasten in allen Trainings. **S** (nach Antwort auf die offenen Fragen)
-13. [ ] **C6** Stufe 2: Fernbedienung per WebRTC mit QR-Pairing (Befehle und Zustand, Live-Bild später). **M–L**
+12. [x] **C6 Bedienung aus der Ferne**, Stufe 1 ✅: Start mit Vorlauf und Bluetooth-Presenter-Tasten in allen Trainings (`shared/js/remote.js`, 2026-10-05). **S**
+13. [ ] **C6** Stufe 2: Fernbedienung per WebRTC mit QR-Pairing (Befehle und Zustand, Live-Bild später). **M–L** Annahmen, solange Gordon nichts anderes sagt: zweites Handy; Start/Stopp, Bereit/Pause, Treffer/Daneben; Hotspot; kein öffentlicher Vermittlungsdienst (Verbindung direkt per QR-Code, d. h. Angebot und Antwort als QR in beide Richtungen).
 
 Jede neue Übung bekommt einen Demo-Ablauf in `demo/sim.js` und einen Test in `tests/browser.mjs`, wie der Außenwurf-Coach heute.
 

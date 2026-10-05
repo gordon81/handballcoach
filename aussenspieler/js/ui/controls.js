@@ -12,6 +12,8 @@ import { shareText, shareFile } from '../report.js';
 import { renderLog } from './logView.js';
 import { openSheet } from './sheets.js';
 import { setRunning, openSetup, toggleSetup, startTraining, stopTraining } from './setupView.js';
+import { shoutNow } from '../shout.js';
+import { initRemote } from '../../../shared/js/remote.js';
 
 export function initControls(){
   /* Button-Leiste */
@@ -48,5 +50,8 @@ export function initControls(){
   $('#logClear').onclick = () => { if(confirm('Alle Würfe aller Trainings löschen?')){ clearLog(); clearClips(); renderLog(); } };
   $('#repShare').onclick = shareText;
   $('#repFile').onclick = shareFile;
+  // Presenter-Tasten und Start mit Vorlauf (shared/js/remote.js). Weiter im Training zählt wie ein Zuruf.
+  initRemote({canStart:() => app.source==='cam' && app.state==='off', running:() => app.state!=='off', start:startTraining, stop:stopTraining,
+    next:shoutNow, hint:t => showHint(t, 2500)});
   $('#newSession').onclick = () => { if(confirm('Neues Training starten? Das aktuelle bleibt im Speicher.')){ ensureSession(true); renderLog(); showHint('Neues Training gestartet', 1800); } };
 }
