@@ -20,7 +20,7 @@ Handy-Web-App für das Außenwurf-Training (Links-/Rechtsaußen) ohne Torwart:
 
 ## Dateien
 - `index.html` (Wurzel) – Startmenü: eine Karte (ein `<a>` in `#trainings`) pro Trainingsart, Stil inline. Neue Trainingsart = eigener Ordner mit eigener `index.html` + eine Zeile im Menü.
-- `manifest.webmanifest` & `sw.js` – PWA-Unterstützung für Offline-Betrieb in Sporthallen (Installierbarkeit als Handy-App, Caching aller Kern-Ressourcen via Service Worker).
+- `manifest.webmanifest` & `sw.js` – PWA-Unterstützung für Offline-Betrieb in Sporthallen (Installierbarkeit als Handy-App, Caching aller Kern-Ressourcen via Service Worker). **Bei jeder Änderung an Dateien `CACHE_NAME` in `sw.js` hochzählen und neue Dateien in `PRECACHE_URLS` eintragen**, sonst liefert der Cache beim ersten Laden alte Module zu neuen.
 - `shared/` – gemeinsamer Code aller Trainings (Pfade aus einem Training: `../shared/…` bzw. in JS `../../shared/js/…`):
   - `icon.svg` – Vektor-App-Icon und Favicon (Handball-Design) für alle Seiten und PWA-Manifest.
   - `css/base.css` – Farben, Schriften, Grundstil.
