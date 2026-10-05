@@ -383,6 +383,15 @@ Der 7-m-Trainer prüft den Strafwurf nach den Regeln (IHF-Regeln, DHB-Fassung): 
 5. Die Karte zeigt Zeit, Linie und Standfuß, darunter **Treffer / Daneben** für das angesagte Ziel.
 6. Nach der Serie: *„Serie geschafft: 8 von 10.“* bzw. *„6 von 10. Ziel war 8.“* und eine große Karte mit **Nochmal** und **Fertig**.
 
+### Pause zwischen den Würfen (alleine trainieren)
+In der Einrichtung unter **„Pause zwischen den Würfen“**: **Kurz** (wie bisher, nach wenigen Sekunden geht es weiter), **30 s**, **45 s** oder **Nur Zuruf** (ohne Zähler). Mit 30/45 s/Nur Zuruf hört das Mikrofon in der Pause zu, und groß im Bild steht der Zähler mit dem nächsten Ziel.
+- **Ball holen.** Die App sagt nach dem Wurf gleich das nächste Ziel an.
+- **An der Linie rufen** („Ready!“): genau **1 Sekunde später kommt der Pfiff**. Ruhig hinter der Linie stehen, sonst wartet der Pfiff, bis du stehst.
+- **Unterwegs rufen** („Pause!“): der Zähler **hält an** (gelb). Noch ein Ruf unterwegs: er **läuft weiter**. Ein Ruf an der Linie: bereit, Pfiff nach 1 s.
+- **Ohne Ruf** pfeift es, wenn der Zähler abgelaufen ist (10 s vorher: *„Noch zehn Sekunden.“*), sobald du hinter der Linie stehst.
+- Die App erkennt **keine Wörter**, nur einen lauten Ruf. Was er bedeutet, entscheidet, **wo du stehst** (an der Linie oder nicht). Zwei Rufe schnell hintereinander gehen in der Halle nicht, der Nachhall verbindet sie.
+- **Ersatz zum Rufen:** die großen Flächen **Bereit** und **Anhalten/Weiter** antippen (oder wenn das Mikrofon nicht geht).
+
 Ein Fehler ist es nur, wenn **beide** Füße vor dem Abwurf den Boden verlassen (z. B. ein Hüpfer). Abrollen, Ferse heben und Rutschen des Standfußes sind erlaubt; ein angehobener Fuß über der Linie zählt nicht als Berührung. Die Grenzen sind bisher nur im Demo geprüft (siehe Hallentest).
 
 ### Log und Bericht
