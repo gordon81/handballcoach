@@ -1,5 +1,5 @@
 // Service Worker für Handballcoach: Offline-Betrieb in der Halle
-const CACHE_NAME = "handballcoach-v4";   // bei neuen/geänderten Dateien hochzählen, sonst mischt der Cache alte und neue Module
+const CACHE_NAME = "handballcoach-v5";   // bei neuen/geänderten Dateien hochzählen, sonst mischt der Cache alte und neue Module
 
 const PRECACHE_URLS = [
   "./",
@@ -15,6 +15,9 @@ const PRECACHE_URLS = [
   "./shared/js/errorlog.js",
   "./shared/js/mic.js",
   "./shared/js/remote.js",
+  "./shared/js/guide/figure.js",
+  "./shared/js/guide/view.js",
+  "./shared/js/guide/player.js",
   "./shared/js/bounceDetect.js",
   "./shared/js/hitDetect.js",
   "./shared/js/pose.js",
@@ -50,6 +53,7 @@ const PRECACHE_URLS = [
   "./aussenspieler/js/summary.js",
   "./aussenspieler/js/report.js",
   "./aussenspieler/js/ui/setupView.js",
+  "./aussenspieler/js/ui/guideView.js",
   "./aussenspieler/js/ui/controls.js",
   "./aussenspieler/js/ui/settingsView.js",
   "./aussenspieler/js/ui/card.js",
@@ -61,6 +65,7 @@ const PRECACHE_URLS = [
   "./siebenmeter/js/rules.js",
   "./siebenmeter/js/state.js",
   "./siebenmeter/js/main.js",
+  "./siebenmeter/js/guide.js",
   "./siebenmeter/js/demo.js",
   "./siebenmeter/js/rest.js",
   "./siebenmeter/js/restCtl.js",
@@ -68,16 +73,19 @@ const PRECACHE_URLS = [
   "./abwehr/js/rules.js",
   "./abwehr/js/state.js",
   "./abwehr/js/main.js",
+  "./abwehr/js/guide.js",
   "./abwehr/js/demo.js",
   "./passen/index.html",
   "./passen/js/rules.js",
   "./passen/js/state.js",
   "./passen/js/main.js",
+  "./passen/js/guide.js",
   "./passen/js/demo.js",
   "./sprung/index.html",
   "./sprung/js/rules.js",
   "./sprung/js/state.js",
   "./sprung/js/main.js",
+  "./sprung/js/guide.js",
   "./sprung/js/demo.js"
 ];
 

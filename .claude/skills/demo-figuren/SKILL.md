@@ -10,6 +10,11 @@ eine **simulierte Person** die Körperpunkte im MediaPipe-Format. Die App läuft
 Bewertung, Ansagen, Log). Die Person macht **absichtlich bekannte** Dinge (sauber, Übertritt, falsches Bein …); die
 Browser-Tests prüfen, dass die App genau das erkennt. Grundsätze dazu: `TESTSTRATEGIE.md`, Technik: `brain.md`.
 
+**Nicht verwechseln: Anleitungsvideos** („▶ Video: Korrekte Ausführung“) sind kein Teil der Demo. Sie haben eine eigene
+Lehrbild-Figur in `shared/js/guide/` (Pose über Gelenkwinkel, Winkelmarken, eigene Kamera und Halle) und sind im Demo
+ausgeblendet. Gelenkwinkel dort genau setzen (z. B. Knie 90° = Oberschenkel `[-40, 0]`, Unterschenkel `[-50, 180]`) und mit
+`tests/guide.mjs` messen; nichts aus `shared/js/demo/` dafür benutzen.
+
 ## Aufbau (wo was steht)
 
 | Datei | Aufgabe |

@@ -250,6 +250,13 @@ Für alle Trainings, wenn das Handy zu hoch hängt oder steht, um es während de
 
 Die Kamera und die Einrichtung (Linie) müssen vorher einmal am Handy gestartet sein. Selfie-Fernauslöser funktionieren meist nicht: sie senden „Lauter“, und das bekommt eine Webseite nicht.
 
+### 5.8 Anleitungsvideos „▶ Video: Korrekte Ausführung“
+In jeder Einrichtung und auf dem Startbildschirm jedes Trainings. Eine Lehrbild-Figur zeigt die Technik nach DHB/KNSU (siehe `QUELLEN.md`) mit den wichtigen **Gelenkwinkeln als gelbe Bögen und Zahlen** (gelb = im Sollbereich), z. B. Knie etwa 90° beim Ausholen, Kniehub mit Oberschenkel waagerecht, Ellbogen und Oberarm etwa 90° in der Wurfauslage. Das Bein, das am Boden bleiben oder abspringen muss, ist **grün umrandet**.
+- **Ansichten:** „Seite“ zeigt die Winkel unverzerrt; dazu je nach Training „Vorne“, „Hinten“, „Schräg vorn“ oder die Kamerapositionen des Außenwurf-Coachs.
+- **Tempo** 1×, 0,5×, 0,25×, **Pause** zum Anhalten in einer Phase; **Speichern** legt einen Durchlauf als Video ab.
+- **Varianten:** Strecksprung / Einbein, Schlagwurf / mit Wurffinte, Grundstellung / Heraustreten, Schlagpass / schnelle Passfolge, im Außenwurf je Aufgabe (z. B. Wurf hoch / aus der Hüfte).
+- Wurfhand (Außenwurf, 7 m, Pässe), Position links/rechts außen und bei der Abwehr die Wurfhand des Gegners werden übernommen; die Figur ist dann gespiegelt.
+
 ## 6. Videodatei analysieren
 
 Mit **Video** eine Videodatei vom Handy wählen (z. B. ein Bundesliga-Clip oder eine eigene Aufnahme). Die Analyse startet sofort, es gibt keine Ansagen, die Linie ist optional (über „Setup“; ohne Linie wird der Übertritt nicht geprüft).
@@ -336,6 +343,8 @@ Die Demo folgt der gewählten Kameraposition 1 oder 2. Zusatz-Leiste oben:
 - **Kamera bewegen:** verschiebt/schwenkt die Kamera (3 Stellungen). Danach „Setup“ oder „Start“: die App merkt es und richtet die Linie neu aus.
 - **Zuruf:** löst von Hand einen Ruf aus (ohne Mikrofon).
 - **Beenden:** zurück zur echten App.
+
+Im Demo gibt es **keine Anleitungsvideos** (die Knöpfe „▶ Video: Korrekte Ausführung“ sind ausgeblendet); sie gehören zur echten App (siehe 5.8).
 
 Die Demo hat ihren eigenen Speicher (siehe Abschnitt 8); das echte Training bleibt unberührt. Einrichtung, Linienerkennung, Kamera-Check, Analyse, Videos und Bericht laufen genauso wie mit Kamera.
 

@@ -1,24 +1,12 @@
-// Anleitungsvideo: interaktiver 3D-Player für die korrekte Ausführung der Übungen im Außenwurf-Coach.
-// Zeigt die simulierte Person in Lehrbild-Technik (DHB / KNSU nach QUELLEN.md).
-import { $ } from '../dom.js';
-import { esc } from '../../../shared/js/utils.js';
+// Anleitungsvideo im Außenwurf-Coach (und Rückraum, ?rr=1): Sprungwurf als Lehrbild nach DHB/KNSU (QUELLEN.md), mit der
+// Lehrbild-Figur aus shared/js/guide/ (getrennt vom Demo-Modus). Drei-Schritt-Anlauf links–rechts–links (Rechtshand),
+// Stemmschritt, Schwungbein-Knie hoch (Knie ~90°), Wurfauslage mit Ellbogen auf Schulterhöhe, Abwurf im höchsten Punkt,
+// Landung auf dem Sprungbein. Je Aufgabe eigene Hinweise und Hilfslinien; Linkshänder und rechter Flügel gespiegelt.
 import { RR } from '../config.js';
 import { settings } from '../store.js';
-import { TASKS } from '../tasks.js';
-import {
-  W, H, linePt, setView, proj, drawFloor, joints as rig, drawPerson, ball, hand as handOf, add, sub
-} from '../../../shared/js/demo/scene.js';
-
-const CAMS = {
-  base: { pos: [-3.4, -2.4, 2.2], look: [-6.6, 3.0, 0.2] },
-  court: { pos: [2.5, 10.5, 2.0], look: [-3.5, 2.3, 0.5] },
-  rr: { pos: [-3.6, 3.2, 2.2], look: [-7.6, 9.6, 0.3] }
-};
-
-const RINGS = {
-  'Orange kurz': [-1.15, 0, 1.65],
-  'Orange lang': [1.15, 0, 1.65]
-};
+import { createGuide } from '../../../shared/js/guide/player.js';
+import { V, body } from '../../../shared/js/guide/figure.js';
+import { sideCam, drawGuideLine } from '../../../shared/js/guide/view.js';
 
 export const GUIDE_DATA = {
   rr: {
@@ -130,348 +118,186 @@ export const GUIDE_DATA = {
   }
 };
 
-let activeTaskId = 'free';
-let heightVariant = 'high';   // 'high' | 'hip' für Wurfhöhe
-let activeCam = 'base';
-let speed = 1.0;
-let playing = true;
-let animId = null;
-let tSim = 0;
-let lastNow = 0;
-let mediaRecorder = null;
-let recordedChunks = [];
 
-const rightHand = () => settings.hand !== 'L';
-
-export function openGuide(taskId = 'free'){
-  if(RR && (taskId === 'free' || !GUIDE_DATA[taskId])) taskId = 'rr';
-  activeTaskId = GUIDE_DATA[taskId] ? taskId : (RR ? 'rr' : 'free');
-  activeCam = RR ? 'rr' : (settings.camPos === 'court' ? 'court' : 'base');
-  playing = true;
-  tSim = 0;
-  lastNow = performance.now();
-
-  const sheet = $('#guideSheet');
-  if(!sheet) return;
-  sheet.hidden = false;
-
-  renderInfo();
-  updateCam();
-  initEvents();
-  startLoop();
+/* ---------- Bewegung: Sprungwurf mit Drei-Schritt-Anlauf (Beine über Fußpunkte, IK) ---------- */
+const D = Math.PI/180;
+const ss = k => k <= 0 ? 0 : k >= 1 ? 1 : k*k*(3 - 2*k);
+// Stückweise linear durch [[t, v], …].
+const pw = (pts, t) => { if(t <= pts[0][0]) return pts[0][1]; for(let i = 1; i < pts.length; i++) if(t <= pts[i][0]){ const [t0, a] = pts[i-1], [t1, b] = pts[i]; return a + (b - a)*(t - t0)/(t1 - t0); } return pts.at(-1)[1]; };
+// Arm- und Rumpfhaltung weich zwischen Stützpunkten [[t, pose], …] (smoothstep je Abschnitt).
+function blend(keys, t){
+  let i = 0; while(i < keys.length - 1 && keys[i+1][0] <= t) i++;
+  const [t0, A] = keys[i], [t1, B] = keys[i+1] || keys[i];
+  const k = t1 > t0 ? ss((t - t0)/(t1 - t0)) : 0, o = {};
+  for(const key in A) o[key] = Array.isArray(A[key]) ? A[key].map((v, n) => v + (B[key][n] - v)*k) : typeof A[key] === 'number' ? A[key] + (B[key] - A[key])*k : (k < 0.5 ? A[key] : B[key]);
+  return o;
 }
 
-export function closeGuide(){
-  const sheet = $('#guideSheet');
-  if(sheet) sheet.hidden = true;
-  stopLoop();
-  if(mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop();
-  // Kamera auf Einstellung des Trainings zurücksetzen
-  const cam = RR ? 'rr' : (CAMS[settings.camPos] ? settings.camPos : 'base');
-  setView(CAMS[cam].pos, CAMS[cam].look);
+// Ort auf dem Spielfeld: Absprungpunkt K vor der Linie, Laufrichtung u (zum Tor), w = links davon.
+function place(m, wing){
+  const rr = RR || !!m.isRR, rad = (rr ? 9 : 6) + m.dr, sg = wing === 'RA' ? 1 : -1;
+  const th = (rr ? 125 : 150)*D, K = [sg*(1.5 + rad*Math.cos(Math.PI - th)), rad*Math.sin(th)];
+  const back = (rr ? 13.7 : 8.6) - rad, Sx = [sg*(1.5 + (rad + back)*Math.cos(Math.PI - th)), (rad + back)*Math.sin(th)];
+  const u = [(K[0] - Sx[0])/back, (K[1] - Sx[1])/back], w = [-u[1], u[0]];
+  return {K, u, w, a:Math.atan2(u[1], u[0])/D, rr, line:rad - m.dr};
 }
 
-function renderInfo(){
-  const data = GUIDE_DATA[activeTaskId] || (RR ? GUIDE_DATA.rr : GUIDE_DATA.free);
-  const title = $('#guideTitle'), sub = $('#guideSub'), cues = $('#guideCues');
-  if(title) title.textContent = data.title;
-  if(sub) sub.textContent = data.sub;
-  if(cues){
-    cues.innerHTML = data.cues.map(c => `<li>${esc(c)}</li>`).join('');
-  }
-  const hSwitch = $('#guideHeightSwitch');
-  if(hSwitch){
-    hSwitch.hidden = !data.motion.hasHeightVariant;
-    hSwitch.querySelectorAll('button').forEach(b => {
-      b.classList.toggle('on', b.dataset.hvariant === heightVariant);
-    });
-  }
-  const camBtn = $('#guideCam');
-  if(camBtn){
-    camBtn.hidden = RR;
-    camBtn.textContent = activeCam === 'court' ? 'Kamera 1 (Grundlinie)' : 'Kamera 2 (Feld)';
-  }
-}
-
-function updateCam(){
-  const c = CAMS[activeCam] || (RR ? CAMS.rr : CAMS.base);
-  setView(c.pos, c.look);
-}
-
-function startLoop(){
-  if(animId) cancelAnimationFrame(animId);
-  lastNow = performance.now();
-  const loop = now => {
-    animId = requestAnimationFrame(loop);
-    const dt = Math.min(0.08, (now - lastNow) / 1000 || 0);
-    lastNow = now;
-    if(playing){
-      tSim += dt * speed;
-      stepMotion();
-    }
-    renderFrame();
+// Pose zur Zeit t. R: Rechtshand (Absprung links, Wurfarm rechts). m: GUIDE_DATA[...].motion, hip: Wurf aus der Hüfte.
+function jumpThrow(m, R, wing, hip){
+  const P = place(m, wing), {K, u, w} = P, T = R ? 'l' : 'r', S = R ? 'r' : 'l', sg = R ? 1 : -1;
+  const h = m.h || 0.54, at = (s, lat, z = 0) => [K[0] + u[0]*s + w[0]*lat, K[1] + u[1]*s + w[1]*lat, z];
+  const latOf = side => side === 'l' ? 0.12 : -0.12;
+  // Anlauf: Kontakte [t, s] je Fuß (Rechtshand: links –2,4, rechts –1,2, links 0 = Stemmschritt/Absprung).
+  const pre = m.startDist ? 3 : 0, dt = m.startDist ? 0.28 : 0;   // Gegenstoß: drei schnelle Schritte mehr
+  const cT = [[0, -3.3 - pre*1.3], ...(pre ? [[0.2 + dt, -3.6 - 1.3], [0.2 + 3*dt, -3.6 + 0.0]] : []), [0.45 + pre*dt, -2.4], [1.12 + pre*dt, 0]];
+  const cS = [[0, -3.5 - pre*1.3], ...(pre ? [[0.2 + 2*dt, -3.6 - 0.65]] : []), [0.8 + pre*dt, -1.2]];
+  const o = pre*dt, tTake = 1.32 + o, tPeak = tTake + 0.33, tRel = tPeak + 0.1, tLand = tPeak + 0.33, dur = 3.4 + o;
+  const fly = m.fly === 'in' ? 0.75 : 0, inSign = Math.sign((0 - K[0])*w[0] + (3 - K[1])*w[1]) || 1;
+  const sP = t => t < tTake ? pw([[0, -3.4 - pre*1.3], [0.3, -3.3 - pre*1.3], ...(pre ? [[0.3 + 2*dt, -4.0]] : []), [0.45 + o, -2.55], [0.8 + o, -1.35], [1.12 + o, -0.25], [tTake, 0.1]], t)
+    : pw([[tTake, 0.1], [tLand, 1.15], [tLand + 0.35, 1.35]], t);
+  const latP = t => fly*inSign*ss((t - tTake)/(tLand - tTake));
+  const zP = t => t < 0.3 ? 0.97 : t < 1.12 + o ? 0.93 + 0.02*Math.sin((t - 0.3)*18) : t < tTake ? pw([[1.12 + o, 0.93], [1.2 + o, 0.9], [tTake, 0.98]], t)
+    : t < tLand ? 0.98 + h*(1 - ((t - tPeak)/(tPeak - tTake))**2) : pw([[tLand, 0.98], [tLand + 0.15, 0.82], [tLand + 0.6, 0.97]], t);
+  // Fuß aus Kontaktliste: steht nach dem Aufsetzen 0,15 s, schwingt dann im Bogen zum nächsten Kontakt.
+  const foot = (list, side, t) => {
+    let i = 0; while(i < list.length - 1 && list[i+1][0] <= t) i++;
+    const [t0, s0] = list[i], nx = list[i+1];
+    if(!nx || t < t0 + 0.15) return [s0, 0];
+    const k = (t - t0 - 0.15)/(nx[0] - t0 - 0.15);
+    return [s0 + (nx[1] - s0)*ss(k), 0.22*Math.sin(Math.PI*Math.min(1, k))];
   };
-  animId = requestAnimationFrame(loop);
+  const throwArm = hip
+    ? {cock:{[S+'Upper']:[-48, 100], [S+'Fore']:[5, 140]}, rel:{[S+'Upper']:[-38, 25], [S+'Fore']:[-5, -5]}, tilt:-14*sg}
+    : {cock:{[S+'Upper']:[-8, 100], [S+'Fore']:[78, 160]}, rel:{[S+'Upper']:[25, 10], [S+'Fore']:[35, -5]}, tilt:0};
+  const carry = {lUpper:[-50, 15], lFore:[20, -55], rUpper:[-50, 15], rFore:[20, -55], twist:0, lean:6, tilt:0};
+  const cock = {...carry, ...throwArm.cock, [T+'Upper']:[8, 20], [T+'Fore']:[5, 0], twist:-42*sg, lean:-2, tilt:throwArm.tilt};
+  const arms = [[0, carry], [0.75 + o, carry], [1.15 + o, cock], [tRel - 0.12, {...cock, twist:-45*sg}],
+    [tRel, {...cock, ...throwArm.rel, twist:30*sg, lean:16, tilt:throwArm.tilt*0.5}],
+    [tRel + 0.25, {...cock, [S+'Upper']:[-40, -25], [S+'Fore']:[-55, -35], [T+'Upper']:[-45, 120], [T+'Fore']:[-35, 150], twist:40*sg, lean:22, tilt:0}],
+    [tLand + 0.3, {...carry, lUpper:[-40, 25], lFore:[-15, 0], rUpper:[-40, 25], rFore:[-15, 0], lean:15}], [dur - 0.3, carry], [dur, carry]];
+  const phase = t => t < 1.12 + o ? `1. Anlauf: Drei-Schritt-Rhythmus ${R ? 'links–rechts–links' : 'rechts–links–rechts'}${pre ? ' aus vollem Tempo' : ''}`
+    : t < tTake ? `2. Absprung: Stemmschritt ${R ? 'links' : 'rechts'}, Schwungbein-Knie hoch`
+    : t < tRel - 0.12 ? (hip ? '3. Wurfauslage: Hand unter Schulterhöhe (aus der Hüfte)' : m.fly === 'in' ? '3. Flug nach innen, Wurfauslage' : '3. Wurfauslage im höchsten Punkt')
+    : t < tRel + 0.15 ? '4. Abwurf im höchsten Punkt' : t < tLand + 0.5 ? `5. Landung auf dem Sprungbein (${R ? 'links' : 'rechts'})` : '✓ Lehrbild abgeschlossen';
+  const frame = t => {
+    const s = sP(t), lat = latP(t), z = zP(t), pel = at(s, lat);
+    let tf, sf;
+    if(t < tTake){ const [a1, z1] = foot(cT, T, t); tf = [...at(a1, latOf(T)).slice(0, 2), z1]; }
+    else if(t < tLand){ const k = ss((t - tTake)/(tLand - tTake)); tf = [...at(s - 0.3 + 0.35*k, lat + latOf(T)).slice(0, 2), Math.max(0, z - 1.02)]; }
+    else tf = [...at(1.2, latOf(T) + fly*inSign).slice(0, 2), 0];
+    if(t < tTake - 0.2){ const [a1, z1] = foot(cS, S, t); sf = [...at(a1, latOf(S)).slice(0, 2), z1]; }
+    else if(t < tLand + 0.12){
+      const k = ss((t - tTake + 0.2)/0.35), back = ss((t - tRel)/(tLand + 0.12 - tRel));
+      const knee = [...at(s + 0.28*(1 - back) + 0.15*back, lat + latOf(S)).slice(0, 2), Math.max(0, (z - 0.74)*(1 - back))];
+      const start = [...at(-1.2, latOf(S)).slice(0, 2), 0];
+      sf = t < tTake + 0.15 ? V.mix(start, knee, k) : knee;
+    } else sf = [...at(1.35, latOf(S) + fly*inSign).slice(0, 2), 0];
+    const takeoffFoot = t > 1.12 + o && t < tTake ? 25*ss((t - 1.12 - o)/(tTake - 1.12 - o)) : t >= tTake && t < tLand - 0.08 ? 50 : 0;
+    const pose = {x:pel[0], y:pel[1], a:P.a, pz:z, [T+'At']:tf, [S+'At']:sf, [T+'Foot']:takeoffFoot, [S+'Foot']:t >= tTake && t < tLand ? 30 : 0,
+      ...blend(arms, t), ball:t < tRel ? (t < 1.15 + o ? 'both' : S) : null};
+    const marks = t >= 1.12 + o && t < tTake ? [{j:T+'Knee', label:'Sprungbein'}]
+      : t >= tTake + 0.1 && t < tRel - 0.05 ? [{j:S+'Knee', label:'Kniehub', target:90, tol:20}, ...(hip ? [] : [{j:S+'Elbow', label:'Ellbogen', target:90, tol:20}])] : [];
+    return {pose, phase:phase(t), marks, hl:[T+'Thigh', T+'Shank', T+'Foot']};
+  };
+  return {dur, frame, P, tRel, S};
 }
 
-function stopLoop(){
-  if(animId){
-    cancelAnimationFrame(animId);
-    animId = null;
-  }
+// Kreisläufer: Rücken zum Tor an der 6-m-Linie, auf Ansage 180° über den linken (Rechtshand) Fuß eindrehen, Sprungwurf.
+function pivot(m, R, wing){
+  const X0 = wing === 'RA' ? 0.6 : -0.6, Y0 = 6.55, T = R ? 'l' : 'r', S = R ? 'r' : 'l', sg = R ? 1 : -1;
+  const aBack = 90, aGoal = -90, dur = 3.4;
+  const low = {lUpper:[-40, 30], lFore:[0, 10], rUpper:[-40, 30], rFore:[0, 10], twist:0, lean:25, tilt:0};
+  const cock = {...low, [S+'Upper']:[-8, 100], [S+'Fore']:[78, 160], [T+'Upper']:[8, 20], [T+'Fore']:[5, 0], twist:-40*sg, lean:0};
+  const rel = {...cock, [S+'Upper']:[25, 10], [S+'Fore']:[35, -5], twist:30*sg, lean:16};
+  const arms = [[0, low], [1.1, low], [1.45, cock], [1.85, cock], [2.0, rel], [2.3, {...rel, [S+'Upper']:[-40, -25], [S+'Fore']:[-55, -35], lean:25}], [3.0, low], [3.4, low]];
+  const frame = t => {
+    const turn = ss((t - 0.9)/0.35), a = aBack + (aGoal - aBack)*turn*sg;   // Linkshand dreht andersherum
+    const ar = a*D, fw = [Math.cos(ar), Math.sin(ar)], lt = [-fw[1], fw[0]];
+    const piv = [X0 + 0.12*(R ? -1 : 1), Y0];   // Drehfuß bleibt stehen
+    const tJ = 1.45, tL = 2.15, hh = m.h || 0.46, air = t > tJ && t < tL ? hh*Math.sin(Math.PI*(t - tJ)/(tL - tJ)) : 0;
+    const pz = t < tJ ? (t < 1.35 ? 0.86 : 0.86 + (t - 1.35)*1.2) : t < tL ? 0.98 + air : pw([[tL, 0.98], [tL + 0.15, 0.84], [tL + 0.6, 0.95]], t);
+    const fwd = ss((t - 1.25)/1.2)*0.45;   // Absprung leicht nach vorn, bleibt vor der Linie
+    const pel = [piv[0] - lt[0]*0.12*(R ? 1 : -1) + fw[0]*(0.05 + fwd), piv[1] - lt[1]*0.12*(R ? 1 : -1) + fw[1]*(0.05 + fwd)];
+    const other = [pel[0] - lt[0]*0.12*(R ? 1 : -1)*-1 + fw[0]*(t < 1.0 ? 0 : 0.1), pel[1] - lt[1]*0.12*(R ? 1 : -1)*-1 + fw[1]*(t < 1.0 ? 0 : 0.1)];
+    const lift = t > 0.92 && t < 1.2 ? 0.08*Math.sin(Math.PI*(t - 0.92)/0.28) : 0;
+    const tf = t < tJ ? [...piv, 0] : [pel[0] - fw[0]*0.15 + lt[0]*0.12*sg, pel[1] - fw[1]*0.15 + lt[1]*0.12*sg, Math.max(0, pz - 0.9)];
+    const sfp = t < tJ ? [...other, lift] : [pel[0] + fw[0]*0.25 - lt[0]*0.12*(R ? 1 : -1), pel[1] + fw[1]*0.25 - lt[1]*0.12*(R ? 1 : -1), Math.max(0, pz - (t < tL - 0.15 ? 0.6 : 0.9))];
+    const pose = {x:pel[0], y:pel[1], a, pz, [T+'At']:tf, [S+'At']:sfp, [T+'Foot']:t > tJ - 0.1 && t < tL ? 45 : 0, [S+'Foot']:0, ...blend(arms, t), ball:t < 2.0 ? (t < 1.2 ? 'both' : S) : null};
+    const phase = t < 0.9 ? '1. Ausgangsstellung: Rücken zum Tor, tief' : t < 1.3 ? `2. Ansage: Drehung über den ${R ? 'linken' : 'rechten'} Fuß` : t < 1.9 ? '3. Absprung vor der Linie, Wurfarm oben' : t < 2.15 ? '4. Abwurf' : '5. Landung';
+    return {pose, phase, marks:t < 0.9 ? [{j:'lKnee', label:'Knie'}] : t > 1.6 && t < 1.95 ? [{j:S+'Elbow', label:'Ellbogen', target:90, tol:20}] : [], hl:[T+'Thigh', T+'Shank', T+'Foot']};
+  };
+  return {dur, frame, P:{K:[X0, Y0], u:[0, -1], w:[1, 0], a:-90, rr:false, line:6}, tRel:2.0, S};
 }
 
-// Simulierte Person & Ball für das Lehrbild
-const P = {
-  x: 0, y: 0, a: 0, phi: 0, s: 0,
-  lift: 0, lf: 0, rf: 0, lfx: 0, rfx: 0,
-  raise: 0, swing: 0, twist: 0, lean: 0.08, low: 0, ball: true
-};
-let ballFly = null;
-let currentPhaseName = 'Anlauf';
+const TARGET = {LA:[1.15, 0, 1.65], RA:[-1.15, 0, 1.65]};   // Orange lang: langes Eck vom Flügel
+function motionFor(taskId){
+  return (variant, R) => {
+    const d = GUIDE_DATA[taskId], wing = settings.pos === 'RA' ? 'RA' : 'LA';
+    const mv = d.motion.turn ? pivot(d.motion, R, wing) : jumpThrow(d.motion, R, wing, variant === 'hip');
+    const rel = mv.frame(mv.tRel);
+    return {dur:mv.dur, P:mv.P, frame(t){
+      const st = mv.frame(t), k = (t - mv.tRel)/0.4;
+      if(k >= 0 && k <= 1){
+        const j0 = relHand(rel.pose, mv.S);
+        st.ball = V.add(V.mix(j0, TARGET[wing], k), [0, 0, 1], 0.2*Math.sin(Math.PI*k));
+      }
+      return st;
+    }};
+  };
+}
+const relHand = (pose, S) => body(pose)[S + 'Hand'];
 
-function stepMotion(){
-  const data = (GUIDE_DATA[activeTaskId] || (RR ? GUIDE_DATA.rr : GUIDE_DATA.free)).motion;
-  const R = rightHand();
-  const isHip = data.hasHeightVariant && heightVariant === 'hip';
-  P.low = isHip ? 1 : 0;
-
-  // Gesamtdauer einer Lehrbild-Schleife: 3.4 s
-  const CYCLE = 3.4;
-  const loopT = tSim % CYCLE;
-
-  const isRR = RR || !!data.isRR;
-  const R_line = isRR ? 9 : 6;
-  const thBase = isRR ? 125 : 150;
-  const K = linePt(thBase, R_line + data.dr);   // Absprungpunkt
-  const startDist = data.startDist || (isRR ? 13.7 : 8.6);
-  const S = linePt(thBase, startDist);
-
-  // Phasen:
-  // 0.0 - 1.1s: Anlauf
-  // 1.1 - 1.35s: Stemmschritt / Absprung
-  // 1.35 - 1.85s: Flug & Wurfauslage im Zenit
-  // 1.85 - 2.15s: Peitschenwurf
-  // 2.15 - 2.65s: Landung
-  // 2.65 - 3.4s: Stand / Lehrbild-Freeze
-  if(loopT < 1.1){
-    currentPhaseName = '1. Anlauf (Drei-Schritt)';
-    const u = loopT / 1.1;
-    P.x = S[0] + (K[0] - S[0]) * u;
-    P.y = S[1] + (K[1] - S[1]) * u;
-    P.a = Math.atan2(K[1] - S[1], K[0] - S[0]);
-    P.s = 1;
-    P.phi = u * 4.5 * Math.PI;
-    P.lift = 0; P.lf = 0; P.rf = 0;
-    P.lfx = 0; P.rfx = 0;
-    P.raise = Math.min(1, u * 1.2);
-    P.swing = 0; P.twist = 0.1 * u;
-    P.ball = true;
-    ballFly = null;
-  } else if(loopT < 1.35){
-    currentPhaseName = '2. Absprung (Schwungbein hoch)';
-    const u = (loopT - 1.1) / 0.25;
-    P.x = K[0]; P.y = K[1];
-    P.s = 0;
-    // Sprungbein steht (links bei Rechtshand), Schwungbein (rechts) reißt hoch
-    if(R){ P.lf = 0; P.rf = 0.35 * u; } else { P.rf = 0; P.lf = 0.35 * u; }
-    P.lift = 0.1 * u;
-    P.raise = 1;
-    P.twist = 0.3 * u;
-    P.ball = true;
-  } else if(loopT < 1.85){
-    currentPhaseName = '3. Wurfauslage im Zenit';
-    const u = (loopT - 1.35) / 0.5;   // 0 .. 1 in der Flugphase vor dem Wurf
-    const h = data.h || 0.52;
-    P.lift = 4 * h * (u * 0.7) * (1 - u * 0.7 * 0.5);
-    // Beine in der Luft
-    P.lf = P.lift * 0.8;
-    P.rf = P.lift * 0.8 + 0.25 * Math.sin(Math.PI * u);
-    if(!R) { const tmp = P.lf; P.lf = P.rf; P.rf = tmp; }
-
-    // Flugrichtung: bei 'in' zieht der Flug aktiv nach innen zur Tormitte
-    const flyIn = data.fly === 'in';
-    const fwd = flyIn ? 1.4 : 1.1;
-    const side = flyIn ? -0.7 : 0;
-    P.x = K[0] + Math.cos(P.a) * fwd * u + Math.sin(P.a) * side * u;
-    P.y = K[1] + Math.sin(P.a) * fwd * u - Math.cos(P.a) * side * u;
-
-    // Kreisläufer-Drehung
-    if(data.turn) P.a += Math.PI * u * 0.5;
-
-    P.raise = isHip ? 0.35 : 1.0;
-    P.twist = 0.45;
-    P.swing = 0;
-    P.ball = true;
-  } else if(loopT < 2.15){
-    currentPhaseName = '4. Abwurf im höchsten Punkt';
-    const u = (loopT - 1.85) / 0.3;   // Wurfzug
-    P.lift = data.h || 0.52;
-    P.swing = Math.min(1, u * 1.4);
-    P.twist = 0.45 - 0.7 * u;
-    if(P.swing > 0.6 && P.ball){
-      P.ball = false;
-      const targetPos = RINGS['Orange lang'] || [1.15, 0, 1.65];
-      ballFly = { from: handOf(R), to: targetPos, t: 0 };
-    }
-  } else if(loopT < 2.65){
-    currentPhaseName = '5. Sichere Landung';
-    const u = (loopT - 2.15) / 0.5;
-    P.lift = Math.max(0, (data.h || 0.52) * (1 - u));
-    P.lf = P.lift; P.rf = P.lift;
-    P.swing = Math.max(0, 1 - u * 2);
-    P.raise = Math.max(0, 1 - u * 2);
-    P.twist = 0;
-  } else {
-    currentPhaseName = '✓ Lehrbild abgeschlossen';
-    P.lift = 0; P.lf = 0; P.rf = 0;
-    P.raise = 0; P.swing = 0; P.twist = 0;
-    P.s = 0; P.ball = true;
-  }
-
-  if(ballFly){
-    ballFly.t += 0.03 * speed;
-    const k = Math.min(1, ballFly.t / 0.35);
-    ballFly.cur = add(ballFly.from, sub(ballFly.to, ballFly.from), k);
-  }
+// Ansichten: Kamera 1 (Grundlinie, wie im Training), Kamera 2 (Feld), Seite (echte Winkel am Absprung).
+function views(taskId){
+  const wing = () => settings.pos === 'RA' ? 'RA' : 'LA', mx = p => wing() === 'RA' ? [-p[0], p[1], p[2]] : p;
+  const P = () => { const d = GUIDE_DATA[taskId]; return d.motion.turn ? {K:[wing() === 'RA' ? 0.6 : -0.6, 6.55], a:-90} : place(d.motion, wing()); };
+  // Seite: schwenkt mit (Mitte auf dem Becken), Höhe fest, damit die Sprunghöhe sichtbar bleibt.
+  const side = {id:'side', label:'Seite', cam:(v, R, j) => { const p = P(); return sideCam(j.pelvis[0], j.pelvis[1], p.a, {side:wing() === 'RA' ? 1 : -1, dist:6.2, lookZ:1.35, h:1.3}); }};
+  if(RR || GUIDE_DATA[taskId].motion.isRR) return [side, {id:'cam', label:'Kamera', cam:() => ({pos:mx([-3.6, 3.2, 2.2]), look:mx([-7.6, 9.6, 0.3]), fov:66})}];
+  return [
+    side,
+    {id:'cam1', label:'Kamera 1', cam:() => ({pos:mx([-3.4, -2.4, 2.2]), look:mx([-6.6, 3.0, 0.2]), fov:66})},
+    {id:'cam2', label:'Kamera 2', cam:() => ({pos:mx([2.5, 10.5, 2.0]), look:mx([-3.5, 2.3, 0.5]), fov:66})}
+  ];
 }
 
-function renderFrame(){
-  const canvas = $('#guideCanvas');
-  if(!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const R = rightHand();
-
-  // 1. Hallenboden & Linien
-  drawFloor(ctx);
-
-  // 2. Coaching-Overlays auf dem Boden zeichnen (Absprungzone / Flugkurve)
-  drawCoachingOverlays(ctx);
-
-  // 3. Person aus Gelenken zeichnen
-  const j = rig(P, R);
-  drawPerson(j, P, R, ctx);
-
-  // 4. Fliegender Ball
-  if(ballFly && ballFly.cur){
-    ball(ballFly.cur, ctx);
-  }
-
-  // 5. Phase-Badge im UI aktualisieren
-  const phaseEl = $('#guidePhase');
-  if(phaseEl) phaseEl.textContent = currentPhaseName;
+// Hilfslinien: Absprungpunkt vor der Linie (grün), bei „Winkel vergrößern“ die Flugkurve nach innen.
+function overlay(taskId){
+  return (ctx, cam) => {
+    const d = GUIDE_DATA[taskId], wing = settings.pos === 'RA' ? 'RA' : 'LA';
+    if(d.motion.turn) return;
+    const p = place(d.motion, wing), K = [...p.K, 0.01];
+    const c = cam.proj(K); if(c.z > 0.3){ ctx.strokeStyle = 'rgba(46,204,113,.85)'; ctx.lineWidth = 5; ctx.beginPath(); ctx.ellipse(c.x, c.y, cam.F*0.22/c.z, cam.F*0.09/c.z, 0, 0, 7); ctx.stroke(); }
+    drawGuideLine(ctx, cam, [K[0] - p.w[0]*0.4, K[1] - p.w[1]*0.4, 0.01], [K[0] + p.w[0]*0.4, K[1] + p.w[1]*0.4, 0.01], '#2ecc71', `Absprung ${Math.round(d.motion.dr*100)} cm vor der Linie`, []);
+    if(d.motion.fly === 'in'){
+      const sg = Math.sign((0 - p.K[0])*p.w[0] + (3 - p.K[1])*p.w[1]) || 1;
+      const E = [p.K[0] + p.u[0]*1.15 + p.w[0]*0.75*sg, p.K[1] + p.u[1]*1.15 + p.w[1]*0.75*sg, 0.01];
+      drawGuideLine(ctx, cam, K, E, 'rgba(52,152,219,.9)', 'Flug nach innen', [10, 8]);
+    }
+  };
 }
 
-function drawCoachingOverlays(ctx){
-  const data = (GUIDE_DATA[activeTaskId] || (RR ? GUIDE_DATA.rr : GUIDE_DATA.free)).motion;
-
-  // Absprung-Markierung (grüner Bogen / Band vor der 6-m- oder 9-m-Linie)
-  ctx.save();
-  const isRR = RR || !!data.isRR;
-  const R_line = isRR ? 9 : 6;
-  const thBase = isRR ? 125 : 150;
-  const pLine = proj([...linePt(thBase, R_line), 0]);
-  const pTakeoff = proj([...linePt(thBase, R_line + data.dr), 0]);
-
-  // Zeigt visualisierten Sicherheitsabstand zur Linie
-  ctx.strokeStyle = 'rgba(46, 204, 113, 0.7)';
-  ctx.lineWidth = 4;
-  ctx.beginPath();
-  ctx.arc(pTakeoff.x, pTakeoff.y, 22, 0, Math.PI * 2);
-  ctx.stroke();
-
-  // Bei "Winkel vergrößern": Flugkurve nach innen anzeigen
-  if(data.fly === 'in'){
-    const pStart = pTakeoff;
-    const pEnd = proj([-1.5, 3.2, 0.4]);
-    ctx.strokeStyle = 'rgba(52, 152, 219, 0.85)';
-    ctx.lineWidth = 3;
-    ctx.setLineDash([8, 6]);
-    ctx.beginPath();
-    ctx.moveTo(pStart.x, pStart.y);
-    ctx.quadraticCurveTo((pStart.x + pEnd.x) / 2 + 50, (pStart.y + pEnd.y) / 2 - 30, pEnd.x, pEnd.y);
-    ctx.stroke();
-    ctx.setLineDash([]);
-  }
-  ctx.restore();
-}
-
-function initEvents(){
-  const sheet = $('#guideSheet');
-  if(!sheet || sheet.dataset.ready) return;
-  sheet.dataset.ready = '1';
-
-  sheet.addEventListener('click', e => {
-    const b = e.target.closest('button');
-    if(!b) return;
-
-    if(b.matches('[data-close]')){
-      closeGuide();
-      return;
-    }
-    if(b.id === 'guidePlay'){
-      playing = !playing;
-      b.textContent = playing ? '❚❚' : '▶︎';
-      return;
-    }
-    if(b.dataset.speed){
-      speed = +b.dataset.speed;
-      sheet.querySelectorAll('[data-speed]').forEach(el => el.classList.toggle('on', el === b));
-      return;
-    }
-    if(b.id === 'guideCam'){
-      activeCam = activeCam === 'base' ? 'court' : 'base';
-      updateCam();
-      renderInfo();
-      return;
-    }
-    if(b.dataset.hvariant){
-      heightVariant = b.dataset.hvariant;
-      renderInfo();
-      return;
-    }
-    if(b.id === 'guideSave'){
-      saveVideoClip(b);
-    }
+const guides = {};
+function guideFor(taskId){
+  return guides[taskId] ??= createGuide({
+    id:'aussenspieler_' + taskId,
+    title:() => GUIDE_DATA[taskId].title,
+    sub:() => GUIDE_DATA[taskId].sub,
+    cues:() => GUIDE_DATA[taskId].cues,
+    variants:GUIDE_DATA[taskId].motion.hasHeightVariant ? [{id:'high', label:'Wurf über Kopf (Hoch)'}, {id:'hip', label:'Wurf aus der Hüfte (Hüfte)'}] : [{id:'std', label:'Lehrbild'}],
+    views:views(taskId),
+    isRightHand:() => settings.hand !== 'L',
+    motion:motionFor(taskId),
+    overlay:overlay(taskId)
   });
 }
-
-// 1 Lehrbild-Zyklus als Video (.webm / .mp4) aufzeichnen und herunterladen
-function saveVideoClip(btnEl){
-  const canvas = $('#guideCanvas');
-  if(!canvas || !canvas.captureStream) return;
-
-  btnEl.disabled = true;
-  btnEl.textContent = 'Aufnahme…';
-
-  recordedChunks = [];
-  const stream = canvas.captureStream(30);
-  const mime = ['video/mp4;codecs=avc1', 'video/webm;codecs=vp8', 'video/webm']
-    .find(m => window.MediaRecorder && MediaRecorder.isTypeSupported(m)) || 'video/webm';
-
-  try {
-    mediaRecorder = new MediaRecorder(stream, { mimeType: mime });
-    mediaRecorder.ondataavailable = e => { if(e.data.size) recordedChunks.push(e.data); };
-    mediaRecorder.onstop = () => {
-      btnEl.disabled = false;
-      btnEl.textContent = 'Speichern';
-      const blob = new Blob(recordedChunks, { type: mime.split(';')[0] });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `handballcoach_anleitung_${activeTaskId}.webm`;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-    };
-    // Genau einen vollen Zyklus (3.4 s) aufnehmen
-    tSim = 0;
-    playing = true;
-    mediaRecorder.start();
-    setTimeout(() => {
-      if(mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop();
-    }, 3400);
-  } catch(e){
-    console.warn('Videoaufnahme fehlgeschlagen', e);
-    btnEl.disabled = false;
-    btnEl.textContent = 'Speichern';
-  }
+let open = null;
+export function openGuide(taskId = 'free'){
+  if(RR && (taskId === 'free' || !GUIDE_DATA[taskId])) taskId = 'rr';
+  if(!GUIDE_DATA[taskId]) taskId = RR ? 'rr' : 'free';
+  open = guideFor(taskId); open.openGuide();
+  return open;
 }
+export function closeGuide(){ open?.closeGuide(); }
+export const guideState = () => open?.state();
+export const guideSeek = t => open?.seek(t);

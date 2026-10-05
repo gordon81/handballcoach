@@ -591,3 +591,30 @@ test('Presenter-Tasten: Bild ab = weiter, Bild auf = zurück, Bildschirm schwarz
   for(const k of ['Escape', 'b', '.']) assert.equal(keyAction(k), 'stop', k);
   for(const k of [' ', 'Enter', 'AudioVolumeUp', 'a']) assert.equal(keyAction(k), null, `${k}: Leertaste/Enter klicken schon Buttons`);
 });
+
+/* ---------- Lehrbild-Figur der Anleitungsvideos (shared/js/guide/figure.js) ---------- */
+import { body, jointAngle, track, mirror, mirrorFrames } from '../shared/js/guide/figure.js';
+test('Lehrbild-Figur: Gelenkwinkel aus der Pose stimmen (Knie 90°, gestreckt 180°, Ellbogen 90°)', () => {
+  const near = (v, w, tol = 0.5) => assert.ok(Math.abs(v - w) <= tol, `${v} statt ${w}`);
+  let j = body({lThigh:[-40, 0], lShank:[-50, 180], rThigh:[-40, 0], rShank:[-50, 180], lean:40});
+  near(jointAngle(j, 'lKnee'), 90); near(jointAngle(j, 'rKnee'), 90);
+  assert.ok(Math.min(j.lHeel[2], j.lToe[2]) > -1e-9 && Math.min(j.lHeel[2], j.lToe[2]) < 1e-6, 'Füße auf dem Boden');
+  j = body({rThigh:[0, 0], rShank:[-90, 0], anchor:'l', x:2, y:3});
+  near(jointAngle(j, 'rKnee'), 90); near(jointAngle(j, 'lKnee'), 178, 1);
+  assert.ok(Math.abs(j.lAnk[0] - 2) < 1e-9 && Math.abs(j.lAnk[1] - 3) < 1e-9, 'Standfuß am Ort');
+  near(j.rKnee[2], j.rHip[2], 1e-6);   // Oberschenkel waagerecht
+  j = body({rUpper:[0, 90], rFore:[90, 90]});
+  near(jointAngle(j, 'rElbow'), 90); near(j.rEl[2], j.rSh[2], 1e-6);   // Ellbogen auf Schulterhöhe
+  j = body({air:0.4}); near(Math.min(j.lToe[2], j.lHeel[2]), 0.4, 1e-6);
+});
+test('Lehrbild-Figur: Beine über Fußpunkte (IK), Spiegeln, Keyframes', () => {
+  const j = body({x:0, y:0, a:90, pz:0.81, lAt:[-0.42, 0.13, 0], rAt:[0.42, -0.07, 0]});
+  assert.ok(Math.abs(j.lAnk[0] + 0.42) < 1e-9 && Math.abs(j.lToe[2]) < 1e-9, 'Fuß dort, wo er hin soll');
+  const k = jointAngle(j, 'lKnee'); assert.ok(k > 115 && k < 140, `Knie ${k}`);
+  assert.ok(j.lKnee[1] > j.lHip[1] - 0.05, 'Knie zeigt nach vorn');
+  assert.deepEqual(mirror({lThigh:[1, 2], rFoot:3, twist:10, ball:'r', anchor:'l'}), {rThigh:[1, 2], lFoot:3, twist:-10, ball:'l', anchor:'r'});
+  const m = mirrorFrames([{t:0, pose:{x:-5, a:90, lAt:[-5.4, 7, 0]}, marks:[{j:'lKnee'}], hl:['lThigh']}], -5)[0];
+  assert.deepEqual([m.pose.x, m.pose.a, m.pose.rAt[0], m.marks[0].j, m.hl[0]], [-5, 90, -4.6, 'rKnee', 'rThigh']);
+  const tr = track([{t:0, pose:{lean:0}, phase:'A'}, {t:1, pose:{lean:40}, phase:'B'}, {t:2, pose:{lean:0}}], 2);
+  assert.equal(tr(0.5).pose.lean, 20); assert.equal(tr(0.5).phase, 'A'); assert.equal(tr(1.5).phase, 'B'); assert.equal(tr(2.5).pose.lean, 20, 'läuft im Kreis');
+});

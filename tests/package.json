@@ -4,7 +4,7 @@
   "type": "module",
   "description": "Automatische Tests für den Außenwurf-Coach (Node-Unit-Tests und Playwright im Demo-Modus)",
   "scripts": {
-    "test": "node --test --test-concurrency=1 unit.mjs browser.mjs pause7m.mjs remote.mjs",
+    "test": "node --test --test-concurrency=1 unit.mjs browser.mjs pause7m.mjs remote.mjs guide.mjs",
     "unit": "node --test unit.mjs"
   },
   "devDependencies": {
