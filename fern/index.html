@@ -32,6 +32,12 @@
   #btnHit{background:#1d4d33} #btnMiss{background:#4d1d1d}
   .small{min-height:44px;border:1px solid var(--line);border-radius:10px;background:transparent;padding:0 14px}
   ol{margin:0;padding-left:22px;line-height:1.5}
+  #pairStep{display:flex;flex-direction:column;gap:10px}
+  #pairStep[hidden]{display:none}
+  .step{color:var(--orange);font:700 16px var(--head);text-transform:uppercase;letter-spacing:.05em}
+  .do{font-size:19px}
+  .row2{display:flex;gap:10px} .row2 button{flex:1}
+  .small{color:var(--text);background:var(--panel2)}
 </style>
 </head>
 <body>
@@ -49,9 +55,14 @@
 
   <section id="vPair" hidden>
     <p id="pairMsg" role="status">Verbinde …</p>
-    <canvas id="qr" hidden></canvas>
-    <p id="pairHow" hidden>Diesen Code vor die Kamera des <b>Kamera-Handys</b> halten (Rückseite), 20 bis 40 cm Abstand, bis es „verbunden“ sagt.</p>
-    <button class="small" id="btnCopy" hidden>Code kopieren</button>
+    <div id="pairStep" hidden>
+      <p class="step">Schritt 2 von 2</p>
+      <p class="do">Jetzt <b>dieses Handy umdrehen</b> und den Code unten <b>vor die Kamera des Kamera-Handys</b> halten (Rückseite, beim Laptop die Webcam), 20 bis 40 cm Abstand.</p>
+      <canvas id="qr"></canvas>
+      <p class="muted">Das Kamera-Handy sagt „Fernbedienung verbunden“, dann erscheinen hier die Knöpfe.</p>
+      <p class="muted">Klappt das Scannen nicht: Code teilen (z. B. per Messenger an dich selbst), am Kamera-Handy kopieren und dort „Code einfügen“ tippen.</p>
+      <div class="row2"><button class="small" id="btnShare">Code teilen</button><button class="small" id="btnCopy">Code kopieren</button></div>
+    </div>
   </section>
 
   <section id="vCtl" hidden>

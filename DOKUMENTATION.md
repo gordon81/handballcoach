@@ -283,13 +283,13 @@ Voraussetzung: **beide Handys im selben Netz.** In der Halle am einfachsten: am 
 2. **Am Kamera-Handy** das Training öffnen, **Kamera starten** und die Einrichtung machen (Linie) wie gewohnt.
 3. Oben im Bild auf **📱** tippen. Es erscheint ein QR-Code.
 4. **Am zweiten Handy** die normale **Kamera-App** öffnen, den QR-Code scannen und den Link öffnen. Die Seite „Fernbedienung“ zeigt jetzt ihrerseits einen QR-Code.
-5. Diesen Code **vor die Kamera des Kamera-Handys** halten (Rückseite, 20 bis 40 cm). Das kleine Vorschaubild zeigt, was die Kamera sieht. Sobald der Code gelesen ist, sagt das Kamera-Handy *„Fernbedienung verbunden.“*, oben steht **📱 verbunden**, und das zweite Handy zeigt die Knöpfe.
+5. Das zweite Handy zeigt „Schritt 2 von 2“ und einen eigenen QR-Code. Jetzt **das zweite Handy umdrehen** und diesen Code **vor die Kamera des Kamera-Handys** halten (Rückseite, 20 bis 40 cm; beim Laptop vor die Webcam). Das Vorschaubild am Kamera-Handy zeigt, was die Kamera sieht; der Code gehört in den gestrichelten Rahmen. Sobald der Code gelesen ist, sagt das Kamera-Handy *„Fernbedienung verbunden.“*, oben steht **📱 verbunden**, und das zweite Handy zeigt die Knöpfe.
 6. Kamera-Handy aufhängen, mit dem zweiten Handy zum Startpunkt gehen, **Start** drücken (mit **⏱ 10 s** zählt das Kamera-Handy erst herunter; **Abbrechen** stoppt den Countdown).
 7. **Aufhören:** **Stopp**. Mit **Trennen** am zweiten Handy oder Antippen von **📱 verbunden** am Kamera-Handy endet die Verbindung.
 
 Gut zu wissen:
 - Beide Bildschirme müssen an bleiben und die Seite vorn sein. Die Fernbedienung hält ihren Bildschirm selbst wach; wird ein Handy gesperrt oder die Seite gewechselt, kann die Verbindung abreißen. Dann sagt das Kamera-Handy *„Fernbedienung getrennt.“* und man muss neu koppeln (Schritte 3 bis 5).
-- Klappt die Verbindung nicht („Keine Verbindung …“): sind beide wirklich im selben Hotspot? Am Kamera-Handy **Neuer Code** tippen und noch einmal scannen. Kann das Kamera-Handy den Code nicht lesen, am zweiten Handy **Code kopieren**, irgendwie aufs Kamera-Handy bringen und dort **Code eingeben**.
+- Klappt die Verbindung nicht („Keine Verbindung …“): sind beide wirklich im selben Hotspot? Am Kamera-Handy **Neuer Code** tippen und noch einmal scannen. Kann das Kamera-Handy den Code nicht lesen: am zweiten Handy **Code teilen** (z. B. per Messenger an dich selbst), die Nachricht am Kamera-Handy kopieren und dort **Code einfügen** tippen. Abtippen ist nicht nötig, die App liest den Code aus der Zwischenablage.
 - iPhone als Kamera-Handy: zum Lesen des QR-Codes lädt die App beim ersten Mal ein kleines Lese-Programm aus dem Internet (danach aus dem Speicher). Android liest den Code ohne Nachladen.
 - Die Codes gelten nur für eine Kopplung. Ein alter QR-Code oder ein Neuladen der Fernbedienungs-Seite funktioniert nicht mehr, dann einfach neu koppeln.
 - Ein Live-Bild auf dem zweiten Handy gibt es noch nicht.

@@ -10,7 +10,9 @@ const TAG = 'HC1';
 const b64 = hex => btoa(String.fromCharCode(...hex.split(':').map(h => parseInt(h, 16)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 const hex = s => [...atob(s.replace(/-/g, '+').replace(/_/g, '/'))].map(c => c.charCodeAt(0).toString(16).toUpperCase().padStart(2, '0')).join(':');
 
-// Nur UDP-Kandidaten, IPv4 und mDNS-Namen (*.local) vor IPv6, höchstens 6.
+// Nur UDP-Kandidaten, höchstens 4: zuerst typische Heim-/Hotspot-Netze (192.168.x, 10.x, iPhone-Hotspot 172.20.10.x),
+// dann mDNS-Namen (*.local), dann übrige 172.x (oft Docker-Netze am Rechner), zuletzt IPv6.
+const rank = c => /^192\.168\./.test(c) ? 0 : /^10\./.test(c) ? 1 : /^172\.20\.10\./.test(c) ? 2 : /\.local,/.test(c) ? 3 : c.includes(':') ? 5 : 4;
 export function pack(sdp, kind){
   const get = k => (sdp.match(new RegExp('^a=' + k + ':(.+)$', 'm')) || [])[1]?.trim();
   const fp = (sdp.match(/^a=fingerprint:sha-256 (.+)$/m) || [])[1]?.trim();
@@ -20,8 +22,8 @@ export function pack(sdp, kind){
     if(m[1].toLowerCase() !== 'udp') continue;
     const c = `${m[2]},${m[3]}`; if(!cands.includes(c)) cands.push(c);
   }
-  cands.sort((a, b) => a.includes(':') - b.includes(':'));
-  return [TAG, kind, get('ice-ufrag'), get('ice-pwd'), b64(fp), ...cands.slice(0, 6)].join('~');
+  cands.sort((a, b) => rank(a) - rank(b));
+  return [TAG, kind, get('ice-ufrag'), get('ice-pwd'), b64(fp), ...cands.slice(0, 4)].join('~');
 }
 
 export function unpack(code){

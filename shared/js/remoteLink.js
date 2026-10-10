@@ -50,9 +50,8 @@ async function open(){
   p.pc.onconnectionstatechange = () => { if(p === peer && p.pc.connectionState === 'failed') linked ? close('Fernbedienung getrennt.') : setStatus('Keine Verbindung. Sind beide Handys im selben WLAN oder Hotspot? „Neuer Code“ versucht es noch einmal.'); };
   const url = remoteUrl(p.code);
   drawQr(box.querySelector('canvas'), url, Math.min(300, innerWidth - 80));
-  box.querySelector('[data-k=url]').textContent = url;
   const noNet = p.code.split('~').length < 6;
-  setStatus(noNet ? 'Kein Netz gefunden: Hotspot an einem Handy einschalten, das andere damit verbinden, dann „Neuer Code“.' : 'Warte auf den Code der Fernbedienung …');
+  setStatus(noNet ? 'Kein Netz gefunden: Hotspot an einem Handy einschalten, das andere damit verbinden, dann „Neuer Code“.' : 'Kamera sucht den Code des zweiten Handys …');
   startScan();
 }
 
@@ -77,29 +76,50 @@ function stopPeer(){
 }
 
 /* ---------- Fenster ---------- */
+// Zwei Schritte untereinander; der aktive ist hervorgehoben. Schritt 2 zeigt groß, was die Kamera sieht.
+const BTN = 'min-height:44px;padding:0 16px;border-radius:10px;border:1px solid #4a6078;background:#243241;color:#fff;font:600 16px Barlow,sans-serif;cursor:pointer';
 function showBox(){
   if(!box){
     box = document.createElement('div'); box.id = 'linkBox';
-    box.style.cssText = 'position:absolute;inset:0;z-index:60;overflow:auto;background:rgba(10,14,22,.94);color:#fff;'
-      + 'font-family:Barlow,sans-serif;text-align:center;padding:16px';
-    box.innerHTML = `<h2 style="margin:4px 0 8px;font:700 22px 'Barlow Condensed',sans-serif">Zweites Handy als Fernbedienung</h2>
-      <p style="margin:0 0 8px"><b>1.</b> Mit der Kamera-App des zweiten Handys diesen Code scannen und die Seite öffnen.</p>
-      <canvas style="background:#fff;border-radius:8px;max-width:100%;image-rendering:pixelated"></canvas>
-      <p style="margin:10px 0 6px"><b>2.</b> Das zweite Handy zeigt dann einen eigenen Code. Den vor die Kamera <b>dieses</b> Handys (Rückseite) halten, 20 bis 40 cm Abstand.</p>
-      <canvas data-k="prev" width="160" height="120" style="width:160px;height:120px;border-radius:6px;background:#222"></canvas>
-      <p data-k="st" role="status" style="min-height:2.6em;margin:6px 0;color:#ffd166"></p>
-      <p style="font-size:13px;opacity:.75;margin:4px 0">Beide Handys müssen im selben WLAN oder Hotspot sein. Kein Server, kein Konto.</p>
-      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:8px">
-        <button data-k="new" style="min-height:44px;padding:0 14px">Neuer Code</button>
-        <button data-k="paste" style="min-height:44px;padding:0 14px">Code eingeben</button>
-        <button data-k="close" style="min-height:44px;padding:0 14px">Schließen</button></div>
-      <p data-k="url" style="font-size:10px;opacity:.4;word-break:break-all;margin-top:10px"></p>`;
+    box.style.cssText = 'position:fixed;inset:0;z-index:1000;overflow:auto;background:#0a0e16;color:#fff;'
+      + 'font-family:Barlow,sans-serif;text-align:center;padding:14px 16px';
+    box.innerHTML = `<h2 style="margin:2px 0 10px;font:700 22px 'Barlow Condensed',sans-serif">Zweites Handy als Fernbedienung</h2>
+      <div data-k="s1" style="border-radius:12px;padding:10px;margin-bottom:10px">
+        <p style="margin:0 0 8px"><b>Schritt 1 · am zweiten Handy:</b> Kamera-App öffnen, diesen Code scannen, den Link öffnen.</p>
+        <canvas style="background:#fff;border-radius:8px;max-width:100%;image-rendering:pixelated"></canvas></div>
+      <div data-k="s2" style="border-radius:12px;padding:10px">
+        <p style="margin:0 0 8px"><b>Schritt 2 · zurück:</b> Das zweite Handy zeigt jetzt <b>seinen eigenen Code</b>. Das zweite Handy mit dem Code
+          <b>vor die Kamera dieses Geräts</b> halten (Handy: Rückseite, Laptop: Webcam), 20 bis 40 cm, bis der Code unten im Bild zu sehen ist.</p>
+        <div style="position:relative;display:inline-block;max-width:100%">
+          <canvas data-k="prev" width="320" height="240" style="width:min(320px,100%);border-radius:8px;background:#222;display:block"></canvas>
+          <div style="position:absolute;inset:18% 26%;border:3px dashed rgba(255,209,102,.8);border-radius:8px;pointer-events:none"></div></div>
+        <p data-k="st" role="status" style="min-height:2.6em;margin:8px 0 4px;color:#ffd166;font-weight:600"></p>
+        <p style="font-size:14px;margin:0 0 8px;color:#c9d3dd">Geht das Scannen nicht: am zweiten Handy „Code teilen“ (z. B. per Messenger an dich selbst), hier kopieren und „Code einfügen“.</p>
+        <button data-k="paste" style="${BTN}">Code einfügen</button></div>
+      <p style="font-size:14px;margin:12px 0 8px;color:#c9d3dd">Beide Geräte müssen im selben WLAN oder Hotspot sein. Kein Server, kein Konto.</p>
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+        <button data-k="new" style="${BTN}">Neuer Code</button>
+        <button data-k="close" style="${BTN}">Schließen</button></div>`;
     box.querySelector('[data-k=new]').onclick = () => open();
     box.querySelector('[data-k=close]').onclick = () => { if(!linked) stopPeer(); hideBox(); };
-    box.querySelector('[data-k=paste]').onclick = () => { const c = prompt('Code der Fernbedienung (beginnt mit HC1~A~):'); if(c) accept(c); };
+    box.querySelector('[data-k=paste]').onclick = paste;
     (document.querySelector('#stage') || document.body).append(box);
   }
   box.style.display = 'block';
+  stepOn(1);
+}
+// Aktiven Schritt hervorheben.
+function stepOn(n){
+  [1, 2].forEach(i => { const el = box?.querySelector(`[data-k=s${i}]`); if(el) el.style.cssText = `border-radius:12px;padding:10px;margin-bottom:10px;`
+    + (i === n ? 'background:#1d2b3a;outline:2px solid #ff8a1f' : 'outline:1px solid #33465a'); });
+}
+// Code aus der Zwischenablage, sonst Eingabefeld.
+async function paste(){
+  let c = '';
+  try{ c = (await navigator.clipboard.readText()).trim(); }catch(e){}
+  if(!c.startsWith('HC1~A~')) c = prompt('Code der Fernbedienung einfügen (beginnt mit HC1~A~):') || '';
+  c = (c.match(/HC1~A~\S+/) || [c.trim()])[0];
+  if(c) accept(c);
 }
 function hideBox(){ if(box) box.style.display = 'none'; stopScan(); }
 function setStatus(t){ const p = box?.querySelector('[data-k=st]'); if(p) p.textContent = t; }
@@ -112,7 +132,9 @@ async function camera(){
   try{
     const stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment', width:{ideal:1280}}, audio:false});
     const video = document.createElement('video'); video.muted = true; video.playsInline = true; video.srcObject = stream;
-    await video.play(); own = {stream, video};
+    await video.play();
+    const fm = stream.getVideoTracks()[0]?.getSettings?.().facingMode;
+    own = {stream, video, front:fm !== 'environment'};   // Laptop-Webcams melden meist nichts = vorn
   }catch(e){ own = null; }
 }
 let decoder = null;
@@ -130,20 +152,30 @@ async function getDecoder(){
 function startScan(){
   stopScan();
   const c = document.createElement('canvas'), g = c.getContext('2d', {willReadFrequently:true});
-  let busy = false, warned = false;
+  let busy = false, warned = false, n = 0;
   scan = setInterval(async () => {
+    if(++n === 20) stepOn(2);         // nach ~6 s ist Schritt 1 meist erledigt
     const v = liveVideo() || own?.video;
     if(busy || !v || !v.videoWidth) return;
     busy = true;
     try{
       const k = Math.min(1, 960/v.videoWidth); c.width = Math.round(v.videoWidth*k); c.height = Math.round(v.videoHeight*k);
       g.drawImage(v, 0, 0, c.width, c.height);
-      const pv = box?.querySelector('[data-k=prev]'); pv?.getContext('2d').drawImage(c, 0, 0, pv.width, pv.height);
+      preview(c, v === own?.video && own.front);
       const txt = await (await getDecoder())(c);
-      if(txt && txt.startsWith('HC1~A~')) await accept(txt);
-    }catch(e){ if(!warned){ warned = true; setStatus('Kamera kann hier keinen Code lesen, bitte „Code eingeben“.'); } }
+      if(txt && txt.startsWith('HC1~A~')){ stepOn(2); await accept(txt); }
+      else if(txt){ stepOn(2); setStatus(txt.includes('HC1~O~') ? 'Das ist der Code aus Schritt 1. Gebraucht wird der Code, den das zweite Handy danach zeigt.' : 'Fremder QR-Code. Gebraucht wird der Code, den das zweite Handy zeigt.'); }
+    }catch(e){ if(!warned){ warned = true; setStatus('Kamera kann hier keinen Code lesen, bitte „Code einfügen“.'); } }
     busy = false;
   }, 300);
+}
+// Vorschau im Seitenverhältnis der Kamera; Frontkamera/Webcam gespiegelt wie ein Spiegel, damit man sich zurechtfindet.
+function preview(c, mirror){
+  const pv = box?.querySelector('[data-k=prev]'); if(!pv) return;
+  const h = Math.round(320*c.height/c.width); if(pv.height !== h) pv.height = h;
+  const g = pv.getContext('2d'); g.save();
+  if(mirror){ g.translate(pv.width, 0); g.scale(-1, 1); }
+  g.drawImage(c, 0, 0, pv.width, pv.height); g.restore();
 }
 function stopScan(){
   clearInterval(scan); scan = null;

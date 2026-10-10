@@ -23,18 +23,20 @@ async function pair(code){
   catch(e){ $('#pairMsg').textContent = 'Dieser Code passt nicht. Bitte am Kamera-Handy auf „Neuer Code“ tippen und neu scannen.'; return; }
   const p = peer;
   if(p.code.split('~').length < 6){ $('#pairMsg').textContent = 'Kein Netz gefunden. Hotspot einschalten, beide Handys verbinden und neu scannen.'; return; }
-  $('#pairMsg').textContent = 'Fast fertig:';
-  $('#qr').hidden = $('#pairHow').hidden = false;
+  $('#pairMsg').hidden = true;
+  $('#pairStep').hidden = false;
   drawQr($('#qr'), p.code, Math.min(340, innerWidth - 32));
   $('#qr').dataset.code = p.code;
+  $('#btnShare').hidden = !navigator.share;
+  $('#btnShare').onclick = () => navigator.share({text:p.code}).catch(() => {});
   $('#btnCopy').hidden = !navigator.clipboard;
-  $('#btnCopy').onclick = () => navigator.clipboard.writeText(p.code).then(() => $('#btnCopy').textContent = 'Kopiert');
+  $('#btnCopy').onclick = () => navigator.clipboard.writeText(p.code).then(() => $('#btnCopy').textContent = 'Kopiert ✓');
   p.ch.onopen = () => { show('#vCtl'); keepAwake(); p.ch.send(JSON.stringify({t:'hi'})); };
   p.ch.onmessage = e => { let m; try{ m = JSON.parse(e.data); }catch(x){ return; } if(m.t === 's'){ st = m; render(); } };
   p.ch.onclose = gone;
   p.pc.onconnectionstatechange = () => { if(['failed', 'closed'].includes(p.pc.connectionState)) gone(); };
   p.pc.oniceconnectionstatechange = () => {
-    if(p.pc.iceConnectionState === 'failed' && !$('#vPair').hidden) $('#pairMsg').textContent = 'Keine Verbindung. Sind beide Handys im selben WLAN oder Hotspot?';
+    if(p.pc.iceConnectionState === 'failed' && !$('#vPair').hidden){ $('#pairMsg').hidden = false; $('#pairMsg').textContent = 'Code wurde gelesen, aber keine Verbindung. Sind beide Geräte im selben WLAN oder Hotspot? Am Kamera-Handy „Neuer Code“ und neu scannen.'; }
   };
 }
 function gone(){ if(!peer) return; try{ peer.pc.close(); }catch(e){} peer = null; releaseWake(); show('#vGone'); }
