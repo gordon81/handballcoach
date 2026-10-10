@@ -207,3 +207,45 @@ test('Kein Fuß unter dem Hallenboden, in keinem Lehrbild und keiner Variante', 
     await page.close();
   }
 });
+
+// Die 6-m-Linie gehört zum Torraum (IHF 6:1), die 7-m-Linie darf nicht berührt werden (14:5): kein Fuß, der am Boden steht,
+// auf dem Strich (gezeichnet 5 cm breit um 6 m bzw. 7 m). Geprüft bis zum Absprung, in allen Lehrbildern, Seiten und Händen.
+test('Füße bleiben vor der 6-m-, 9-m- und 7-m-Linie, nicht auf dem Strich', {timeout:120000}, async () => {
+  const EDGE = 0.025, CLEAR = 0.1;   // Feldkante des Strichs, mindestens 10 cm Abstand der Fußspitze
+  const scan = (page, rr) => page.evaluate(async ([rr, EDGE]) => {
+    const st = (await import('/aussenspieler/js/store.js')).settings, R0 = rr ? 9 : 6, out = [];
+    const dist = ([x, y]) => (Math.abs(x) <= 1.5 ? y : Math.hypot(Math.abs(x) - 1.5, y)) - R0 - EDGE;
+    const tasks = rr ? ['free'] : ['free', 'line', 'angle', 'height', 'fastbreak', 'pivot', 'tired', 'air'];
+    for(const task of tasks) for(const pos of rr ? ['LA'] : ['LA', 'RA']) for(const hand of ['R', 'L']) for(const v of task === 'height' ? ['high', 'hip'] : [null]){
+      st.pos = pos; st.hand = hand; const g = G.openGuide(task); if(v) g.openGuide(v);
+      let m = {d:9};
+      for(let t = 0; t < 4.5; t += 0.01){
+        G.guideSeek(t); const s = G.guideState();
+        if(/Wurfauslage|Flug|Abwurf/.test(s.phase)) break;   // ab dem Absprung in der Luft, die Landung im Torraum ist erlaubt
+        for(const k of ['lHeel', 'lToe', 'rHeel', 'rToe']) if(s.j[k][2] < 0.03){ const d = dist(s.j[k]); if(d < m.d) m = {d, k, t}; }
+      }
+      G.closeGuide(); out.push({what:[task, pos, hand, v].filter(Boolean).join(' '), ...m});
+    }
+    st.pos = 'LA'; st.hand = 'R'; return out;
+  }, [rr, EDGE]);
+  for(const rr of [false, true]){
+    const {page, errors} = await open(rr ? 'aussenspieler/?rr=1' : 'aussenspieler/', '/aussenspieler/js/ui/guideView.js');
+    for(const r of await scan(page, rr)) assert.ok(r.d >= CLEAR - 0.005, `${rr ? '9 m' : '6 m'} ${r.what}: ${r.k} ${(r.d*100).toFixed(1)} cm vor der Linie bei ${r.t.toFixed(2)} s`);
+    assert.deepEqual(errors, []);
+    await page.close();
+  }
+  const {page, errors} = await open('siebenmeter/', '/siebenmeter/js/guide.js');
+  const low = await page.evaluate(async EDGE => {
+    const st = (await import('/siebenmeter/js/state.js')).settings, out = [];
+    for(const hand of ['R', 'L']) for(const v of ['clean', 'delay']){
+      st.hand = hand; G.openGuide(v); let m = {d:9};
+      for(let t = 0; t < 4.5; t += 0.01){ G.guideSeek(t); const j = G.guideState().j;
+        for(const k of ['lHeel', 'lToe', 'rHeel', 'rToe']) if(j[k][2] < 0.03 && j[k][1] - 7 - EDGE < m.d) m = {d:j[k][1] - 7 - EDGE, k, t}; }
+      G.closeGuide(); out.push({what:hand + ' ' + v, ...m});
+    }
+    st.hand = 'R'; return out;
+  }, EDGE);
+  for(const r of low) assert.ok(r.d > 0.03, `7 m ${r.what}: ${r.k} ${(r.d*100).toFixed(1)} cm hinter der Linie bei ${r.t.toFixed(2)} s`);
+  assert.deepEqual(errors, []);
+  await page.close();
+});

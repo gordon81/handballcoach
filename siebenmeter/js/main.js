@@ -28,7 +28,7 @@ function readyPose(t){
   const bl = w.at(-1).bl, xs = w.map(f => f.hip.x), ys = w.map(f => f.hip.y);
   if(Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) > 0.1*bl) return false;
   const L = linePx(), f = w.at(-1);
-  return !L || ['lToe','lHeel','rToe','rHeel'].every(k => lineDist(L, f[k]) < 0);
+  return !L || ['lToe','lHeel','rToe','rHeel'].every(k => lineDist(L, f[k]) <= TH7.lineTouch*f.bl);   // nicht auf der Linie
 }
 
 /* ---------- Ablauf ---------- */

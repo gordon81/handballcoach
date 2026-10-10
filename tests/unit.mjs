@@ -91,7 +91,9 @@ const throwAt = (line, issues = []) => ({issues, m:{line}});
 test('Absprung an der Linie: Fenster bis ~30 cm vor der Linie, Übertritt zählt nie', () => {
   const far = TH.taskLineFar;
   assert.equal(judge('line', throwAt(-0.05)).ok, true);
-  assert.equal(judge('line', throwAt(0)).ok, true, 'genau auf der Linie, aber kein Übertritt');
+  assert.equal(judge('line', throwAt(0)).ok, false, 'auf der Linienmitte: Fuß auf der Linie = Übertritt');
+  assert.equal(judge('line', throwAt(-TH.lineHalf + 0.005)).why, 'Übertritt', 'auf der Feldkante der Linie: Übertritt');
+  assert.equal(judge('line', throwAt(-TH.lineHalf - 0.005)).ok, true, 'knapp vor der Linie');
   assert.equal(judge('line', throwAt(far)).ok, true, 'genau an der Grenze');
   assert.equal(judge('line', throwAt(far - 0.01)).ok, false, 'knapp zu weit weg');
   assert.match(judge('line', throwAt(far - 0.1)).say, /Näher ran/);
@@ -102,11 +104,12 @@ test('Absprung an der Linie: Fenster bis ~30 cm vor der Linie, Übertritt zählt
 });
 
 test('Abstand in cm: auf 5 cm gerundet, nie negativ', () => {
-  assert.equal(lineCm(-0.1), 15);   // 0,1 KL × 140 cm = 14 cm → 15
-  assert.equal(lineCm(-0.02), 5);
+  assert.equal(lineCm(-0.12), 15);   // (0,12 − 0,018 halbe Linienbreite) KL × 140 cm = 14 cm → 15
+  assert.equal(lineCm(-0.04), 5);
+  assert.equal(lineCm(-0.02), 0, 'bis zur Feldkante der Linie gemessen');
   assert.equal(lineCm(0.05), 0);
-  assert.match(judge('line', throwAt(-0.01)).say, /Direkt an der Linie/);
-  assert.match(judge('line', throwAt(-0.1)).say, /^Geschafft\. 15 Zentimeter vor der Linie\.$/);
+  assert.match(judge('line', throwAt(-0.025)).say, /Direkt an der Linie/);
+  assert.match(judge('line', throwAt(-0.12)).say, /^Geschafft\. 15 Zentimeter vor der Linie\.$/);
 });
 
 test('Entscheidung in der Luft: nur Würfe nach „Los“, sauber und nicht daneben', () => {
@@ -181,6 +184,10 @@ test('7 m: zu langsam (über 3 s) und kein Wurf', () => {
 test('7 m: Linie übertreten (Fußspitze jenseits der Linie)', () => {
   const r = judge7(frames7({frontX:t => t > 1.3 ? 495 : 560}), 0, LINE7);
   assert.ok(r.issues.includes('line'), JSON.stringify(r)); assert.ok(r.m.line > 0);
+  // Fußspitze auf der Linie (1 cm vor der Mitte, Linie 5 cm breit) ist schon Berührung (Regel 14:5).
+  const on = judge7(frames7({frontX:t => t > 1.3 ? 517 : 560}), 0, LINE7);   // Spitze bei x 502 = 1 % KL vor der Mitte
+  assert.ok(on.issues.includes('line'), 'Fuß auf der Linie: ' + JSON.stringify(on.m));
+  assert.equal(judge7(frames7({frontX:t => t > 1.3 ? 525 : 560}), 0, LINE7).ok, true, 'Spitze 5 % KL (~7 cm) vor der Linie: sauber');
   // Nach dem Abwurf darf der Fuß über die Linie (Ball ist weg).
   assert.equal(judge7(frames7({frontX:t => t > 1.7 ? 480 : 560}), 0, LINE7).ok, true);
 });

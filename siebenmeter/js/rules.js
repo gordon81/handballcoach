@@ -9,7 +9,7 @@ export const TH7 = {
   maxTime: 3.0,     // s vom Pfiff bis zum Abwurf (Regel)
   vThrow: 3.0,      // KL/s: so schnell muss das Handgelenk mindestens sein, damit es als Wurf zählt
   footLift: 0.05,   // KL (~7 cm): Fuß gilt als abgehoben, wenn er im Bild so weit über seiner Höhe beim Pfiff ist
-  lineTouch: 0.0,   // KL: Fußspitze/Ferse jenseits der Linienmitte (+ = Richtung Tor) gilt als übertreten
+  lineTouch: -0.018, // KL: Fußspitze/Ferse näher als die halbe Linienbreite (2,5 cm) an der Linienmitte = berührt die Linie (Regel 14:5)
   waitThrow: 4.5    // s nach dem Pfiff: kein Wurf erkannt
 };
 export const KL_CM = 140;

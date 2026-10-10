@@ -38,6 +38,8 @@ export const CAM_POS = RR ? {
 // Grenzwerte der Prüfungen in Körperlängen (KL = Schulter–Knöchel) bzw. Grad. Nach den ersten Hallentests
 // anpassen: die Messwerte jedes Wurfs stehen im Training-Fenster und im Bericht (siehe brain.md, Kalibrieren).
 export const TH = {jumpHigh:0.25, jumpMid:0.17, rot:25, rotWrongSide:35, leanUpright:15, leanForward:25, leanStrong:35,
+  // Halbe Linienbreite (2,5 cm bei ~140 cm KL): ein Fuß weniger weit vor der markierten Linienmitte steht auf der Linie = Übertritt.
+  lineHalf:0.018,
   // Aufgabe „Absprung an der Linie“: geschafft, wenn der Fuß höchstens so weit vor der Linie abspringt (KL, ~30 cm).
   taskLineFar:-0.2,
   // Aufgabe „Wurfhöhe auf Ansage“ (Handgelenk im Wurf-Frame, KL): „Hoch“ = über der Nase um mehr als taskHighArm;

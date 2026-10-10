@@ -24,7 +24,7 @@ Alles läuft im Browser auf dem Handy. Es gibt keinen Server, kein Konto und kei
 
 | Prüfung | Was gemessen wird | Gut, wenn … |
 |---|---|---|
-| **Übertritt** | Fußspitze oder Ferse des Sprungbeins beim letzten Bodenkontakt gegenüber der markierten 6-m-Linie | der Fuß außerhalb des Torraums bleibt. Ohne eingerichtete Linie wird nicht geprüft. |
+| **Übertritt** | Fußspitze oder Ferse des Sprungbeins beim letzten Bodenkontakt gegenüber der markierten 6-m-Linie | der Fuß ganz vor der Linie bleibt. Die Linie gehört zum Torraum: ein Fuß **auf** dem Strich ist schon Übertritt (gerechnet ab der halben Linienbreite, ~2,5 cm vor der markierten Mitte). Ohne eingerichtete Linie wird nicht geprüft. |
 | **Sprungbein** | welcher Fuß zuletzt am Boden war | Rechtshänder links, Linkshänder rechts abspringen |
 | **Wurfarm** | Höhe des Wurf-Handgelenks beim Absprung | Handgelenk über der Nase (über der Schulter = mittel) |
 | **Körperdrehung** | wie weit die Schultern gegen die Hüfte aufdrehen (3D-Schätzung) | ab 25°, auf der „falschen Seite“ (Rechtshänder auf Rechtsaußen bzw. Linkshänder auf Linksaußen) ab 35° |
@@ -259,6 +259,18 @@ Für alle Trainings, wenn das Handy zu hoch hängt oder steht, um es während de
 | **Bildschirm schwarz** (B oder Punkt) oder **Esc** | Vorlauf abbrechen | **Stopp** |
 
 Die Kamera und die Einrichtung (Linie) müssen vorher einmal am Handy gestartet sein. Selfie-Fernauslöser funktionieren meist nicht: sie senden „Lauter“, und das bekommt eine Webseite nicht.
+
+**Anleitung Schritt für Schritt**
+1. **Klicker koppeln (einmalig):** Klicker einschalten (bei manchen Modellen USB-Stick abziehen bzw. Schalter auf „BT“), am Handy *Einstellungen → Bluetooth → Neues Gerät koppeln*, den Klicker auswählen. Er erscheint dort als Tastatur oder Eingabegerät. Ein Klicker mit USB-Funkstick ohne Bluetooth geht nur mit USB-C-Adapter am Handy.
+2. **Training öffnen**, z. B. Außenwurf-Coach oder 7-m-Trainer, wie gewohnt **Kamera starten** und die Einrichtung machen (Linie ablaufen bzw. antippen). Das geht nur am Handy selbst.
+3. **Vorlauf einschalten:** oben im Bild auf **⏱ aus** tippen, bis **⏱ 10 s** dasteht. Die Einstellung bleibt gespeichert, auch für die anderen Trainings.
+4. **Klicker testen:** in der Einrichtung einmal **Weiter** drücken. Startet der Vorlauf (große 10 im Bild, Ansage *„Start in 10 Sekunden.“*), kommt die Taste an. Mit **Esc / Bildschirm schwarz** wieder abbrechen. Passiert nichts, sendet der Klicker andere Tasten (manche z. B. F5); die App kennt bisher Bild ab/auf, die Pfeiltasten, B, Punkt und Esc. Dann das Modell melden, die Taste lässt sich in `shared/js/remote.js` ergänzen.
+5. **Handy aufstellen oder aufhängen.** Der Bildschirm muss an bleiben und die Seite vorn sein, sonst kommen die Tasten nicht an. Ab dem Start hält die App den Bildschirm wach, vorher nicht: die automatische Bildschirmsperre am Handy so lang stellen, dass sie bis zum Start nicht zuschlägt (z. B. 5 Minuten).
+6. **Starten aus der Ferne:** an deinen Startpunkt gehen und **Weiter** drücken. Die App zählt 10 Sekunden herunter, piept bei 3, 2, 1 und startet. Ohne Vorlauf startet sie sofort.
+7. **Im Training:** im Außenwurf-Coach mit „Nach Zuruf“ und in der Aufgabe „Gegenstoß auf Zeit“ zählt **Weiter** wie ein Zuruf (Piep, dann kommt das Ziel). Im 7-m-Trainer in der Pause: **Weiter** = bereit (Pfiff 1 s später), **Zurück** = Pause anhalten bzw. weiter. In den anderen Trainings tun Weiter und Zurück während des Trainings nichts.
+8. **Aufhören:** **Esc** oder **Bildschirm schwarz** stoppt das Training. Auswertung, Log und Videos danach wie gewohnt am Handy.
+
+Noch nicht möglich: ein zweites Handy als Fernbedienung (geplant, siehe `PLAYBOOK.md`, C6 Stufe 2). Bisher ist die Fernbedienung nur am Schreibtisch mit der Tastatur geprüft, noch nicht mit einem echten Klicker in der Halle.
 
 ### 5.8 Anleitungsvideos „▶ Video: Korrekte Ausführung“
 In jeder Einrichtung und auf dem Startbildschirm jedes Trainings. Eine Lehrbild-Figur zeigt die Technik nach DHB/KNSU (siehe `QUELLEN.md`) mit den wichtigen **Gelenkwinkeln als gelbe Bögen und Zahlen** (gelb = im Sollbereich), z. B. Knie etwa 90° beim Ausholen, Kniehub mit Oberschenkel waagerecht, Ellbogen und Oberarm etwa 90° in der Wurfauslage. Das Bein, das am Boden bleiben oder abspringen muss, ist **grün umrandet**.

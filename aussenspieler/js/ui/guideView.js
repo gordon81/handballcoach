@@ -5,7 +5,8 @@
 import { RR } from '../config.js';
 import { settings, store } from '../store.js';
 import { createGuide } from '../../../shared/js/guide/player.js';
-import { V, body } from '../../../shared/js/guide/figure.js';
+import { V, body, SEG } from '../../../shared/js/guide/figure.js';
+const LINE_W = 0.05;   // Linienbreite wie in drawCourt (shared/js/guide/view.js)
 import { sideCam, drawGuideLine } from '../../../shared/js/guide/view.js';
 
 // Platzhalter in den Texten (je nach Wurfhand eingesetzt, siehe fill()): {seq} Schrittfolge, {T} Sprungbein-Seite,
@@ -150,12 +151,14 @@ function blend(keys, t){
 
 // Ort auf dem Spielfeld: Absprungpunkt K vor der Linie, Laufrichtung u (zum Tor), w = links davon.
 // x entlang der Torlinie, y ins Feld. Der Angreifer blickt zum Tor (−y), seine linke Seite ist +x: Linksaußen steht bei +x.
+// K ist das Fußgelenk des Stemmschritts. m.dr = Abstand der Fußspitze (SEG.toe vor dem Fußgelenk) zur Feldkante der Linie
+// (gezeichnet 5 cm breit um den Radius): die Linie gehört zum Torraum, der Fuß muss ganz davor stehen.
 function place(m, wing){
-  const rr = RR || !!m.isRR, rad = (rr ? 9 : 6) + m.dr, sg = wing === 'LA' ? 1 : -1;   // Blick zum Tor (−y): links = +x
+  const rr = RR || !!m.isRR, rad = (rr ? 9 : 6) + LINE_W/2 + SEG.toe + m.dr, sg = wing === 'LA' ? 1 : -1;   // Blick zum Tor (−y): links = +x
   const th = (rr ? 125 : 150)*D, K = [sg*(1.5 + rad*Math.cos(Math.PI - th)), rad*Math.sin(th)];
   const back = (rr ? 13.7 : 8.6) - rad, Sx = [sg*(1.5 + (rad + back)*Math.cos(Math.PI - th)), (rad + back)*Math.sin(th)];
   const u = [(K[0] - Sx[0])/back, (K[1] - Sx[1])/back], w = [-u[1], u[0]];
-  return {K, u, w, a:Math.atan2(u[1], u[0])/D, rr, line:rad - m.dr};
+  return {K, u, w, a:Math.atan2(u[1], u[0])/D, rr, line:rr ? 9 : 6};
 }
 
 // Pose zur Zeit t. R: Rechtshand (Absprung links, Wurfarm rechts). m: GUIDE_DATA[...].motion, hip: Wurf aus der Hüfte.
@@ -223,10 +226,13 @@ function jumpThrow(m, R, wing, hip){
     const takeoffFoot = t > 1.12 + o && t < tTake ? 25*ss((t - 1.12 - o)/(tTake - 1.12 - o)) : t >= tTake && t < tLand - 0.08 ? 50 : 0;
     const pose = {x:pel[0], y:pel[1], a:P.a, pz:z, [T+'At']:tf, [S+'At']:sf, [T+'Foot']:takeoffFoot, [S+'Foot']:t >= tTake && t < tLand ? 30 : 0,
       ...blend(arms, t), ball:t < tRel ? (t < 1.15 + o ? 'both' : S) : null};
-    const marks = t >= 1.12 + o && t < tTake ? [{j:T+'Knee', label:'Sprungbein'}]
+    // Beim Stemmschritt nur die Winkelmarke am Knie, ohne Schild „Sprungbein“ am Fuß (beide überlappten). Das Bein ist grün,
+    // der Schritt-Text nennt es.
+    const stemm = t >= 1.12 + o && t < tTake;
+    const marks = stemm ? [{j:T+'Knee', label:'Knie'}]
       : t >= tTake + 0.1 && t < tRel - 0.05 ? [{j:S+'Knee', label:'Kniehub', target:90, tol:20}, ...(hip ? [] : [{j:S+'Elbow', label:'Ellbogen', target:90, tol:20}])] : [];
     const tags = [...(t >= 0.8 + o && t < tRel + 0.15 ? [{j:S+'Hand', label:`Wurfarm ${L(S)}`, col:ARM}] : []),
-      ...(t >= 0.45 + o && t < tTake + 0.25 ? [{j:T+'Ank', label:`Sprungbein ${L(T)}`, col:LEG}] : [])];
+      ...(t >= 0.45 + o && t < tTake + 0.25 && !stemm ? [{j:T+'Ank', label:`Sprungbein ${L(T)}`, col:LEG}] : [])];
     return {pose, phase:phaseAt(phases, t), marks, tags, hl:[T+'Thigh', T+'Shank', T+'Foot'], hl2:[S+'Upper', S+'Fore']};
   };
   return {dur, frame, P, tRel, S, T, phases, steps};

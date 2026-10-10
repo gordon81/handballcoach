@@ -36,8 +36,9 @@ const avg = a => a.reduce((x, y) => x + y, 0)/a.length;
 const BAD = {over:'Übertritt', leg:'Falsches Sprungbein', arm:'Wurfarm zu spät oben'};
 const SAY_BAD = {over:'Übertritt.', leg:'Falsches Bein.', arm:'Arm früher hoch.'};
 
-// Abstand des Absprungs vor der Linie in cm (auf 5 cm gerundet, Schätzung über KL_CM).
-export const lineCm = line => Math.max(0, Math.round(-line*KL_CM/5)*5);
+// Abstand des Absprungs vor der Linie in cm, gemessen bis zur Feldkante des Strichs (m.line ist zur Linienmitte, halbe
+// Linienbreite TH.lineHalf abgezogen), auf 5 cm gerundet, Schätzung über KL_CM.
+export const lineCm = (line, half = TH.lineHalf) => Math.max(0, Math.round((-line - half)*KL_CM/5)*5);
 
 // Eine Wiederholung bewerten. entry = Log-Eintrag des Wurfs (issues, m, target, hit).
 // → {ok, why (für Karte/Log), say (Ansage)} oder null, wenn der Wurf für die Aufgabe nicht zählt.
@@ -45,9 +46,10 @@ export const lineCm = line => Math.max(0, Math.round(-line*KL_CM/5)*5);
 export function judge(id, entry, th = TH, prev = []){
   const is = k => (entry.issues || []).includes(k), m = entry.m || {};
   if(id==='line'){
-    if(is('over') || m.line > 0) return {ok:false, why:'Übertritt', say:'Übertritt.'};
+    const half = th.lineHalf ?? TH.lineHalf;   // Fuß auf der Linie = Übertritt (die Linie gehört zum Torraum)
+    if(is('over') || m.line > -half) return {ok:false, why:'Übertritt', say:'Übertritt.'};
     if(m.line == null) return {ok:false, why:'Linie nicht geprüft', say:'Linie nicht erkannt.'};
-    const cm = lineCm(m.line), d = cm < 5 ? 'Direkt an der Linie' : `${cm} Zentimeter vor der Linie`;
+    const cm = lineCm(m.line, half), d = cm < 5 ? 'Direkt an der Linie' : `${cm} Zentimeter vor der Linie`;
     if(m.line < (th.taskLineFar ?? TH.taskLineFar)) return {ok:false, why:`${cm} cm vor der Linie, zu weit weg`, say:`${d}. Näher ran.`};
     return {ok:true, why:`${cm} cm vor der Linie`, say:`Geschafft. ${d}.`};
   }

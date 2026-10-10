@@ -15,7 +15,9 @@ export function evaluate(e, t, H){
 
   // Übertritt
   let over = null;
-  if(settings.line){ const ft = e.tf.foot[e.foot]; over = [ft.toe, ft.heel].some(p => inTorraum({x:p.x/W, y:p.y/Hh})); }
+  // Markiert ist die Mitte des Strichs. Die Linie gehört zum Torraum (IHF 6:1): schon ein Fuß auf ihrer Feldkante
+  // (halbe Linienbreite vor der Mitte, TH.lineHalf) ist Übertritt.
+  if(settings.line){ const ft = e.tf.foot[e.foot]; over = [ft.toe, ft.heel].some(p => inTorraum({x:p.x/W, y:p.y/Hh}) || lineOffset({x:p.x/W, y:p.y/Hh})*Hh/e.bl > -TH.lineHalf); }
   if(over===null) res.push({ok:null, txt:RR ? 'Abstand nicht geprüft (Linie fehlt)' : 'Übertritt nicht geprüft (Linie fehlt)'});
   else if(over){ res.push({ok:false, txt:RR ? 'Absprung innerhalb der 9 m' : 'Übertritt beim Absprung'}); issues.push('over'); }
   else { res.push({ok:true, txt:RR ? 'Absprung vor der 9-m-Linie' : 'Kein Übertritt'}); good.push('over'); }
