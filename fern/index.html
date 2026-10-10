@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#121a22">
+<title>Fernbedienung</title>
+<script src="../shared/js/errorlog.js"></script>
+<link rel="icon" type="image/svg+xml" href="../shared/icon.svg">
+<link rel="manifest" href="../manifest.webmanifest">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared/css/base.css">
+<style>
+  body{overflow:auto}
+  main{max-width:480px;width:100%;margin:0 auto;padding:16px;display:flex;flex-direction:column;gap:12px;flex:1}
+  h1{font:800 26px/1.1 var(--head);margin:4px 0}
+  p{margin:0;line-height:1.4}
+  .muted{color:var(--muted);font-size:14px}
+  section[hidden]{display:none}
+  #qr{background:#fff;border-radius:10px;align-self:center;max-width:100%;image-rendering:pixelated}
+  #status{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;min-height:96px}
+  #status .st{font:800 28px/1.1 var(--head)}
+  #status .card{margin-top:6px;font-weight:600}
+  #status .hint{margin-top:6px;color:var(--warn)}
+  .big{min-height:96px;border:0;border-radius:16px;font:800 34px var(--head);background:var(--ok);color:#06210f;width:100%}
+  .big.stop{background:var(--bad);color:#fff}
+  .big:disabled{opacity:.4}
+  .row{display:flex;gap:10px}
+  .row button{flex:1;min-height:72px;border:1px solid var(--line);border-radius:14px;background:var(--panel2);font:700 24px var(--head)}
+  .row button[hidden]{display:none}
+  #hitRow button.on{outline:3px solid var(--orange)}
+  #btnHit{background:#1d4d33} #btnMiss{background:#4d1d1d}
+  .small{min-height:44px;border:1px solid var(--line);border-radius:10px;background:transparent;padding:0 14px}
+  ol{margin:0;padding-left:22px;line-height:1.5}
+</style>
+</head>
+<body>
+<main>
+  <h1>📱 Fernbedienung</h1>
+
+  <section id="vNoCode">
+    <ol>
+      <li>Kamera-Handy und dieses Handy ins selbe Netz bringen: am besten den <b>Hotspot</b> eines der beiden Handys einschalten und das andere damit verbinden (oder beide ins Hallen-WLAN).</li>
+      <li>Am Kamera-Handy ein Training öffnen und oben auf <b>📱</b> tippen.</li>
+      <li>Den QR-Code dort mit der <b>Kamera-App dieses Handys</b> scannen und die Seite öffnen.</li>
+    </ol>
+    <p class="muted" style="margin-top:10px">Kein Server, kein Konto: die beiden Handys sprechen direkt miteinander.</p>
+  </section>
+
+  <section id="vPair" hidden>
+    <p id="pairMsg" role="status">Verbinde …</p>
+    <canvas id="qr" hidden></canvas>
+    <p id="pairHow" hidden>Diesen Code vor die Kamera des <b>Kamera-Handys</b> halten (Rückseite), 20 bis 40 cm Abstand, bis es „verbunden“ sagt.</p>
+    <button class="small" id="btnCopy" hidden>Code kopieren</button>
+  </section>
+
+  <section id="vCtl" hidden>
+    <div id="status" aria-live="polite"><div class="st">–</div><div class="card"></div><div class="hint"></div></div>
+    <button class="big" id="btnStart">Start</button>
+    <div class="row"><button id="btnNext" hidden>Weiter</button><button id="btnPrev" hidden>Zurück</button></div>
+    <div class="row" id="hitRow" hidden><button id="btnHit">Treffer</button><button id="btnMiss">Daneben</button></div>
+    <p class="muted">Bildschirm bleibt an, solange die Fernbedienung verbunden ist. Wird er gesperrt, kann die Verbindung abreißen.</p>
+    <button class="small" id="btnBye">Trennen</button>
+  </section>
+
+  <section id="vGone" hidden>
+    <p><b>Verbindung getrennt.</b></p>
+    <p>Zum Neu-Koppeln am Kamera-Handy oben auf 📱 tippen und den neuen QR-Code scannen.</p>
+  </section>
+</main>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

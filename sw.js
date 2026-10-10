@@ -1,5 +1,5 @@
 // Service Worker für Handballcoach: Offline-Betrieb in der Halle
-const CACHE_NAME = "handballcoach-v7";   // bei neuen/geänderten Dateien hochzählen, sonst mischt der Cache alte und neue Module
+const CACHE_NAME = "handballcoach-v8";   // bei neuen/geänderten Dateien hochzählen, sonst mischt der Cache alte und neue Module
 
 const PRECACHE_URLS = [
   "./",
@@ -15,6 +15,9 @@ const PRECACHE_URLS = [
   "./shared/js/errorlog.js",
   "./shared/js/mic.js",
   "./shared/js/remote.js",
+  "./shared/js/remoteLink.js",
+  "./shared/js/link.js",
+  "./shared/js/qr.js",
   "./shared/js/guide/figure.js",
   "./shared/js/guide/view.js",
   "./shared/js/guide/player.js",
@@ -87,7 +90,10 @@ const PRECACHE_URLS = [
   "./sprung/js/state.js",
   "./sprung/js/main.js",
   "./sprung/js/guide.js",
-  "./sprung/js/demo.js"
+  "./sprung/js/demo.js",
+  "./fern/",
+  "./fern/index.html",
+  "./fern/js/main.js"
 ];
 
 self.addEventListener("install", event => {

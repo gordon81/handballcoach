@@ -76,6 +76,7 @@ Die Wahl bleibt gespeichert. Wer schon eingerichtet hat, drückt unten direkt **
 - **Mikro** mit kleinem Pegel-Balken: nur sichtbar, solange das Mikrofon an ist. Rot = das Mikrofon liefert keinen Ton.
 - **fps:** wie viele Bilder pro Sekunde die KI auswertet. Ziel: 25 oder mehr.
 - **⏱ aus / ⏱ 10 s:** Start mit Vorlauf an/aus (in allen Trainings gleich, siehe 5.7).
+- **📱 / 📱 verbunden:** zweites Handy als Fernbedienung koppeln bzw. trennen (in allen Trainings, siehe 5.7).
 - **Zielname** groß in der Mitte, solange ein Ziel angesagt ist.
 - Im Bild: die **rote 6-m-Linie** (eingerichtet) und das **Skelett** des Spielers.
 
@@ -245,7 +246,7 @@ Würfe werden zu „Trainings“ zusammengefasst. Ein neues Training beginnt aut
 
 ---
 
-### 5.7 Bedienung aus der Ferne: Start mit Vorlauf und Presenter-Klicker
+### 5.7 Bedienung aus der Ferne: Start mit Vorlauf, Presenter-Klicker, zweites Handy
 Für alle Trainings, wenn das Handy zu hoch hängt oder steht, um es während des Trainings zu bedienen.
 
 **Start mit Vorlauf:** Oben im Bild den Chip **⏱** antippen, bis er **⏱ 10 s** zeigt. Dann zählt die App nach „Start“ (oder „Training starten“ in der Einrichtung) **10 Sekunden** groß herunter, sagt *„Start in 10 Sekunden.“* und piept bei 3, 2, 1. Zeit genug, das Handy aufzuhängen und sich hinzustellen. Antippen der großen Zahl bricht ab. Die Einstellung gilt für alle Trainings.
@@ -270,7 +271,29 @@ Die Kamera und die Einrichtung (Linie) müssen vorher einmal am Handy gestartet 
 7. **Im Training:** im Außenwurf-Coach mit „Nach Zuruf“ und in der Aufgabe „Gegenstoß auf Zeit“ zählt **Weiter** wie ein Zuruf (Piep, dann kommt das Ziel). Im 7-m-Trainer in der Pause: **Weiter** = bereit (Pfiff 1 s später), **Zurück** = Pause anhalten bzw. weiter. In den anderen Trainings tun Weiter und Zurück während des Trainings nichts.
 8. **Aufhören:** **Esc** oder **Bildschirm schwarz** stoppt das Training. Auswertung, Log und Videos danach wie gewohnt am Handy.
 
-Noch nicht möglich: ein zweites Handy als Fernbedienung (geplant, siehe `PLAYBOOK.md`, C6 Stufe 2). Bisher ist die Fernbedienung nur am Schreibtisch mit der Tastatur geprüft, noch nicht mit einem echten Klicker in der Halle.
+Bisher ist der Klicker nur am Schreibtisch mit der Tastatur geprüft, noch nicht mit einem echten Klicker in der Halle.
+
+**Zweites Handy als Fernbedienung**
+
+Ein zweites Handy (oder Tablet) wird zur Fernbedienung: großer Knopf **Start / Stopp**, im 7-m-Trainer **Bereit** und **Anhalten** für die Pause, im Außenwurf-Coach **Zuruf**, und nach einem Wurf mit Ziel **Treffer / Daneben**. Darüber steht, was das Kamera-Handy gerade macht (Zustand, Ergebnis des letzten Wurfs, Countdown, Hinweise). Die beiden Handys sprechen direkt miteinander, ohne Server, ohne Konto, ohne App: gekoppelt wird mit zwei QR-Codes.
+
+Voraussetzung: **beide Handys im selben Netz.** In der Halle am einfachsten: am Kamera-Handy (oder am zweiten) den **Hotspot** einschalten und das andere Handy damit verbinden. Mobile Daten braucht es dafür nicht. Hallen-WLAN geht auch, wenn es Geräte untereinander verbinden lässt (Gäste-WLANs tun das oft nicht).
+
+1. **Netz:** Hotspot an einem Handy einschalten, das andere damit verbinden.
+2. **Am Kamera-Handy** das Training öffnen, **Kamera starten** und die Einrichtung machen (Linie) wie gewohnt.
+3. Oben im Bild auf **📱** tippen. Es erscheint ein QR-Code.
+4. **Am zweiten Handy** die normale **Kamera-App** öffnen, den QR-Code scannen und den Link öffnen. Die Seite „Fernbedienung“ zeigt jetzt ihrerseits einen QR-Code.
+5. Diesen Code **vor die Kamera des Kamera-Handys** halten (Rückseite, 20 bis 40 cm). Das kleine Vorschaubild zeigt, was die Kamera sieht. Sobald der Code gelesen ist, sagt das Kamera-Handy *„Fernbedienung verbunden.“*, oben steht **📱 verbunden**, und das zweite Handy zeigt die Knöpfe.
+6. Kamera-Handy aufhängen, mit dem zweiten Handy zum Startpunkt gehen, **Start** drücken (mit **⏱ 10 s** zählt das Kamera-Handy erst herunter; **Abbrechen** stoppt den Countdown).
+7. **Aufhören:** **Stopp**. Mit **Trennen** am zweiten Handy oder Antippen von **📱 verbunden** am Kamera-Handy endet die Verbindung.
+
+Gut zu wissen:
+- Beide Bildschirme müssen an bleiben und die Seite vorn sein. Die Fernbedienung hält ihren Bildschirm selbst wach; wird ein Handy gesperrt oder die Seite gewechselt, kann die Verbindung abreißen. Dann sagt das Kamera-Handy *„Fernbedienung getrennt.“* und man muss neu koppeln (Schritte 3 bis 5).
+- Klappt die Verbindung nicht („Keine Verbindung …“): sind beide wirklich im selben Hotspot? Am Kamera-Handy **Neuer Code** tippen und noch einmal scannen. Kann das Kamera-Handy den Code nicht lesen, am zweiten Handy **Code kopieren**, irgendwie aufs Kamera-Handy bringen und dort **Code eingeben**.
+- iPhone als Kamera-Handy: zum Lesen des QR-Codes lädt die App beim ersten Mal ein kleines Lese-Programm aus dem Internet (danach aus dem Speicher). Android liest den Code ohne Nachladen.
+- Die Codes gelten nur für eine Kopplung. Ein alter QR-Code oder ein Neuladen der Fernbedienungs-Seite funktioniert nicht mehr, dann einfach neu koppeln.
+- Ein Live-Bild auf dem zweiten Handy gibt es noch nicht.
+- Bisher am Schreibtisch mit zwei Browserfenstern geprüft, noch nicht mit zwei Handys in der Halle.
 
 ### 5.8 Anleitungsvideos „▶ Video: Korrekte Ausführung“
 In jeder Einrichtung und auf dem Startbildschirm jedes Trainings. Eine Lehrbild-Figur zeigt die Technik nach DHB/KNSU (siehe `QUELLEN.md`) mit den wichtigen **Gelenkwinkeln als gelbe Bögen und Zahlen** (gelb = im Sollbereich), z. B. Knie etwa 90° beim Ausholen, Kniehub mit Oberschenkel waagerecht, Ellbogen und Oberarm etwa 90° in der Wurfauslage. Das Bein, das am Boden bleiben oder abspringen muss, ist **grün umrandet**.
@@ -407,6 +430,7 @@ Die Grenzwerte der Prüfungen sind bisher nur im Demo geprüft. Beim ersten Hall
 | „Kamera hat sich bewegt“ | Linie prüfen bzw. neu einrichten; bei reinem Lichtwechsel zweites Mal auf Start. |
 | fps niedrig | Wurf-Videos aus, Modell „Lite“, besseres Licht. |
 | „Video nicht mehr gespeichert“ | Es bleiben nur die letzten 60 Videos. |
+| Fernbedienung verbindet nicht | Beide Handys im selben Hotspot? Am Kamera-Handy „Neuer Code“, neu scannen (siehe 5.7). |
 
 ---
 

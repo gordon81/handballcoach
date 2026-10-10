@@ -441,4 +441,4 @@ if(DEMO){ const a = $('#demoLink'); a.textContent = 'Demo-Modus aktiv: „Start�
 document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible' && app.state!=='off') keepAwake(); });
 // Presenter-Tasten und Start mit Vorlauf (shared/js/remote.js): Weiter = bereit, Zurück = Pause/weiter in der Pause.
 initRemote({canStart:() => app.source!=='none' && app.state==='off' && !!settings.line, running:() => app.state!=='off', start, stop,
-  next:() => press('ready'), prev:() => press('hold'), hint:t => hint(t, 2500)});
+  next:() => press('ready'), prev:() => press('hold'), labels:{next:'Bereit', prev:'Anhalten'}, hint:t => hint(t, 2500)});

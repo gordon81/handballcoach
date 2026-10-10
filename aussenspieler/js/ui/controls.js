@@ -52,6 +52,6 @@ export function initControls(){
   $('#repFile').onclick = shareFile;
   // Presenter-Tasten und Start mit Vorlauf (shared/js/remote.js). Weiter im Training zählt wie ein Zuruf.
   initRemote({canStart:() => app.source==='cam' && app.state==='off', running:() => app.state!=='off', start:startTraining, stop:stopTraining,
-    next:shoutNow, hint:t => showHint(t, 2500)});
+    next:shoutNow, labels:{next:'Zuruf'}, hint:t => showHint(t, 2500)});
   $('#newSession').onclick = () => { if(confirm('Neues Training starten? Das aktuelle bleibt im Speicher.')){ ensureSession(true); renderLog(); showHint('Neues Training gestartet', 1800); } };
 }

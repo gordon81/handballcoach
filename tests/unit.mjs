@@ -625,3 +625,48 @@ test('Lehrbild-Figur: Beine über Fußpunkte (IK), Spiegeln, Keyframes', () => {
   const tr = track([{t:0, pose:{lean:0}, phase:'A'}, {t:1, pose:{lean:40}, phase:'B'}, {t:2, pose:{lean:0}}], 2);
   assert.equal(tr(0.5).pose.lean, 20); assert.equal(tr(0.5).phase, 'A'); assert.equal(tr(1.5).phase, 'B'); assert.equal(tr(2.5).pose.lean, 20, 'läuft im Kreis');
 });
+
+// ---------- Fernbedienung per zweitem Handy (C6, Stufe 2): QR-Code und gepackte Verbindungsdaten ----------
+import { qrMatrix } from '../shared/js/qr.js';
+import { pack, unpack } from '../shared/js/link.js';
+import jsQR from 'jsqr';
+
+function qrImage(m, s = 4){
+  const n = m.length + 8, W = n*s, d = new Uint8ClampedArray(W*W*4).fill(255);
+  m.forEach((r, y) => r.forEach((b, x) => { if(!b) return;
+    for(let j = 0; j < s; j++) for(let i = 0; i < s; i++){ const o = (((y + 4)*s + j)*W + (x + 4)*s + i)*4; d[o] = d[o+1] = d[o+2] = 0; } }));
+  return jsQR(d, W, W)?.data;
+}
+
+test('QR-Code: wird von einem fremden Leser (jsQR) gelesen, kurz und lang, L und M', () => {
+  for(const ecl of ['L', 'M']) for(const len of [1, 17, 60, 150, 300, 600, 1200]){
+    const t = Array.from({length:len}, (_, i) => 'abcXYZ0123~:/.ä'[(i*7 + len) % 15]).join('');
+    assert.equal(qrImage(qrMatrix(t, ecl)), t, `${ecl}, ${len} Zeichen`);
+  }
+  assert.equal(qrMatrix('x'.repeat(150)).length, 45, '150 Zeichen = Version 7 (45 Module), gut lesbar vom Bildschirm');
+});
+
+const SDP = ['v=0', 'o=- 46117317 2 IN IP4 127.0.0.1', 's=-', 't=0 0', 'a=group:BUNDLE 0',
+  'm=application 9 UDP/DTLS/SCTP webrtc-datachannel', 'c=IN IP4 0.0.0.0',
+  'a=candidate:842163049 1 udp 2122260223 192.168.43.17 54321 typ host generation 0 network-id 1',
+  'a=candidate:1510613869 1 tcp 1518280447 192.168.43.17 9 typ host tcptype active generation 0',
+  'a=candidate:99 1 udp 2122197247 2a02:810d::1 50000 typ host generation 0',
+  'a=candidate:77 1 udp 2122129151 0f5a3b1c-1111-4c2d-9e3f-abcdefabcdef.local 50123 typ host generation 0',
+  'a=ice-ufrag:Ab/+', 'a=ice-pwd:xYz0123456789abcdefghij+', 'a=ice-options:trickle',
+  'a=fingerprint:sha-256 0A:1B:2C:3D:4E:5F:60:71:82:93:A4:B5:C6:D7:E8:F9:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF',
+  'a=setup:actpass', 'a=mid:0', 'a=sctp-port:5000', 'a=max-message-size:262144', ''].join('\r\n');
+
+test('Verbindungsdaten packen: nur UDP, IPv4/mDNS zuerst, Fingerabdruck und Kennung bleiben erhalten', () => {
+  const c = pack(SDP, 'O');
+  assert.ok(c.length < 200, `kurz (${c.length})`);
+  assert.deepEqual(c.split('~').slice(5), ['192.168.43.17,54321', '0f5a3b1c-1111-4c2d-9e3f-abcdefabcdef.local,50123', '2a02:810d::1,50000']);
+  const u = unpack(c);
+  assert.equal(u.kind, 'O');
+  for(const l of ['a=ice-ufrag:Ab/+', 'a=ice-pwd:xYz0123456789abcdefghij+', 'a=setup:actpass',
+    'a=fingerprint:sha-256 0A:1B:2C:3D:4E:5F:60:71:82:93:A4:B5:C6:D7:E8:F9:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF',
+    'a=candidate:1 1 udp 2122260223 192.168.43.17 54321 typ host', 'a=candidate:3 1 udp 2122260221 2a02:810d::1 50000 typ host'])
+    assert.ok(u.sdp.split('\r\n').includes(l), l);
+  assert.match(unpack(pack(SDP, 'A')).sdp, /a=setup:active/);
+  assert.equal(unpack('irgendein QR-Code'), null);
+  assert.equal(unpack('HC1~X~a~b~c'), null);
+});
